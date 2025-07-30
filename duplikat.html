@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deteksi Link Duplikat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 80%;
+            max-width: 600px;
+            height: 150px;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            background-color: #fff;
+            resize: vertical;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 600px;
+            padding: 15px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        #copyBtn {
+            display: none;
+            background-color: #28a745;
+        }
+
+        #copyBtn:hover {
+            background-color: #218838;
+        }
+
+        .alert {
+            color: green;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+    </style>
+    <script>
+        function checkDuplicates() {
+            let inputText = document.getElementById("links").value;
+            let links = inputText.split(/\s+/).filter(link => link.trim() !== "");
+            let productIds = {}; // Menyimpan kode produk yang sudah ditemukan
+            let nonDuplicates = []; // Menyimpan link yang tidak duplikat
+            let duplicates = []; // Menyimpan link yang duplikat
+
+            links.forEach(link => {
+                // Menggunakan RegEx untuk menangkap kode produk (angka setelah /product/{kode_toko}/{kode_produk})
+                let match = link.match(/product\/\d+\/(\d+)/); // Menangkap kode produk sebagai grup pertama
+                if (match) {
+                    let productId = match[1]; // ID produk adalah grup pertama
+
+                    // Jika kode produk sudah ada sebelumnya, link dianggap duplikat
+                    if (productIds[productId]) {
+                        duplicates.push(link); // Menambahkan link ke duplikat
+                    } else {
+                        productIds[productId] = true;
+                        nonDuplicates.push(link); // Menambahkan link ke nonDuplicates jika kode produk belum ada
+                    }
+                }
+            });
+
+            let resultDiv = document.getElementById("result");
+            let totalLinks = links.length;
+            let uniqueLinks = nonDuplicates.length;
+            let duplicateLinks = duplicates.length;
+
+            // Menampilkan jumlah total link, link unik, dan link duplikat
+            let resultHTML = `<b>Jumlah Total Link:</b> ${totalLinks} <br><b>Jumlah Link Unik:</b> ${uniqueLinks} <br><b>Jumlah Link Duplikat:</b> ${duplicateLinks}<br><br>`;
+
+            // Menampilkan link yang tidak duplikat
+            if (uniqueLinks > 0) {
+                resultHTML += `<b>Link yang Tidak Duplikat:</b><br>` + nonDuplicates.join("<br>");
+            }
+
+            // Menampilkan link yang duplikat
+            if (duplicateLinks > 0) {
+                resultHTML += `<br><b>Link Duplikat:</b><br>` + duplicates.join("<br>");
+            }
+
+            resultDiv.innerHTML = resultHTML;
+
+            // Menampilkan tombol salin hanya jika ada hasil
+            if (uniqueLinks > 0 || duplicateLinks > 0) {
+                document.getElementById("copyBtn").style.display = "inline-block"; // Menampilkan tombol salin
+            } else {
+                document.getElementById("copyBtn").style.display = "none"; // Menyembunyikan tombol salin
+            }
+        }
+
+        function copyToClipboard() {
+            let resultDiv = document.getElementById("result");
+            // Menyalin hanya link yang tidak duplikat, mengabaikan informasi lainnya
+            let textToCopy = resultDiv.innerText.split('\n').slice(3, resultDiv.innerText.split('\n').indexOf('Link Duplikat:')).join('\n');
+            navigator.clipboard.writeText(textToCopy)  // Menyalin teks ke clipboard
+                .then(() => {
+                    alert("Hasil berhasil disalin ke clipboard!");
+                })
+                .catch(err => {
+                    alert("Gagal menyalin: " + err);
+                });
+        }
+    </script>
+</head>
+<body>
+    <h2>Deteksi Link Duplikat Shopee</h2>
+    <!-- Tombol Salin Hasil dipindahkan ke bagian atas -->
+    <button id="copyBtn" onclick="copyToClipboard()">Salin Hasil(yang tidak duplikat)</button>
+    <textarea id="links" rows="10" cols="50" placeholder="Tempel daftar link di sini seperti contoh.. https://shopee.co.id/product/256364012/26957537922" oninput="checkDuplicates()"></textarea><br>
+	<div class="sponsor">
+        Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
+    </div>
+    <div id="result"></div>
+	
+</body>
+</html>
