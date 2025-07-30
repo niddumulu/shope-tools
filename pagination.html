@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Link Shopee Pagination</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    textarea { width: 100%; height: 150px; }
+    #output { white-space: pre-wrap; background: #f4f4f4; padding: 10px; border: 1px solid #ccc; }
+    .pagination { margin-top: 10px; }
+    .page-btn { margin: 0 2px; padding: 5px 10px; cursor: pointer; }
+    .active { font-weight: bold; }
+    #copyBtn { margin-top: 10px; }
+    #stats { margin: 15px 0; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h2>Masukkan Link Shopee</h2>
+  <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
+
+  <h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
+  <textarea id="excludedShops" placeholder="Contoh: 123456789&#10;987654321"></textarea>
+
+  <br>
+  <button onclick="processLinks()">Proses Link</button>
+
+  <div id="stats"></div>
+
+  <h3>Output (maks 100 per halaman)</h3>
+  <div id="output"></div>
+  <button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
+
+  <div class="pagination" id="pagination"></div>
+
+  <script>
+    let allLinks = [];
+    let currentPage = 1;
+    const maxPerPage = 100;
+
+    function processLinks() {
+      const input = document.getElementById('inputLinks').value;
+      const excludeInput = document.getElementById('excludedShops').value;
+
+      const rawLinks = input.split('\n').map(link => link.trim()).filter(link => link);
+      const uniqueLinks = [...new Set(rawLinks)];
+
+      // Ambil daftar shop_id yang ingin dikecualikan
+      const excludedShopIds = excludeInput
+        .split('\n')
+        .map(id => id.trim())
+        .filter(id => id !== '');
+
+      // Filter link yang bukan dari toko yang dikecualikan
+      const filteredLinks = uniqueLinks.filter(link => {
+        const match = link.match(/\/product\/(\d+)\/\d+/);
+        if (match) {
+          const shopId = match[1];
+          return !excludedShopIds.includes(shopId);
+        }
+        return false; // Jika tidak cocok dengan pola, buang juga
+      });
+
+      allLinks = filteredLinks;
+      currentPage = 1;
+      showPage(currentPage);
+      renderPagination();
+
+      const totalPages = Math.ceil(allLinks.length / maxPerPage);
+      document.getElementById('stats').textContent =
+        `Total link diinput: ${rawLinks.length} | Link unik: ${uniqueLinks.length} | Setelah eliminasi: ${filteredLinks.length} | Total halaman: ${totalPages}`;
+    }
+
+    function showPage(page) {
+      const start = (page - 1) * maxPerPage;
+      const end = start + maxPerPage;
+      const pageLinks = allLinks.slice(start, end);
+      document.getElementById('output').textContent = pageLinks.join('\n');
+      currentPage = page;
+      highlightActivePage();
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(allLinks.length / maxPerPage);
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = 'page-btn';
+        if (i === currentPage) btn.classList.add('active');
+        btn.addEventListener('click', () => showPage(i));
+        pagination.appendChild(btn);
+      }
+    }
+
+    function highlightActivePage() {
+      document.querySelectorAll('.page-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (parseInt(btn.textContent) === currentPage) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    function copyToClipboard() {
+      const outputText = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(outputText)
+        .then(() => alert('Link berhasil disalin!'))
+        .catch(() => alert('Gagal menyalin!'));
+    }
+  </script>
+
+</body>
+</html>
