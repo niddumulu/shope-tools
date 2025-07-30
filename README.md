@@ -1,2 +1,2 @@
 # shopeelink
-https://niddumulu.github.io/shopeelink/elimination.html
+https://niddumulu.github.io/shope-tools/elimination.html
