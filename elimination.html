@@ -18,14 +18,9 @@
       font-size: 1.1rem;
     }
     textarea { width: 100%; height: 150px; box-sizing: border-box; font-size: 1rem; padding: 8px; }
+    /* Sembunyikan output tapi tetap ada di DOM */
     #output { 
-      white-space: pre-wrap; 
-      background: #f4f4f4; 
-      padding: 10px; 
-      border: 1px solid #ccc; 
-      min-height: 150px;
-      font-size: 0.9rem;
-      overflow-wrap: break-word;
+      display: none;
     }
     .pagination { margin-top: 10px; text-align: center; }
     .page-btn { margin: 0 2px; padding: 5px 10px; cursor: pointer; border: 1px solid #ccc; border-radius: 3px; background-color: white; }
@@ -33,7 +28,7 @@
     .active { font-weight: bold; background-color: #ffd42a; color: #b36b00; border-color: #b36b00; }
     #copyBtn { margin-top: 10px; padding: 8px 16px; font-size: 1rem; cursor: pointer; border: none; background-color: #ffd42a; color: #b36b00; border-radius: 4px; }
     #copyBtn:hover { background-color: #e6c72b; }
-    #stats { margin: 15px 0; font-weight: bold; font-size: 1rem; }
+    #stats { margin: 15px 0; font-weight: bold; font-size: 1rem; white-space: pre-line; }
     @media (max-width: 480px) {
       body { margin: 10px; }
       textarea { height: 120px; font-size: 0.9rem; }
@@ -45,20 +40,15 @@
 </head>
 <body>
 
-  
-
   <h2>Masukkan Link Shopee</h2>
   <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
   <div class="sponsor">
-  <br>
-        <center>Disponsori oleh <strong>Kios Tembakau MadGazan</strong></center>
+    <br>
+    <center>Disponsori oleh <strong>Kios Tembakau MadGazan</strong></center>
   </div>
 
   <h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
   <textarea id="excludedShops" placeholder="Contoh: 123456789&#10;987654321"></textarea>
-
-  <br />
-  <button onclick="processLinks()" id="processBtn">Proses Link</button>
 
   <div id="stats"></div>
 
@@ -73,9 +63,33 @@
     let currentPage = 1;
     const maxPerPage = 100;
 
+    const inputLinksEl = document.getElementById('inputLinks');
+    const excludedShopsEl = document.getElementById('excludedShops');
+
+    // Load data dari localStorage saat halaman dibuka
+    window.onload = () => {
+      if(localStorage.getItem('inputLinks')) {
+        inputLinksEl.value = localStorage.getItem('inputLinks');
+      }
+      if(localStorage.getItem('excludedShops')) {
+        excludedShopsEl.value = localStorage.getItem('excludedShops');
+      }
+      processLinks();
+    }
+
+    // Simpan ke localStorage + proses setiap input berubah
+    inputLinksEl.addEventListener('input', () => {
+      localStorage.setItem('inputLinks', inputLinksEl.value);
+      processLinks();
+    });
+    excludedShopsEl.addEventListener('input', () => {
+      localStorage.setItem('excludedShops', excludedShopsEl.value);
+      processLinks();
+    });
+
     function processLinks() {
-      const input = document.getElementById('inputLinks').value;
-      const excludeInput = document.getElementById('excludedShops').value;
+      const input = inputLinksEl.value;
+      const excludeInput = excludedShopsEl.value;
 
       const rawLinks = input.split('\n').map(link => link.trim()).filter(link => link);
       const uniqueLinks = [...new Set(rawLinks)];
@@ -85,7 +99,11 @@
         .map(id => id.trim())
         .filter(id => id !== '');
 
-      const filteredLinks = uniqueLinks.filter(link => {
+      // Link yang valid (pola cocok)
+      const validLinks = uniqueLinks.filter(link => /\/product\/\d+\/\d+/.test(link));
+
+      // Filter setelah kecualikan berdasarkan toko
+      const filteredLinks = validLinks.filter(link => {
         const match = link.match(/\/product\/(\d+)\/\d+/);
         if (match) {
           const shopId = match[1];
@@ -100,8 +118,16 @@
       renderPagination();
 
       const totalPages = Math.ceil(allLinks.length / maxPerPage);
-      document.getElementById('stats').textContent =
-        `Total link diinput: ${rawLinks.length} | Link unik: ${uniqueLinks.length} | Setelah eliminasi: ${filteredLinks.length} | Total halaman: ${totalPages}`;
+
+      const statsText = 
+        `Total link diinput: ${rawLinks.length}\n` +
+        `Link unik: ${uniqueLinks.length}\n` +
+        `Link valid (sesuai pola): ${validLinks.length}\n` +
+        `Link tereliminasi (excluded toko): ${validLinks.length - filteredLinks.length}\n` +
+        `Link setelah eliminasi: ${filteredLinks.length}\n` +
+        `Total halaman: ${totalPages}`;
+
+      document.getElementById('stats').textContent = statsText;
     }
 
     function showPage(page) {
