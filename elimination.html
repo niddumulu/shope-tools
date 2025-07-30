@@ -42,6 +42,8 @@
 
   <h2>Masukkan Link Shopee</h2>
   <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
+  <button id="clearInputLinksBtn" style="margin-top:5px; padding:5px 10px; cursor:pointer;">Clear Input Links</button>
+  
   <div class="sponsor">
     <br>
     <center>Disponsori oleh <strong>Kios Tembakau MadGazan</strong></center>
@@ -84,6 +86,13 @@
     });
     excludedShopsEl.addEventListener('input', () => {
       localStorage.setItem('excludedShops', excludedShopsEl.value);
+      processLinks();
+    });
+
+    // Tombol Clear untuk inputLinks
+    document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
+      inputLinksEl.value = '';
+      localStorage.removeItem('inputLinks');
       processLinks();
     });
 
