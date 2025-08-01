@@ -18,7 +18,9 @@
       font-size: 1.1rem;
     }
     textarea { width: 100%; height: 150px; box-sizing: border-box; font-size: 1rem; padding: 8px; }
-    #output { display: none; }
+    #output { display: none; margin-top: 10px; }
+    #output a { display: block; margin-bottom: 5px; color: #0066cc; text-decoration: none; }
+    #output a:hover { text-decoration: underline; }
     .pagination { margin-top: 10px; text-align: center; }
     .page-btn { margin: 0 2px; padding: 5px 10px; cursor: pointer; border: 1px solid #ccc; border-radius: 3px; background-color: white; }
     .page-btn:hover { background-color: #ffd42a; color: #b36b00; }
@@ -64,32 +66,30 @@
 
     const inputLinksEl = document.getElementById('inputLinks');
     const excludedShopsEl = document.getElementById('excludedShops');
+    const pageKey = location.pathname.split('/').pop().replace(/\.[^/.]+$/, '');
 
-    // Load data dari localStorage saat halaman dibuka
     window.onload = () => {
-      if (localStorage.getItem('inputLinks')) {
-        inputLinksEl.value = localStorage.getItem('inputLinks');
+      if (localStorage.getItem(`${pageKey}_inputLinks`)) {
+        inputLinksEl.value = localStorage.getItem(`${pageKey}_inputLinks`);
       }
-      if (localStorage.getItem('excludedShops')) {
-        excludedShopsEl.value = localStorage.getItem('excludedShops');
+      if (localStorage.getItem(`${pageKey}_excludedShops`)) {
+        excludedShopsEl.value = localStorage.getItem(`${pageKey}_excludedShops`);
       }
       processLinks();
     }
 
-    // Simpan ke localStorage + proses setiap input berubah
     inputLinksEl.addEventListener('input', () => {
-      localStorage.setItem('inputLinks', inputLinksEl.value);
+      localStorage.setItem(`${pageKey}_inputLinks`, inputLinksEl.value);
       processLinks();
     });
     excludedShopsEl.addEventListener('input', () => {
-      localStorage.setItem('excludedShops', excludedShopsEl.value);
+      localStorage.setItem(`${pageKey}_excludedShops`, excludedShopsEl.value);
       processLinks();
     });
 
-    // Tombol Clear untuk inputLinks
     document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
       inputLinksEl.value = '';
-      localStorage.removeItem('inputLinks');
+      localStorage.removeItem(`${pageKey}_inputLinks`);
       processLinks();
     });
 
@@ -105,7 +105,6 @@
         .map(id => id.trim())
         .filter(id => id !== '');
 
-      // ✅ Tambahan: cek duplikat ID toko
       const duplicateShopIds = excludedShopIds.filter((id, idx, arr) => arr.indexOf(id) !== idx);
       if (duplicateShopIds.length > 0) {
         alert(`Peringatan: Ditemukan ID toko yang duplikat:\n${[...new Set(duplicateShopIds)].join('\n')}`);
@@ -133,18 +132,24 @@
         `Total link diinput: ${rawLinks.length}\n` +
         `Link unik: ${uniqueLinks.length}\n` +
         `Link valid (sesuai pola): ${validLinks.length}\n` +
-        `Link tereliminasi (produk toko live): ${validLinks.length - filteredLinks.length}\n` +
+        `Link tereliminasi (excluded toko): ${validLinks.length - filteredLinks.length}\n` +
         `Link setelah eliminasi: ${filteredLinks.length}\n` +
         `Total halaman: ${totalPages}`;
 
       document.getElementById('stats').textContent = statsText;
+      document.getElementById('output').style.display = allLinks.length ? 'block' : 'none';
     }
 
     function showPage(page) {
       const start = (page - 1) * maxPerPage;
       const end = start + maxPerPage;
       const pageLinks = allLinks.slice(start, end);
-      document.getElementById('output').textContent = pageLinks.join('\n');
+
+      const outputDiv = document.getElementById('output');
+      outputDiv.innerHTML = pageLinks.map(link =>
+        `<a href="${link}" target="_blank" rel="noopener noreferrer">${link}</a>`
+      ).join('');
+
       currentPage = page;
       highlightActivePage();
     }
@@ -174,8 +179,9 @@
     }
 
     function copyToClipboard() {
-      const outputText = document.getElementById('output').textContent;
-      navigator.clipboard.writeText(outputText)
+      const links = allLinks.slice((currentPage - 1) * maxPerPage, currentPage * maxPerPage);
+      const textToCopy = links.join('\n');
+      navigator.clipboard.writeText(textToCopy)
         .then(() => alert('Link berhasil disalin!'))
         .catch(() => alert('Gagal menyalin!'));
     }
