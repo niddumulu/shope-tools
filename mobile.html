@@ -126,7 +126,7 @@
   <h2>Masukkan Link Shopee</h2>
   <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
   <div class="input-buttons">
-    <button id="ambilDataBtn">📂 Ambil dari data.txt</button>
+    <button id="ambilLinksBtn">Ambil dari data.txt</button>
     <button id="clearInputLinksBtn">Clear Input Links</button>
     <button id="copyInputLinksBtn">Copy Input Links</button>
   </div>
@@ -137,6 +137,11 @@
 
   <h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
   <textarea id="excludedShops" placeholder="Contoh: 123456789&#10;987654321"></textarea>
+  <div class="input-buttons">
+    <button id="ambilTokoBtn">Ambil dari data_toko.txt</button>
+    <button id="clearInputTokoBtn">Clear Input Toko</button>
+    <button id="copyInputTokoBtn">Copy Input Toko</button>
+  </div>
 
   <div id="stats"></div>
 
@@ -165,15 +170,37 @@
       processLinks();
     }
 
-    inputLinksEl.addEventListener('input', () => {
-      localStorage.setItem(`${pageKey}_inputLinks`, inputLinksEl.value);
-      processLinks();
-    });
-    excludedShopsEl.addEventListener('input', () => {
-      localStorage.setItem(`${pageKey}_excludedShops`, excludedShopsEl.value);
-      processLinks();
+    // Ambil data links
+    document.getElementById('ambilLinksBtn').addEventListener('click', async () => {
+      try {
+        const res = await fetch('data.txt?t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const text = await res.text();
+        const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+        inputLinksEl.value = rows.join("\n");
+        localStorage.setItem(`${pageKey}_inputLinks`, inputLinksEl.value);
+        processLinks();
+      } catch (e) {
+        alert("Gagal mengambil data.txt: " + e.message);
+      }
     });
 
+    // Ambil data toko
+    document.getElementById('ambilTokoBtn').addEventListener('click', async () => {
+      try {
+        const res = await fetch('data_toko.txt?t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const text = await res.text();
+        const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+        excludedShopsEl.value = rows.join("\n");
+        localStorage.setItem(`${pageKey}_excludedShops`, excludedShopsEl.value);
+        processLinks();
+      } catch (e) {
+        alert("Gagal mengambil data_toko.txt: " + e.message);
+      }
+    });
+
+    // Event clear/copy untuk links
     document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
       inputLinksEl.value = '';
       localStorage.removeItem(`${pageKey}_inputLinks`);
@@ -191,27 +218,31 @@
         .catch(() => alert("Gagal menyalin!"));
     });
 
-    // Tambahan: Ambil data dari data.txt
-    document.getElementById('ambilDataBtn').addEventListener('click', async () => {
-      try {
-        const url = 'data.txt?t=' + Date.now();
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+    // Event clear/copy untuk toko
+    document.getElementById('clearInputTokoBtn').addEventListener('click', () => {
+      excludedShopsEl.value = '';
+      localStorage.removeItem(`${pageKey}_excludedShops`);
+      processLinks();
+    });
 
-        let text = await res.text();
-        text = text.replace(/^\uFEFF/, ''); // hapus BOM
-        const rows = text
-          .split(/\r?\n/)
-          .map(r => r.trim())
-          .filter(Boolean);
-
-        inputLinksEl.value = rows.join('\n');
-        localStorage.setItem(`${pageKey}_inputLinks`, inputLinksEl.value);
-        processLinks();
-        alert("Data dari data.txt berhasil dimasukkan!");
-      } catch (err) {
-        alert("Gagal mengambil data.txt: " + err.message);
+    document.getElementById('copyInputTokoBtn').addEventListener('click', () => {
+      const textToCopy = excludedShopsEl.value.trim();
+      if (!textToCopy) {
+        alert("Input kosong, tidak ada yang disalin!");
+        return;
       }
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => alert("Isi input berhasil disalin!"))
+        .catch(() => alert("Gagal menyalin!"));
+    });
+
+    inputLinksEl.addEventListener('input', () => {
+      localStorage.setItem(`${pageKey}_inputLinks`, inputLinksEl.value);
+      processLinks();
+    });
+    excludedShopsEl.addEventListener('input', () => {
+      localStorage.setItem(`${pageKey}_excludedShops`, excludedShopsEl.value);
+      processLinks();
     });
 
     function processLinks() {
