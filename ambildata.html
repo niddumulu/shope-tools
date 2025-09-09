@@ -34,6 +34,7 @@
         return;
       }
 
+      // Bypass cache dengan membaca ulang file pakai FileReader setiap kali
       const reader = new FileReader();
       reader.onload = function(e) {
         const text = e.target.result;
@@ -59,7 +60,8 @@
     }
 
     function ambilTXT() {
-      fetch("data.txt")
+      const url = "data.txt?t=" + new Date().getTime(); // bypass cache
+      fetch(url, { cache: "no-store" })
         .then(response => {
           if (!response.ok) throw new Error("Gagal ambil data.txt");
           return response.text();
