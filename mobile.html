@@ -2,104 +2,114 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Link Shopee Pagination</title>
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      margin: 20px; 
-      max-width: 600px; 
-      margin-left: auto; 
-      margin-right: auto; 
+    body {
+      font-family: Arial, sans-serif;
+      margin: 15px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
     }
-    #sponsor {
+    h2, h3 {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+      box-sizing: border-box;
+      font-size: 1rem;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    #output {
+      display: none;
+      margin-top: 10px;
+    }
+    #output a {
+      display: block;
+      margin-bottom: 6px;
+      color: #0066cc;
+      text-decoration: none;
+      word-wrap: break-word;
+    }
+    #output a:hover { text-decoration: underline; }
+    .pagination {
+      margin-top: 15px;
+      text-align: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
+    .page-btn {
+      padding: 10px 14px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background-color: white;
+      font-size: 1rem;
+      min-width: 40px;
+    }
+    .page-btn:hover { background-color: #ffd42a; color: #b36b00; }
+    .active {
+      font-weight: bold;
+      background-color: #ffd42a;
+      color: #b36b00;
+      border-color: #b36b00;
+    }
+    #copyBtn {
+      margin-top: 12px;
+      padding: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      background-color: #ffd42a;
+      color: #b36b00;
+      border-radius: 6px;
+      width: 100%;
+    }
+    #copyBtn:hover { background-color: #e6c72b; }
+    #clearInputLinksBtn {
+      margin-top: 6px;
+      padding: 8px 14px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #f5f5f5;
+    }
+    #clearInputLinksBtn:hover {
+      background: #eee;
+    }
+    #stats {
+      margin: 15px 0;
+      font-weight: bold;
+      font-size: 1rem;
+      white-space: pre-line;
+    }
+    .sponsor {
       background-color: #fffae6;
       border: 1px solid #ffd42a;
-      padding: 10px;
-      margin-bottom: 20px;
+      padding: 12px;
+      margin: 15px 0;
       font-weight: bold;
       text-align: center;
       color: #b36b00;
-      border-radius: 5px;
+      border-radius: 6px;
       box-shadow: 0 0 5px rgba(255, 212, 42, 0.5);
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
-    textarea { 
-      width: 100%; 
-      height: 150px; 
-      box-sizing: border-box; 
-      font-size: 1rem; 
-      padding: 8px; 
-    }
-    #output { display: none; margin-top: 10px; }
-    #output a { 
-      display: block; 
-      margin-bottom: 5px; 
-      color: #0066cc; 
-      text-decoration: none; 
-    }
-    #output a:hover { text-decoration: underline; }
-
-    /* PAGINATION */
-    .pagination { 
-      margin-top: 15px; 
-      text-align: center; 
-      display: flex; 
-      flex-wrap: wrap; 
-      gap: 8px; 
-      justify-content: center; 
-    }
-    .page-btn { 
-      min-width: 40px; 
-      padding: 10px 14px; 
-      cursor: pointer; 
-      border: 1px solid #ccc; 
-      border-radius: 6px; 
-      background-color: white; 
-      font-size: 1rem; 
-      transition: 0.2s; 
-    }
-    .page-btn:hover { 
-      background-color: #ffd42a; 
-      color: #b36b00; 
-    }
-    .active { 
-      font-weight: bold; 
-      background-color: #ffd42a; 
-      color: #b36b00; 
-      border-color: #b36b00; 
-    }
-
-    /* COPY BUTTON */
-    #copyBtn { 
-      margin-top: 10px; 
-      padding: 12px 20px; 
-      font-size: 1rem; 
-      cursor: pointer; 
-      border: none; 
-      background-color: #ffd42a; 
-      color: #b36b00; 
-      border-radius: 6px; 
-      width: 100%; 
-    }
-    #copyBtn:hover { background-color: #e6c72b; }
-
-    #stats { 
-      margin: 15px 0; 
-      font-weight: bold; 
-      font-size: 1rem; 
-      white-space: pre-line; 
-    }
-
-    /* RESPONSIVE */
+    /* Responsive tweaks */
     @media (max-width: 480px) {
-      body { margin: 10px; }
+      h2, h3 { font-size: 1rem; }
       textarea { height: 120px; font-size: 0.9rem; }
       #output { font-size: 0.85rem; }
-      .page-btn { 
-        flex: 1 1 60px; 
-        padding: 12px; 
-        font-size: 1rem; 
-      }
+      .page-btn { padding: 8px 12px; font-size: 0.9rem; }
+      #copyBtn { font-size: 0.95rem; }
     }
   </style>
 </head>
@@ -107,11 +117,10 @@
 
   <h2>Masukkan Link Shopee</h2>
   <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
-  <button id="clearInputLinksBtn" style="margin-top:5px; padding:8px 14px; cursor:pointer;">Clear Input Links</button>
+  <button id="clearInputLinksBtn">Clear Input Links</button>
 
   <div class="sponsor">
-    <br>
-    <center>Disponsori oleh <strong>Kios Tembakau MadGazan</strong></center>
+    Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
   </div>
 
   <h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
