@@ -73,16 +73,21 @@
       width: 100%;
     }
     #copyBtn:hover { background-color: #e6c72b; }
-    #clearInputLinksBtn {
+    .input-buttons {
+      display: flex;
+      gap: 8px;
       margin-top: 6px;
-      padding: 8px 14px;
+    }
+    .input-buttons button {
+      flex: 1;
+      padding: 10px;
       font-size: 0.95rem;
       cursor: pointer;
       border: 1px solid #ccc;
       border-radius: 6px;
       background: #f5f5f5;
     }
-    #clearInputLinksBtn:hover {
+    .input-buttons button:hover {
       background: #eee;
     }
     #stats {
@@ -110,6 +115,8 @@
       #output { font-size: 0.85rem; }
       .page-btn { padding: 8px 12px; font-size: 0.9rem; }
       #copyBtn { font-size: 0.95rem; }
+      .input-buttons { flex-direction: column; }
+      .input-buttons button { flex: unset; width: 100%; }
     }
   </style>
 </head>
@@ -117,7 +124,10 @@
 
   <h2>Masukkan Link Shopee</h2>
   <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
-  <button id="clearInputLinksBtn">Clear Input Links</button>
+  <div class="input-buttons">
+    <button id="clearInputLinksBtn">Clear Input Links</button>
+    <button id="copyInputLinksBtn">Copy Input Links</button>
+  </div>
 
   <div class="sponsor">
     Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
@@ -166,6 +176,17 @@
       inputLinksEl.value = '';
       localStorage.removeItem(`${pageKey}_inputLinks`);
       processLinks();
+    });
+
+    document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
+      const textToCopy = inputLinksEl.value.trim();
+      if (!textToCopy) {
+        alert("Input kosong, tidak ada yang disalin!");
+        return;
+      }
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => alert("Isi input berhasil disalin!"))
+        .catch(() => alert("Gagal menyalin!"));
     });
 
     function processLinks() {
