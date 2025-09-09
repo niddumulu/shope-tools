@@ -2,23 +2,64 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ambil Data dari data.txt</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; max-width: 700px; }
-    textarea { width: 100%; height: 200px; margin-top: 10px; }
-    button { margin: 5px 5px 5px 0; padding: 8px 15px; font-size: 14px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 15px;
+      max-width: 700px;
+    }
+    h2 {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    button {
+      display: inline-block;
+      margin: 5px 5px 5px 0;
+      padding: 12px 18px;
+      font-size: 15px;
+      border: none;
+      border-radius: 6px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333;
+    }
+    /* Responsif untuk layar kecil */
+    @media (max-width: 600px) {
+      body { margin: 10px; }
+      button { width: 100%; font-size: 16px; margin-top: 8px; }
+      textarea { height: 250px; font-size: 16px; }
+    }
   </style>
 </head>
 <body>
   <h2>Ambil Data dari data.txt</h2>
 
   <div>
-    <button onclick="ambilTXT()">Ambil dari data.txt</button>
+    <button onclick="ambilTXT()">📂 Ambil dari data.txt</button>
   </div>
 
   <p id="status"></p>
   <textarea id="output" readonly></textarea><br>
-  <button onclick="copyData()" id="copyBtn" style="display:none;">Copy</button>
+  <button onclick="copyData()" id="copyBtn" style="display:none;">📋 Copy</button>
 
   <script>
     function ambilTXT() {
