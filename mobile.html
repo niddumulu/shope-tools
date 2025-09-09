@@ -77,6 +77,7 @@
       display: flex;
       gap: 8px;
       margin-top: 6px;
+      flex-wrap: wrap;
     }
     .input-buttons button {
       flex: 1;
@@ -125,6 +126,7 @@
   <h2>Masukkan Link Shopee</h2>
   <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
   <div class="input-buttons">
+    <button id="ambilDataBtn">📂 Ambil dari data.txt</button>
     <button id="clearInputLinksBtn">Clear Input Links</button>
     <button id="copyInputLinksBtn">Copy Input Links</button>
   </div>
@@ -187,6 +189,29 @@
       navigator.clipboard.writeText(textToCopy)
         .then(() => alert("Isi input berhasil disalin!"))
         .catch(() => alert("Gagal menyalin!"));
+    });
+
+    // Tambahan: Ambil data dari data.txt
+    document.getElementById('ambilDataBtn').addEventListener('click', async () => {
+      try {
+        const url = 'data.txt?t=' + Date.now();
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        let text = await res.text();
+        text = text.replace(/^\uFEFF/, ''); // hapus BOM
+        const rows = text
+          .split(/\r?\n/)
+          .map(r => r.trim())
+          .filter(Boolean);
+
+        inputLinksEl.value = rows.join('\n');
+        localStorage.setItem(`${pageKey}_inputLinks`, inputLinksEl.value);
+        processLinks();
+        alert("Data dari data.txt berhasil dimasukkan!");
+      } catch (err) {
+        alert("Gagal mengambil data.txt: " + err.message);
+      }
     });
 
     function processLinks() {
