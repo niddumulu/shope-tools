@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tampilkan data.txt & Copy</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;max-width:900px;margin:28px auto;padding:0 16px;color:#111}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{font-size:1.15rem;margin:0}
+    .controls{display:flex;gap:8px}
+    button{padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#f7f7f7;cursor:pointer}
+    button:active{transform:translateY(1px)}
+    pre#content{white-space:pre-wrap;background:#0f172a;color:#e6eef8;padding:16px;border-radius:8px;overflow:auto;max-height:60vh}
+    .meta{color:#555;font-size:0.9rem;margin-top:8px}
+    input[type=file]{display:none}
+    .notice{margin-top:12px;color:#444}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Tampilkan <code>data.txt</code> dan tombol Copy</h1>
+    <div class="controls">
+      <button id="refreshBtn" title="Muat ulang dari data.txt">Refresh</button>
+      <button id="copyBtn" title="Salin isi ke clipboard">Copy</button>
+      <label for="fileInput" style="margin:0"><button id="chooseBtn">Pilih file (lokal)</button></label>
+      <input id="fileInput" type="file" accept=".txt" />
+    </div>
+  </header>
+
+  <main>
+    <p class="notice">Catatan: agar fungsi "Refresh" (fetch) bekerja, jalankan file ini melalui server (mis. <code>python -m http.server</code>) dan letakkan <code>data.txt</code> di folder yang sama. Jika tidak ingin menjalankan server, gunakan tombol "Pilih file (lokal)".</p>
+
+    <pre id="content">Memuat...</pre>
+    <p class="meta" id="meta">—</p>
+  </main>
+
+  <script>
+    const contentEl = document.getElementById('content');
+    const metaEl = document.getElementById('meta');
+    const copyBtn = document.getElementById('copyBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const fileInput = document.getElementById('fileInput');
+
+    async function loadFromServer() {
+      try {
+        const resp = await fetch('data.txt', {cache: 'no-store'});
+        if (!resp.ok) throw new Error('Tidak dapat memuat: ' + resp.status+ ' ' + resp.statusText);
+        const txt = await resp.text();
+        showContent(txt, 'Sumber: data.txt (server)');
+      } catch (err) {
+        showContent('Gagal memuat data.txt dari server.\nGunakan tombol "Pilih file (lokal)" atau jalankan server HTTP.\n\nError: '+err.message, 'Kesalahan');
+      }
+    }
+
+    function showContent(text, sourceNote) {
+      contentEl.textContent = text || 'file kosong';
+      const lines = text ? text.split(/\r?\n/).length : 0;
+      const chars = text ? text.length : 0;
+      metaEl.textContent = `${sourceNote} — ${lines} baris, ${chars} karakter`;
+    }
+
+    copyBtn.addEventListener('click', async () => {
+      const text = contentEl.textContent || '';
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = 'Tersalin!';
+        setTimeout(()=> copyBtn.textContent = 'Copy', 1200);
+      } catch (e) {
+        // fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); copyBtn.textContent = 'Tersalin!'; }
+        catch(err){ alert('Maaf, tidak bisa menyalin otomatis. Silakan salin manual.'); }
+        ta.remove();
+        setTimeout(()=> copyBtn.textContent = 'Copy', 1200);
+      }
+    });
+
+    refreshBtn.addEventListener('click', loadFromServer);
+
+    // file chooser (bisa dipakai jika tidak menjalankan server)
+    fileInput.addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => showContent(reader.result, `Sumber: ${f.name} (lokal)`);
+      reader.onerror = () => showContent('Gagal membaca file lokal', 'Kesalahan');
+      reader.readAsText(f, 'utf-8');
+    });
+
+    // coba langsung muat dari server saat halaman dibuka
+    loadFromServer();
+  </script>
+</body>
+</html>
