@@ -10,7 +10,7 @@
   </style>
 </head>
 <body>
-  <h2>Upload CSV (ambil kolom P)</h2>
+  <h2>Upload CSV (ambil kolom ke-16 = Kolom P)</h2>
   <input type="file" id="csvFile" accept=".csv"><br><br>
   <button onclick="processCSV()">Upload & Proses</button>
   <p id="status"></p>
@@ -35,18 +35,11 @@
           return;
         }
 
-        const headers = rows[0].split(",");
-        const pIndex = headers.findIndex(h => h.trim().toLowerCase() === "p");
-        if (pIndex === -1) {
-          alert("Kolom 'p' tidak ditemukan di header CSV!");
-          return;
-        }
-
         let result = [];
-        for (let i = 1; i < rows.length; i++) {
+        for (let i = 1; i < rows.length; i++) { // mulai dari baris ke-2 (skip header)
           const cols = rows[i].split(",");
-          if (cols[pIndex]) {
-            result.push(cols[pIndex].trim());
+          if (cols.length > 15 && cols[15].trim() !== "") { // kolom ke-16 (index 15)
+            result.push(cols[15].trim());
           }
         }
 
