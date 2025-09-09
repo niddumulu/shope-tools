@@ -10,10 +10,10 @@
   </style>
 </head>
 <body>
-  <h2>Upload CSV atau Ambil dari data.txt</h2>
+  <h2>Upload Multi CSV atau Ambil dari data.txt</h2>
 
   <div>
-    <input type="file" id="csvFile" accept=".csv">
+    <input type="file" id="csvFile" accept=".csv" multiple>
     <button onclick="processCSV()">Upload & Proses CSV</button>
   </div>
 
@@ -28,35 +28,37 @@
   <script>
     function processCSV() {
       const fileInput = document.getElementById("csvFile");
-      const file = fileInput.files[0];
-      if (!file) {
-        alert("Pilih file CSV terlebih dahulu!");
+      const files = fileInput.files;
+      if (!files.length) {
+        alert("Pilih minimal satu file CSV!");
         return;
       }
 
-      // Bypass cache dengan membaca ulang file pakai FileReader setiap kali
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const text = e.target.result;
-        const rows = text.split(/\r?\n/).filter(r => r.trim() !== "");
-        if (rows.length <= 1) {
-          document.getElementById("status").innerText = "Tidak ada data.";
-          return;
-        }
+      let allResults = [];
+      let filesProcessed = 0;
 
-        let result = [];
-        for (let i = 1; i < rows.length; i++) { // skip header
-          const cols = rows[i].split(",");
-          if (cols.length > 15 && cols[15].trim() !== "") { 
-            let val = cols[15].trim();
-            val = val.replace(/^"|"$/g, ''); // hilangkan tanda petik
-            result.push(val);
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const text = e.target.result;
+          const rows = text.split(/\r?\n/).filter(r => r.trim() !== "");
+          if (rows.length > 1) {
+            for (let i = 1; i < rows.length; i++) { // skip header
+              const cols = rows[i].split(",");
+              if (cols.length > 15 && cols[15].trim() !== "") { 
+                let val = cols[15].trim();
+                val = val.replace(/^"|"$/g, ''); // hilangkan tanda petik
+                allResults.push(val);
+              }
+            }
           }
-        }
-
-        tampilkanHasil(result);
-      };
-      reader.readAsText(file);
+          filesProcessed++;
+          if (filesProcessed === files.length) {
+            tampilkanHasil(allResults);
+          }
+        };
+        reader.readAsText(file);
+      });
     }
 
     function ambilTXT() {
