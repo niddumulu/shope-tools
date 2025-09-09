@@ -117,8 +117,8 @@
 
     function tampilkanHasil(result) {
       const out = document.getElementById('output');
-      // Gunakan \r\n agar hasil paste tetap satu baris-satu baris
-      out.value = result.join('\r\n');
+      // Tampilkan di textarea pakai \n biar enak dibaca di PC
+      out.value = result.join('\n');
       document.getElementById('copyBtn').style.display = result.length ? 'inline-block' : 'none';
     }
 
@@ -130,9 +130,11 @@
         return;
       }
       try {
+        // Untuk clipboard, pakai line separator universal (\u2028) supaya mobile tetap baris-baris
+        const mobileSafeText = text.replace(/\n/g, '\u2028');
+
         if (navigator.clipboard && window.isSecureContext) {
-          // Pastikan line break konsisten
-          await navigator.clipboard.writeText(text.replace(/\n/g, '\r\n'));
+          await navigator.clipboard.writeText(mobileSafeText);
         } else {
           const readonly = out.hasAttribute('readonly');
           if (readonly) out.removeAttribute('readonly');
@@ -141,6 +143,7 @@
           document.execCommand('copy');
           if (readonly) out.setAttribute('readonly', '');
         }
+
         setStatus('Data berhasil disalin.');
         alert('Data berhasil dicopy!');
       } catch (e) {
