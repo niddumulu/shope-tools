@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ambil Data dari data.txt</title>
   <style>
+    :root { color-scheme: light dark; }
     body {
       font-family: Arial, sans-serif;
       margin: 15px;
@@ -14,39 +15,43 @@
       font-size: 1.3rem;
       margin-bottom: 15px;
     }
-    textarea {
-      width: 100%;
-      height: 200px;
-      margin-top: 10px;
-      padding: 10px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-    button {
+    .btn {
       display: inline-block;
       margin: 5px 5px 5px 0;
       padding: 12px 18px;
       font-size: 15px;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       background: #007bff;
       color: white;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: transform .06s ease, background .2s ease;
+      touch-action: manipulation;
     }
-    button:hover {
-      background: #0056b3;
+    .btn:active { transform: scale(0.98); }
+    .btn.secondary { background: #6c757d; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    textarea {
+      width: 100%;
+      height: 240px;
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 14px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: vertical;
     }
     #status {
       margin-top: 10px;
       font-size: 14px;
       color: #333;
+      min-height: 1.2em;
     }
-    /* Responsif untuk layar kecil */
     @media (max-width: 600px) {
       body { margin: 10px; }
-      button { width: 100%; font-size: 16px; margin-top: 8px; }
-      textarea { height: 250px; font-size: 16px; }
+      .btn { width: 100%; font-size: 16px; margin-top: 8px; }
+      textarea { height: 280px; font-size: 16px; }
     }
   </style>
 </head>
@@ -54,44 +59,104 @@
   <h2>Ambil Data dari data.txt</h2>
 
   <div>
-    <button onclick="ambilTXT()">📂 Ambil dari data.txt</button>
+    <button class="btn" id="btnAmbil" onclick="ambilTXT()">📂 Ambil dari data.txt</button>
+    <button class="btn secondary" id="btnClear" onclick="clearOutput()">🧹 Clear</button>
   </div>
 
   <p id="status"></p>
   <textarea id="output" readonly></textarea><br>
-  <button onclick="copyData()" id="copyBtn" style="display:none;">📋 Copy</button>
+  <button class="btn" onclick="copyData()" id="copyBtn" style="display:none;">📋 Copy</button>
 
   <script>
-    function ambilTXT() {
-      const url = "data.txt?t=" + new Date().getTime(); // bypass cache
-      fetch(url, { cache: "no-store" })
-        .then(response => {
-          if (!response.ok) throw new Error("Gagal ambil data.txt");
-          return response.text();
-        })
-        .then(text => {
-          const rows = text.split(/\r?\n/).filter(r => r.trim() !== "");
-          let result = rows.map(r => r.replace(/^"|"$/g, '')); // bersihkan petik
-          tampilkanHasil(result);
-        })
-        .catch(err => {
-          alert("Error: " + err.message);
-        });
+    function setStatus(msg, isError = false) {
+      const el = document.getElementById('status');
+      el.textContent = msg || '';
+      el.style.color = isError ? '#b00020' : '#333';
+    }
+
+    function clearOutput() {
+      document.getElementById('output').value = '';
+      setStatus(''); 
+      document.getElementById('copyBtn').style.display = 'none';
+    }
+
+    async function ambilTXT() {
+      const btn = document.getElementById('btnAmbil');
+      try {
+        btn.disabled = true;
+        setStatus('Mengambil data…');
+
+        // Tambah timestamp agar tidak ambil dari cache + minta no-store
+        const url = 'data.txt?t=' + Date.now();
+        const res = await fetch(url, { cache: 'no-store' });
+
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+
+        let text = await res.text();
+
+        // Hilangkan BOM kalau ada
+        text = text.replace(/^\uFEFF/, '');
+
+        // Normalisasi line ending dan bersihkan baris kosong
+        const rows = text
+          .split(/\r?\n/)
+          .map(r => r.trim())
+          .filter(Boolean);
+
+        // Hilangkan tanda petik di awal/akhir tiap baris
+        const result = rows.map(r => r.replace(/^"|"$/g, ''));
+
+        tampilkanHasil(result);
+        setStatus('Sudah terupload ' + result.length + ' data.');
+      } catch (err) {
+        setStatus(
+          'Gagal mengambil data.txt: ' + err.message + 
+          '. Pastikan file "data.txt" berada di folder yang sama, dan halaman ini diakses via http(s) (bukan file://).',
+          true
+        );
+        // Optional alert agar terlihat di mobile
+        // alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     function tampilkanHasil(result) {
-      document.getElementById("output").value = result.join("\n");
-      document.getElementById("status").innerText =
-        "Sudah terupload " + result.length + " data.";
-      document.getElementById("copyBtn").style.display = "inline-block";
+      const out = document.getElementById('output');
+      out.value = result.join('\n');
+      document.getElementById('copyBtn').style.display = result.length ? 'inline-block' : 'none';
     }
 
-    function copyData() {
-      const textarea = document.getElementById("output");
-      textarea.select();
-      textarea.setSelectionRange(0, 99999); // untuk mobile
-      document.execCommand("copy");
-      alert("Data berhasil dicopy!");
+    async function copyData() {
+      const out = document.getElementById('output');
+      const text = out.value;
+      if (!text) {
+        setStatus('Tidak ada data untuk disalin.', true);
+        return;
+      }
+      try {
+        // Metode modern (butuh context aman: https/localhost)
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          // Fallback untuk http biasa / environment lama
+          const readonly = out.hasAttribute('readonly');
+          if (readonly) out.removeAttribute('readonly');
+          out.focus();
+          out.select();
+          out.setSelectionRange(0, text.length);
+          const ok = document.execCommand('copy');
+          if (readonly) out.setAttribute('readonly', '');
+          if (!ok) throw new Error('execCommand gagal');
+          // Hilangkan highlight
+          out.setSelectionRange(0, 0);
+          out.blur();
+        }
+        setStatus('Data berhasil disalin.');
+        alert('Data berhasil dicopy!');
+      } catch (e) {
+        setStatus('Gagal menyalin ke clipboard. Coba tekan dan tahan lalu pilih Salin.', true);
+      }
     }
   </script>
 </body>
