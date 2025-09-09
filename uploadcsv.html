@@ -38,8 +38,11 @@
         let result = [];
         for (let i = 1; i < rows.length; i++) { // mulai dari baris ke-2 (skip header)
           const cols = rows[i].split(",");
-          if (cols.length > 15 && cols[15].trim() !== "") { // kolom ke-16 (index 15)
-            result.push(cols[15].trim());
+          if (cols.length > 15 && cols[15].trim() !== "") { 
+            let val = cols[15].trim();
+            // hilangkan tanda petik di awal dan akhir
+            val = val.replace(/^"|"$/g, '');
+            result.push(val);
           }
         }
 
