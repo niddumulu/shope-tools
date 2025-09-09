@@ -61,7 +61,8 @@
     }
 
     copyBtn.addEventListener('click', async () => {
-      const text = contentEl.textContent || '';
+      // gunakan innerText agar newline tetap terjaga
+      const text = contentEl.innerText || '';
       try {
         await navigator.clipboard.writeText(text);
         copyBtn.textContent = 'Tersalin!';
