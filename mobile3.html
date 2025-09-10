@@ -161,18 +161,25 @@ function showPage(page){
 
   // Output utama
   document.getElementById('output').innerHTML = pageLinks.map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
-  
-  // Output unik per toko hanya dari halaman ini
-  const uniqueMap = {};
+
+  // Output unik per toko dengan jumlah link per toko
+  const shopCountMap = {}; // {shopId: {firstLink, count}}
   pageLinks.forEach(line=>{
     const match=line.match(/\/product\/(\d+)\/\d+/);
     if(match){
       const shopId=match[1];
-      if(!uniqueMap[shopId]) uniqueMap[shopId]=line;
+      if(!shopCountMap[shopId]){
+        shopCountMap[shopId] = {firstLink: line, count: 1};
+      } else {
+        shopCountMap[shopId].count++;
+      }
     }
   });
+
   const uniqueDiv = document.getElementById('uniqueOutput');
-  uniqueDiv.innerHTML = Object.values(uniqueMap).map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
+  uniqueDiv.innerHTML = Object.values(shopCountMap).map(item =>
+    `<a href="${item.firstLink}" target="_blank" rel="noopener noreferrer">${item.firstLink} (Jumlah: ${item.count})</a>`
+  ).join('');
   uniqueDiv.style.display = 'none'; // default sembunyi
 
   currentPage=page; 
@@ -194,7 +201,7 @@ function copyUniqueOutput(){
   navigator.clipboard.writeText(links.join('\n')).then(()=>alert('Link unik berhasil disalin!')).catch(()=>alert('Gagal menyalin!'));
 }
 
-// Toggle tampil/smbunyikan unique output
+// Toggle tampil/sembunyikan unique output
 function toggleUniqueOutput(){
   const div=document.getElementById('uniqueOutput');
   div.style.display = div.style.display==='none'?'block':'none';
