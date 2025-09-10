@@ -15,8 +15,8 @@
   .page-btn { padding:10px 14px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background-color:white; font-size:1rem; min-width:40px; }
   .page-btn:hover { background-color:#ffd42a; color:#b36b00; }
   .active { font-weight:bold; background-color:#ffd42a; color:#b36b00; border-color:#b36b00; }
-  #copyBtn, #copyUniqueBtn, #toggleUniqueBtn { margin-top:12px; padding:12px; font-size:1rem; cursor:pointer; border:none; background-color:#ffd42a; color:#b36b00; border-radius:6px; width:100%; }
-  #copyBtn:hover, #copyUniqueBtn:hover, #toggleUniqueBtn:hover { background-color:#e6c72b; }
+  #copyBtn, #toggleUniqueBtn, #copyUniqueBtn { margin-top:12px; padding:12px; font-size:1rem; cursor:pointer; border:none; background-color:#ffd42a; color:#b36b00; border-radius:6px; width:100%; }
+  #copyBtn:hover, #toggleUniqueBtn:hover, #copyUniqueBtn:hover { background-color:#e6c72b; }
   .input-buttons { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
   .input-buttons button { flex:1; padding:10px; font-size:0.95rem; cursor:pointer; border:1px solid #ccc; border-radius:6px; background:#f5f5f5; }
   .input-buttons button:hover { background:#eee; }
@@ -27,7 +27,7 @@
     textarea{ height:120px; font-size:0.9rem; }
     #output, #uniqueOutput{ font-size:0.85rem; }
     .page-btn{ padding:8px 12px; font-size:0.9rem; }
-    #copyBtn, #copyUniqueBtn, #toggleUniqueBtn{ font-size:0.95rem; }
+    #copyBtn, #toggleUniqueBtn, #copyUniqueBtn{ font-size:0.95rem; }
     .input-buttons{ flex-direction:column; }
     .input-buttons button{ flex:unset; width:100%; }
   }
@@ -63,7 +63,7 @@
 
 <div class="pagination" id="pagination"></div>
 
-<!-- Output unik berdasarkan ID toko -->
+<!-- Output unik per toko -->
 <div style="margin-top:15px;">
   <button id="toggleUniqueBtn" onclick="toggleUniqueOutput()">Tampilkan/Sembunyikan Link Unik per Toko</button>
   <button id="copyUniqueBtn" onclick="copyUniqueOutput()">Copy Link Unik per Toko</button>
@@ -133,11 +133,10 @@ function processLinks(){
   const rawLines=inputLinksEl.value.split('\n').map(l=>l.trim());
   const excludedShopIds=excludedShopsEl.value.split('\n').map(id=>id.trim()).filter(Boolean);
   
-  // Pagination per 100 link
   let pages=[], currentLinks=[];
   for(let i=0;i<rawLines.length;i++){
     const line=rawLines[i];
-    if(line==='' || line==='###'){ 
+    if(line==='' || line==='###'){ // pemisah halaman
       if(currentLinks.length>0){ pages.push(currentLinks); currentLinks=[]; }
     }else if(/\/product\/\d+\/\d+/.test(line)){
       const match=line.match(/\/product\/(\d+)\/\d+/);
@@ -149,45 +148,45 @@ function processLinks(){
   if(currentLinks.length>0) pages.push(currentLinks);
 
   allLinks=pages; currentPage=1; showPage(currentPage); renderPagination();
-  
-  // Update stats
+
   const totalLinks=rawLines.filter(l=>l && l!=='###').length;
   document.getElementById('stats').textContent=`Total link diinput: ${totalLinks}\nTotal halaman: ${allLinks.length}`;
   document.getElementById('output').style.display=allLinks.length?'block':'none';
-
-  // Buat output unik per ID toko
-  const uniqueLinksMap = {};
-  rawLines.forEach(line=>{
-    if(/\/product\/\d+\/\d+/.test(line)){
-      const match=line.match(/\/product\/(\d+)\/\d+/);
-      const shopId=match[1];
-      if(!excludedShopIds.includes(shopId) && !uniqueLinksMap[shopId]){
-        uniqueLinksMap[shopId] = line;
-      }
-    }
-  });
-  const uniqueLinks = Object.values(uniqueLinksMap);
-  const uniqueDiv=document.getElementById('uniqueOutput');
-  uniqueDiv.innerHTML = uniqueLinks.map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
-  uniqueDiv.style.display = 'none'; // default sembunyi
 }
 
-// Fungsi halaman
+// Tampilkan halaman dan update unique per toko
 function showPage(page){
   if(page<1||page>allLinks.length) return;
   const pageLinks=allLinks[page-1];
-  document.getElementById('output').innerHTML=pageLinks.map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
-  currentPage=page; highlightActivePage();
+
+  // Output utama
+  document.getElementById('output').innerHTML = pageLinks.map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
+  
+  // Output unik per toko hanya dari halaman ini
+  const uniqueMap = {};
+  pageLinks.forEach(line=>{
+    const match=line.match(/\/product\/(\d+)\/\d+/);
+    if(match){
+      const shopId=match[1];
+      if(!uniqueMap[shopId]) uniqueMap[shopId]=line;
+    }
+  });
+  const uniqueDiv = document.getElementById('uniqueOutput');
+  uniqueDiv.innerHTML = Object.values(uniqueMap).map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
+  uniqueDiv.style.display = 'none'; // default sembunyi
+
+  currentPage=page; 
+  highlightActivePage();
 }
 
-// Copy halaman
+// Copy link halaman saat ini
 function copyToClipboard(){
   if(!allLinks.length) return;
   const text=allLinks[currentPage-1].join('\n');
   navigator.clipboard.writeText(text).then(()=>alert(`Link di halaman ${currentPage} berhasil disalin!`)).catch(()=>alert('Gagal menyalin!'));
 }
 
-// Copy unique links
+// Copy link unik per toko
 function copyUniqueOutput(){
   const uniqueDiv=document.getElementById('uniqueOutput');
   const links = Array.from(uniqueDiv.querySelectorAll('a')).map(a=>a.href);
@@ -195,7 +194,7 @@ function copyUniqueOutput(){
   navigator.clipboard.writeText(links.join('\n')).then(()=>alert('Link unik berhasil disalin!')).catch(()=>alert('Gagal menyalin!'));
 }
 
-// Toggle unique output
+// Toggle tampil/smbunyikan unique output
 function toggleUniqueOutput(){
   const div=document.getElementById('uniqueOutput');
   div.style.display = div.style.display==='none'?'block':'none';
