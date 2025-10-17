@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daftar Link Klikabel</title>
+  <style>
+    :root{
+      --bg: #f7f7f9;
+      --card: #ffffff;
+      --accent: #1f8dd6;
+      --muted: #6b7280;
+      --radius: 12px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    body{
+      margin:0;
+      padding:20px;
+      background:linear-gradient(180deg, var(--bg), #eef2f7 140%);
+      color:#111827;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+    .container{
+      max-width:800px;
+      margin:0 auto;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    h1{
+      font-size:20px;
+      margin:0;
+    }
+    p.lead{
+      margin:6px 0 18px 0;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:0 6px 18px rgba(15,23,42,0.06);
+    }
+
+    .list{
+      display:grid;
+      gap:10px;
+    }
+
+    .item{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:10px;
+      border-radius:10px;
+      background:linear-gradient(180deg, rgba(0,0,0,0.01), rgba(0,0,0,0.00));
+      flex-wrap:wrap;
+    }
+
+    .link-box{
+      flex:1 1 auto;
+      min-width:0;
+      overflow:hidden;
+    }
+
+    a.link{
+      display:block;
+      font-weight:600;
+      color:var(--accent);
+      text-decoration:none;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .small{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    .controls{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex:0 0 auto;
+    }
+
+    button{
+      border:0;
+      padding:8px 10px;
+      border-radius:8px;
+      font-size:13px;
+      cursor:pointer;
+      background:#efefef;
+    }
+    button.primary{
+      background:var(--accent);
+      color:white;
+      font-weight:600;
+    }
+    button.ghost{
+      background:transparent;
+      border:1px solid #e6e6e6;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:8px;
+      justify-content:flex-end;
+      margin-bottom:12px;
+    }
+
+    @media (max-width:520px){
+      header{ flex-direction:column; align-items:flex-start; gap:6px; }
+      .controls{ width:100%; justify-content:flex-start; gap:6px; }
+      .item{ padding:12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Daftar Link Klikabel</h1>
+        <p class="lead">Klik untuk buka, atau gunakan tombol salin untuk menyalin link.</p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="top-actions">
+        <button id="copyAll" class="ghost" title="Salin semua link ke clipboard">Salin Semua</button>
+        <button id="openAll" class="primary" title="Buka semua link di tab baru">Buka Semua</button>
+      </div>
+
+      <div id="linkList" class="list">
+        <!-- Item template -->
+        <div class="item" data-url="https://niddumulu.github.io/shope-tools/oktober/satu.html">
+          <div class="link-box">
+            <a class="link" href="https://niddumulu.github.io/shope-tools/oktober/satu.html" target="_blank" rel="noopener noreferrer">
+              https://niddumulu.github.io/shope-tools/oktober/satu.html
+            </a>
+            <span class="small">HP 1 Jalbizki  — satu.html</span>
+          </div>
+          <div class="controls">
+            <button class="openBtn">Buka</button>
+            <button class="copyBtn">Salin</button>
+          </div>
+        </div>
+
+        <div class="item" data-url="https://niddumulu.github.io/shope-tools/oktober/dua.html">
+          <div class="link-box">
+            <a class="link" href="https://niddumulu.github.io/shope-tools/oktober/dua.html" target="_blank" rel="noopener noreferrer">
+              https://niddumulu.github.io/shope-tools/oktober/dua.html
+            </a>
+            <span class="small">HP 2 ranosadewa — dua.html</span>
+          </div>
+          <div class="controls">
+            <button class="openBtn">Buka</button>
+            <button class="copyBtn">Salin</button>
+          </div>
+        </div>
+
+        <div class="item" data-url="https://niddumulu.github.io/shope-tools/oktober/tiga.html">
+          <div class="link-box">
+            <a class="link" href="https://niddumulu.github.io/shope-tools/oktober/tiga.html" target="_blank" rel="noopener noreferrer">
+              https://niddumulu.github.io/shope-tools/oktober/tiga.html
+            </a>
+            <span class="small">HP 3 kakfitro — tiga.html</span>
+          </div>
+          <div class="controls">
+            <button class="openBtn">Buka</button>
+            <button class="copyBtn">Salin</button>
+          </div>
+        </div>
+
+        <div class="item" data-url="https://niddumulu.github.io/shope-tools/oktober/empat.html">
+          <div class="link-box">
+            <a class="link" href="https://niddumulu.github.io/shope-tools/oktober/empat.html" target="_blank" rel="noopener noreferrer">
+              https://niddumulu.github.io/shope-tools/oktober/empat.html
+            </a>
+            <span class="small">HP 4 rinimuk — empat.html</span>
+          </div>
+          <div class="controls">
+            <button class="openBtn">Buka</button>
+            <button class="copyBtn">Salin</button>
+          </div>
+        </div>
+
+        <div class="item" data-url="https://niddumulu.github.io/shope-tools/oktober/lima.html">
+          <div class="link-box">
+            <a class="link" href="https://niddumulu.github.io/shope-tools/oktober/lima.html" target="_blank" rel="noopener noreferrer">
+              https://niddumulu.github.io/shope-tools/oktober/lima.html
+            </a>
+            <span class="small">HP 5 nurbadstore — lima.html</span>
+          </div>
+          <div class="controls">
+            <button class="openBtn">Buka</button>
+            <button class="copyBtn">Salin</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:10px;color:var(--muted);font-size:13px;">
+      Tips: tombol "Buka" membuka link di tab baru. Jika browser memblokir banyak tab, gunakan "Buka Semua" dengan hati-hati.
+    </p>
+  </div>
+
+  <script>
+    // Fungsi bantu copy text ke clipboard
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        return true;
+      }catch(e){
+        // fallback older browsers
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try{
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          return true;
+        }catch(err){
+          document.body.removeChild(ta);
+          return false;
+        }
+      }
+    }
+
+    document.addEventListener('click', function(ev){
+      const t = ev.target;
+
+      // tombol Salin di setiap item
+      if(t.classList.contains('copyBtn')){
+        const item = t.closest('.item');
+        const url = item.getAttribute('data-url');
+        copyText(url).then(ok=>{
+          t.textContent = ok ? 'Tersalin' : 'Gagal';
+          setTimeout(()=> t.textContent = 'Salin', 1200);
+        });
+      }
+
+      // tombol Buka di setiap item
+      if(t.classList.contains('openBtn')){
+        const item = t.closest('.item');
+        const url = item.getAttribute('data-url');
+        // buka di tab baru
+        window.open(url, '_blank', 'noopener');
+      }
+
+      // tombol Salin Semua
+      if(t.id === 'copyAll'){
+        const urls = Array.from(document.querySelectorAll('.item'))
+          .map(it => it.getAttribute('data-url'))
+          .join('\\n');
+        copyText(urls).then(ok=>{
+          t.textContent = ok ? 'Semua Tersalin' : 'Gagal';
+          setTimeout(()=> t.textContent = 'Salin Semua', 1400);
+        });
+      }
+
+      // tombol Buka Semua
+      if(t.id === 'openAll'){
+        const urls = Array.from(document.querySelectorAll('.item'))
+          .map(it => it.getAttribute('data-url'));
+        // buka satu per satu; browser bisa memblokir popup jika terlalu banyak
+        for(const u of urls){
+          window.open(u, '_blank', 'noopener');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
