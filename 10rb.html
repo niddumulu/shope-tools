@@ -45,6 +45,7 @@
   <button id="ambilLinksBtn">Ambil dari satu.txt</button>
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
+  <button id="hapusDuplikatBtn">Hapus Duplikat Sekarang</button>
 </div>
 
 <h3>List File TXT (untuk Input Links)</h3>
@@ -145,6 +146,17 @@ document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
   navigator.clipboard.writeText(text).then(() => alert('Isi input berhasil disalin!')).catch(() => alert('Gagal menyalin!'));
 });
 
+/* Tombol hapus duplikat manual */
+document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
+  const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const unique = [...new Set(lines)];
+  const duplicates = lines.length - unique.length;
+  inputLinksEl.value = unique.join('\n');
+  try { localStorage.setItem(STORAGE_KEY_INPUT, inputLinksEl.value); } catch(e){}
+  processLinks();
+  alert(`Berhasil hapus ${duplicates} duplikat!`);
+});
+
 /* Ambil semua file yang ada di fileListLinks */
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', () => {
   loadFromFileList(fileListLinksEl, inputLinksEl);
@@ -176,7 +188,6 @@ async function loadFromFileList(listTextarea, targetTextarea) {
   let combined = [];
   for (let fname of list) {
     try {
-      // require server to serve these files; add timestamp to avoid cache
       const res = await fetch(fname + '?t=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) { console.warn('Skip (not found):', fname); continue; }
       const text = await res.text();
@@ -191,26 +202,35 @@ async function loadFromFileList(listTextarea, targetTextarea) {
   processLinks();
 }
 
-/* --- Core processing & pagination (no filter, all non-empty lines accepted) --- */
+/* --- Core processing & pagination (hapus duplikat otomatis) --- */
 function processLinks() {
   const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const uniqueLinks = [...new Set(raw)];
+  const duplicateCount = raw.length - uniqueLinks.length;
+
   allPages = [];
-  for (let i = 0; i < raw.length; i += MAX_PER_PAGE) {
-    allPages.push(raw.slice(i, i + MAX_PER_PAGE));
+  for (let i = 0; i < uniqueLinks.length; i += MAX_PER_PAGE) {
+    allPages.push(uniqueLinks.slice(i, i + MAX_PER_PAGE));
   }
+
   if (allPages.length === 0) {
     currentPage = 1;
   } else {
     currentPage = Math.min(currentPage, allPages.length);
   }
-  renderStats(raw.length, allPages.length);
+
+  renderStats(raw.length, uniqueLinks.length, duplicateCount);
   renderPagination();
   showPage(currentPage);
 }
 
 /* --- UI renderers --- */
-function renderStats(totalLinks, totalPages) {
-  statsEl.textContent = `Total link diinput: ${totalLinks}\nTotal halaman: ${totalPages}`;
+function renderStats(totalInput, totalUnique, duplicateCount) {
+  statsEl.textContent =
+    `Total link diinput: ${totalInput}\n` +
+    `Link unik (setelah hapus duplikat): ${totalUnique}\n` +
+    `Duplikat dihapus: ${duplicateCount}\n` +
+    `Total halaman: ${allPages.length}`;
 }
 
 function showPage(page) {
@@ -224,7 +244,6 @@ function showPage(page) {
   currentPage = page;
   const pageLinks = allPages[page - 1];
   outputEl.innerHTML = pageLinks.map(l => {
-    // ensure proper escaping in attribute
     const safe = l.replace(/"/g, '&quot;');
     return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
   }).join('');
