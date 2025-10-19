@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Link Shopee Pagination</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-left:auto; margin-right:auto; }
+  h2,h3 { font-size: 1.2rem; margin-bottom: 8px; }
+  textarea { width:100%; height:150px; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  #output { display:none; margin-top:10px; }
+  #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
+  #output a:hover { text-decoration:underline; }
+  .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .page-btn { padding:10px 14px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background-color:white; font-size:1rem; min-width:40px; }
+  .page-btn:hover { background-color:#ffd42a; color:#b36b00; }
+  .active { font-weight:bold; background-color:#ffd42a; color:#b36b00; border-color:#b36b00; }
+  #copyBtn { margin-top:12px; padding:12px; font-size:1rem; cursor:pointer; border:none; background-color:#ffd42a; color:#b36b00; border-radius:6px; width:100%; }
+  #copyBtn:hover { background-color:#e6c72b; }
+  .input-buttons { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .input-buttons button { flex:1; padding:10px; font-size:0.95rem; cursor:pointer; border:1px solid #ccc; border-radius:6px; background:#f5f5f5; }
+  .input-buttons button:hover { background:#eee; }
+  #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
+  .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
+  @media (max-width:720px){
+    body { padding:12px; }
+    textarea{ height:120px; }
+  }
+  @media (max-width:480px){
+    h2,h3{ font-size:1rem; }
+    textarea{ height:120px; font-size:0.9rem; }
+    #output{ font-size:0.85rem; }
+    .page-btn{ padding:8px 12px; font-size:0.9rem; }
+    #copyBtn{ font-size:0.95rem; }
+    .input-buttons{ flex-direction:column; }
+    .input-buttons button{ flex:unset; width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<h2>Masukkan Link Shopee</h2>
+<textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
+<div class="input-buttons">
+  <button id="ambilLinksBtn">Ambil dari satu.txt</button>
+  <button id="clearInputLinksBtn">Clear Input Links</button>
+  <button id="copyInputLinksBtn">Copy Input Links</button>
+  <button id="hapusDuplikatBtn">Hapus Duplikat Sekarang</button>
+</div>
+
+<h3>List File TXT (untuk Input Links)</h3>
+<textarea id="fileListLinks" placeholder="contoh:
+satu.txt
+dua.txt
+tiga.txt"></textarea>
+<div class="input-buttons">
+  <button id="ambilFileListLinksBtn">Ambil Semua ke Input Links</button>
+  <button id="clearFileListBtn">Clear List File</button>
+  <button id="copyFileListBtn">Copy List File</button>
+</div>
+
+<div class="sponsor">
+  Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
+</div>
+
+<div id="stats"></div>
+
+<h3>Output (akun 1)</h3>
+<div id="output"></div>
+<button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
+
+<div class="pagination" id="pagination"></div>
+
+<script>
+/* Config */
+const MAX_PER_PAGE = 100;
+const STORAGE_KEY_INPUT = 'inputList';
+const STORAGE_KEY_FILELIST = 'fileListLinks';
+
+/* State */
+let allPages = [];
+let currentPage = 1;
+
+/* Elements */
+const inputLinksEl = document.getElementById('inputLinks');
+const fileListLinksEl = document.getElementById('fileListLinks');
+const statsEl = document.getElementById('stats');
+const outputEl = document.getElementById('output');
+const paginationEl = document.getElementById('pagination');
+
+/* --- LocalStorage: restore on load --- */
+window.addEventListener('load', () => {
+  try {
+    const savedInput = localStorage.getItem(STORAGE_KEY_INPUT);
+    const savedFileList = localStorage.getItem(STORAGE_KEY_FILELIST);
+    if (savedInput) inputLinksEl.value = savedInput;
+    if (savedFileList) fileListLinksEl.value = savedFileList;
+  } catch (e) {
+    console.warn('LocalStorage read error', e);
+  }
+  processLinks();
+});
+
+/* --- Auto-save on input changes --- */
+inputLinksEl.addEventListener('input', () => {
+  try {
+    localStorage.setItem(STORAGE_KEY_INPUT, inputLinksEl.value);
+  } catch (e) {
+    console.warn('LocalStorage write error', e);
+  }
+  processLinks();
+});
+fileListLinksEl.addEventListener('input', () => {
+  try {
+    localStorage.setItem(STORAGE_KEY_FILELIST, fileListLinksEl.value);
+  } catch (e) {
+    console.warn('LocalStorage write error', e);
+  }
+});
+
+/* --- Button actions --- */
+/* Ambil dari satu.txt (butuh dijalankan lewat server agar fetch sukses) */
+document.getElementById('ambilLinksBtn').addEventListener('click', async () => {
+  try {
+    const res = await fetch('satu.txt?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    inputLinksEl.value = text.trim();
+    try { localStorage.setItem(STORAGE_KEY_INPUT, inputLinksEl.value); } catch(e){}
+    processLinks();
+    alert('Berhasil mengambil satu.txt');
+  } catch (e) {
+    alert('Gagal mengambil satu.txt: ' + e.message);
+  }
+});
+
+/* Clear / Copy input links */
+document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
+  inputLinksEl.value = '';
+  try { localStorage.removeItem(STORAGE_KEY_INPUT); } catch(e){}
+  processLinks();
+});
+document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
+  const text = inputLinksEl.value.trim();
+  if (!text) { alert('Input kosong!'); return; }
+  navigator.clipboard.writeText(text).then(() => alert('Isi input berhasil disalin!')).catch(() => alert('Gagal menyalin!'));
+});
+
+/* Tombol hapus duplikat manual */
+document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
+  const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const unique = [...new Set(lines)];
+  const duplicates = lines.length - unique.length;
+  inputLinksEl.value = unique.join('\n');
+  try { localStorage.setItem(STORAGE_KEY_INPUT, inputLinksEl.value); } catch(e){}
+  processLinks();
+  alert(`Berhasil hapus ${duplicates} duplikat!`);
+});
+
+/* Ambil semua file yang ada di fileListLinks */
+document.getElementById('ambilFileListLinksBtn').addEventListener('click', () => {
+  loadFromFileList(fileListLinksEl, inputLinksEl);
+});
+
+/* Clear / Copy file list */
+document.getElementById('clearFileListBtn').addEventListener('click', () => {
+  fileListLinksEl.value = '';
+  try { localStorage.removeItem(STORAGE_KEY_FILELIST); } catch(e){}
+});
+document.getElementById('copyFileListBtn').addEventListener('click', () => {
+  const text = fileListLinksEl.value.trim();
+  if (!text) { alert('List file kosong!'); return; }
+  navigator.clipboard.writeText(text).then(() => alert('List file berhasil disalin!')).catch(() => alert('Gagal menyalin!'));
+});
+
+/* Copy current page links */
+function copyToClipboard() {
+  if (!allPages.length) { alert('Tidak ada link untuk disalin!'); return; }
+  const text = allPages[currentPage - 1].join('\n');
+  navigator.clipboard.writeText(text).then(() => alert(`Link di halaman ${currentPage} berhasil disalin!`)).catch(() => alert('Gagal menyalin!'));
+}
+
+/* --- Helper: load from file list --- */
+async function loadFromFileList(listTextarea, targetTextarea) {
+  const list = listTextarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!list.length) { alert('List file kosong!'); return; }
+
+  let combined = [];
+  for (let fname of list) {
+    try {
+      const res = await fetch(fname + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) { console.warn('Skip (not found):', fname); continue; }
+      const text = await res.text();
+      const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+      combined.push(...rows);
+    } catch (e) {
+      console.warn('Gagal fetch', fname, e);
+    }
+  }
+  targetTextarea.value = combined.join('\n');
+  try { localStorage.setItem(STORAGE_KEY_INPUT, targetTextarea.value); } catch(e){}
+  processLinks();
+}
+
+/* --- Core processing & pagination (hapus duplikat otomatis) --- */
+function processLinks() {
+  const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const uniqueLinks = [...new Set(raw)];
+  const duplicateCount = raw.length - uniqueLinks.length;
+
+  allPages = [];
+  for (let i = 0; i < uniqueLinks.length; i += MAX_PER_PAGE) {
+    allPages.push(uniqueLinks.slice(i, i + MAX_PER_PAGE));
+  }
+
+  if (allPages.length === 0) {
+    currentPage = 1;
+  } else {
+    currentPage = Math.min(currentPage, allPages.length);
+  }
+
+  renderStats(raw.length, uniqueLinks.length, duplicateCount);
+  renderPagination();
+  showPage(currentPage);
+}
+
+/* --- UI renderers --- */
+function renderStats(totalInput, totalUnique, duplicateCount) {
+  statsEl.textContent =
+    `Total link diinput: ${totalInput}\n` +
+    `Link unik (setelah hapus duplikat): ${totalUnique}\n` +
+    `Duplikat dihapus: ${duplicateCount}\n` +
+    `Total halaman: ${allPages.length}`;
+}
+
+function showPage(page) {
+  if (!allPages.length) {
+    outputEl.innerHTML = '';
+    outputEl.style.display = 'none';
+    return;
+  }
+  if (page < 1) page = 1;
+  if (page > allPages.length) page = allPages.length;
+  currentPage = page;
+  const pageLinks = allPages[page - 1];
+  outputEl.innerHTML = pageLinks.map(l => {
+    const safe = l.replace(/"/g, '&quot;');
+    return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
+  }).join('');
+  outputEl.style.display = 'block';
+  highlightActivePage();
+}
+
+function renderPagination() {
+  paginationEl.innerHTML = '';
+  for (let i = 1; i <= allPages.length; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.className = 'page-btn';
+    if (i === currentPage) btn.classList.add('active');
+    btn.addEventListener('click', () => showPage(i));
+    paginationEl.appendChild(btn);
+  }
+}
+
+function highlightActivePage() {
+  document.querySelectorAll('.page-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (parseInt(btn.textContent, 10) === currentPage) btn.classList.add('active');
+  });
+}
+</script>
+
+</body>
+</html>
