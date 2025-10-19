@@ -22,6 +22,7 @@
   .input-buttons button:hover { background:#eee; }
   #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
+  #tokoContainer { margin-top:10px; }
   @media (max-width:480px){
     h2,h3{ font-size:1rem; }
     textarea{ height:120px; font-size:0.9rem; }
@@ -47,17 +48,25 @@
   Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
 </div>
 
-<h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
-<textarea id="excludedShops" placeholder="Contoh: 123456789&#10;987654321"></textarea>
-<div class="input-buttons">
-  <button id="ambilTokoBtn">Ambil dari toko.txt</button>
-  <button id="clearInputTokoBtn">Clear Input Toko</button>
-  <button id="copyInputTokoBtn">Copy Input Toko</button>
+<!-- Tombol untuk tampil/sembunyi -->
+<button id="toggleTokoBtn" style="width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold;">
+  🔽 Sembunyikan ID Toko
+</button>
+
+<!-- Container toko -->
+<div id="tokoContainer">
+  <h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
+  <textarea id="excludedShops" placeholder="Contoh: 123456789&#10;987654321"></textarea>
+  <div class="input-buttons">
+    <button id="ambilTokoBtn">Ambil dari data_toko.txt</button>
+    <button id="clearInputTokoBtn">Clear Input Toko</button>
+    <button id="copyInputTokoBtn">Copy Input Toko</button>
+  </div>
 </div>
 
 <div id="stats"></div>
 
-<h3>Output (akun 5)</h3>
+<h3>Output (maks 100 per halaman)</h3>
 <div id="output"></div>
 <button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
 
@@ -67,7 +76,20 @@
 let allLinks=[], currentPage=1, maxPerPage=100;
 const inputLinksEl=document.getElementById('inputLinks');
 const excludedShopsEl=document.getElementById('excludedShops');
+const tokoContainer=document.getElementById('tokoContainer');
+const toggleTokoBtn=document.getElementById('toggleTokoBtn');
 const pageKey=location.pathname.split('/').pop().replace(/\.[^/.]+$/,'');
+
+// Tombol tampil/sembunyi toko
+toggleTokoBtn.addEventListener('click',()=>{
+  if(tokoContainer.style.display==='none'){
+    tokoContainer.style.display='block';
+    toggleTokoBtn.innerHTML='🔽 Sembunyikan ID Toko';
+  }else{
+    tokoContainer.style.display='none';
+    toggleTokoBtn.innerHTML='▶️ Tampilkan ID Toko';
+  }
+});
 
 window.onload=()=>{ 
   if(localStorage.getItem(`${pageKey}_inputLinks`)) inputLinksEl.value=localStorage.getItem(`${pageKey}_inputLinks`);
@@ -177,7 +199,10 @@ function renderPagination(){
 }
 
 function highlightActivePage(){
-  document.querySelectorAll('.page-btn').forEach(btn=>{ btn.classList.remove('active'); if(parseInt(btn.textContent)===currentPage) btn.classList.add('active'); });
+  document.querySelectorAll('.page-btn').forEach(btn=>{
+    btn.classList.remove('active');
+    if(parseInt(btn.textContent)===currentPage) btn.classList.add('active');
+  });
 }
 </script>
 
