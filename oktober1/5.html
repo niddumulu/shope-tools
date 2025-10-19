@@ -8,7 +8,7 @@
   body { font-family: Arial, sans-serif; margin: 15px; max-width: 700px; margin-left:auto; margin-right:auto; }
   h2,h3 { font-size: 1.2rem; margin-bottom: 8px; }
   textarea { width:100%; height:150px; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; }
-  #output { display:none; margin-top:10px; }
+  #output { margin-top:10px; }
   #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
   #output a:hover { text-decoration:underline; }
   .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
@@ -23,6 +23,8 @@
   #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   #tokoContainer { margin-top:10px; }
+  #toggleOutputBtn { width:100%;padding:10px;margin-top:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold; }
+  #toggleOutputBtn:hover { background:#e6c72b; }
   @media (max-width:480px){
     h2,h3{ font-size:1rem; }
     textarea{ height:120px; font-size:0.9rem; }
@@ -48,7 +50,7 @@
   Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
 </div>
 
-<!-- Tombol untuk tampil/sembunyi -->
+<!-- Tombol untuk tampil/sembunyi toko -->
 <button id="toggleTokoBtn" style="width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold;">
   🔽 Sembunyikan ID Toko
 </button>
@@ -67,7 +69,12 @@
 <div id="stats"></div>
 
 <h3>Output (maks 100 per halaman)</h3>
+
+<!-- Tombol tampil/sembunyi output -->
+<button id="toggleOutputBtn">🔽 Sembunyikan Output Link</button>
+
 <div id="output"></div>
+
 <button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
 
 <div class="pagination" id="pagination"></div>
@@ -78,6 +85,8 @@ const inputLinksEl=document.getElementById('inputLinks');
 const excludedShopsEl=document.getElementById('excludedShops');
 const tokoContainer=document.getElementById('tokoContainer');
 const toggleTokoBtn=document.getElementById('toggleTokoBtn');
+const toggleOutputBtn=document.getElementById('toggleOutputBtn');
+const outputDiv=document.getElementById('output');
 const pageKey=location.pathname.split('/').pop().replace(/\.[^/.]+$/,'');
 
 // Tombol tampil/sembunyi toko
@@ -88,6 +97,17 @@ toggleTokoBtn.addEventListener('click',()=>{
   }else{
     tokoContainer.style.display='none';
     toggleTokoBtn.innerHTML='▶️ Tampilkan ID Toko';
+  }
+});
+
+// Tombol tampil/sembunyi output
+toggleOutputBtn.addEventListener('click',()=>{
+  if(outputDiv.style.display==='none'){
+    outputDiv.style.display='block';
+    toggleOutputBtn.innerHTML='🔽 Sembunyikan Output Link';
+  }else{
+    outputDiv.style.display='none';
+    toggleOutputBtn.innerHTML='▶️ Tampilkan Output Link';
   }
 });
 
@@ -170,13 +190,13 @@ function processLinks(){
 
   const totalLinks=rawLines.filter(l=>l && l!=='###').length;
   document.getElementById('stats').textContent=`Total link diinput: ${totalLinks}\nTotal halaman: ${allLinks.length}`;
-  document.getElementById('output').style.display=allLinks.length?'block':'none';
+  outputDiv.style.display=allLinks.length?'block':'none';
 }
 
 function showPage(page){
   if(page<1||page>allLinks.length) return;
   const pageLinks=allLinks[page-1];
-  document.getElementById('output').innerHTML=pageLinks.map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
+  outputDiv.innerHTML=pageLinks.map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
   currentPage=page; highlightActivePage();
 }
 
