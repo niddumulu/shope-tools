@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Link Shopee Pagination</title>
+<title>Link Shopee Pagination (Auto Save)</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 15px; max-width: 700px; margin-left:auto; margin-right:auto; }
   h2,h3 { font-size: 1.2rem; margin-bottom: 8px; }
@@ -23,8 +23,8 @@
   #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   #tokoContainer { margin-top:10px; }
-  #toggleOutputBtn { width:100%;padding:10px;margin-top:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold; }
-  #toggleOutputBtn:hover { background:#e6c72b; }
+  #toggleOutputBtn, #toggleTokoBtn { width:100%;padding:10px;margin-top:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold; }
+  #toggleOutputBtn:hover, #toggleTokoBtn:hover { background:#e6c72b; }
   @media (max-width:480px){
     h2,h3{ font-size:1rem; }
     textarea{ height:120px; font-size:0.9rem; }
@@ -50,12 +50,8 @@
   Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
 </div>
 
-<!-- Tombol untuk tampil/sembunyi toko -->
-<button id="toggleTokoBtn" style="width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold;">
-  🔽 Sembunyikan ID Toko
-</button>
+<button id="toggleTokoBtn">🔽 Sembunyikan ID Toko</button>
 
-<!-- Container toko -->
 <div id="tokoContainer">
   <h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
   <textarea id="excludedShops" placeholder="Contoh: 123456789&#10;987654321"></textarea>
@@ -70,7 +66,6 @@
 
 <h3>Output (maks 100 per halaman)</h3>
 
-<!-- Tombol tampil/sembunyi output -->
 <button id="toggleOutputBtn">🔽 Sembunyikan Output Link</button>
 
 <div id="output"></div>
@@ -87,37 +82,48 @@ const tokoContainer=document.getElementById('tokoContainer');
 const toggleTokoBtn=document.getElementById('toggleTokoBtn');
 const toggleOutputBtn=document.getElementById('toggleOutputBtn');
 const outputDiv=document.getElementById('output');
+const pagination=document.getElementById('pagination');
 const pageKey=location.pathname.split('/').pop().replace(/\.[^/.]+$/,'');
 
-// Tombol tampil/sembunyi toko
-toggleTokoBtn.addEventListener('click',()=>{
-  if(tokoContainer.style.display==='none'){
-    tokoContainer.style.display='block';
-    toggleTokoBtn.innerHTML='🔽 Sembunyikan ID Toko';
-  }else{
-    tokoContainer.style.display='none';
-    toggleTokoBtn.innerHTML='▶️ Tampilkan ID Toko';
-  }
-});
-
-// Tombol tampil/sembunyi output
-toggleOutputBtn.addEventListener('click',()=>{
-  if(outputDiv.style.display==='none'){
-    outputDiv.style.display='block';
-    toggleOutputBtn.innerHTML='🔽 Sembunyikan Output Link';
-  }else{
-    outputDiv.style.display='none';
-    toggleOutputBtn.innerHTML='▶️ Tampilkan Output Link';
-  }
-});
-
+// 🔹 Load semua data dari localStorage saat halaman dibuka
 window.onload=()=>{ 
   if(localStorage.getItem(`${pageKey}_inputLinks`)) inputLinksEl.value=localStorage.getItem(`${pageKey}_inputLinks`);
   if(localStorage.getItem(`${pageKey}_excludedShops`)) excludedShopsEl.value=localStorage.getItem(`${pageKey}_excludedShops`);
+  
+  // status toggle toko
+  const tokoHidden = localStorage.getItem(`${pageKey}_tokoHidden`) === 'true';
+  tokoContainer.style.display = tokoHidden ? 'none' : 'block';
+  toggleTokoBtn.innerHTML = tokoHidden ? '▶️ Tampilkan ID Toko' : '🔽 Sembunyikan ID Toko';
+
+  // status toggle output
+  const outputHidden = localStorage.getItem(`${pageKey}_outputHidden`) === 'true';
+  outputDiv.style.display = outputHidden ? 'none' : 'block';
+  toggleOutputBtn.innerHTML = outputHidden ? '▶️ Tampilkan Output Link' : '🔽 Sembunyikan Output Link';
+
   processLinks();
+
+  // simpan posisi halaman terakhir
+  const savedPage = parseInt(localStorage.getItem(`${pageKey}_currentPage`));
+  if(savedPage && savedPage > 0) showPage(savedPage);
 }
 
-// Ambil lima.txt
+// 🔹 Tombol tampil/sembunyi toko
+toggleTokoBtn.addEventListener('click',()=>{
+  const hidden = tokoContainer.style.display==='none';
+  tokoContainer.style.display = hidden ? 'block' : 'none';
+  toggleTokoBtn.innerHTML = hidden ? '🔽 Sembunyikan ID Toko' : '▶️ Tampilkan ID Toko';
+  localStorage.setItem(`${pageKey}_tokoHidden`, (!hidden).toString());
+});
+
+// 🔹 Tombol tampil/sembunyi output
+toggleOutputBtn.addEventListener('click',()=>{
+  const hidden = outputDiv.style.display==='none';
+  outputDiv.style.display = hidden ? 'block' : 'none';
+  toggleOutputBtn.innerHTML = hidden ? '🔽 Sembunyikan Output Link' : '▶️ Tampilkan Output Link';
+  localStorage.setItem(`${pageKey}_outputHidden`, (!hidden).toString());
+});
+
+// 🔹 Ambil lima.txt
 document.getElementById('ambilLinksBtn').addEventListener('click',async ()=>{
   try{
     const res=await fetch('lima.txt?t='+Date.now(),{cache:'no-store'});
@@ -130,7 +136,7 @@ document.getElementById('ambilLinksBtn').addEventListener('click',async ()=>{
   }catch(e){alert("Gagal mengambil lima.txt: "+e.message);}
 });
 
-// Ambil data_toko.txt
+// 🔹 Ambil data_toko.txt
 document.getElementById('ambilTokoBtn').addEventListener('click',async ()=>{
   try{
     const res=await fetch('data_toko.txt?t='+Date.now(),{cache:'no-store'});
@@ -143,7 +149,7 @@ document.getElementById('ambilTokoBtn').addEventListener('click',async ()=>{
   }catch(e){alert("Gagal mengambil data_toko.txt: "+e.message);}
 });
 
-// Clear/copy links
+// 🔹 Clear/copy links
 document.getElementById('clearInputLinksBtn').addEventListener('click',()=>{
   inputLinksEl.value=''; localStorage.removeItem(`${pageKey}_inputLinks`); processLinks();
 });
@@ -153,7 +159,7 @@ document.getElementById('copyInputLinksBtn').addEventListener('click',()=>{
   navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!")).catch(()=>alert("Gagal menyalin!"));
 });
 
-// Clear/copy toko
+// 🔹 Clear/copy toko
 document.getElementById('clearInputTokoBtn').addEventListener('click',()=>{
   excludedShopsEl.value=''; localStorage.removeItem(`${pageKey}_excludedShops`); processLinks();
 });
@@ -163,11 +169,11 @@ document.getElementById('copyInputTokoBtn').addEventListener('click',()=>{
   navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!")).catch(()=>alert("Gagal menyalin!"));
 });
 
-// Simpan input ke localStorage saat diketik
+// 🔹 Simpan input ke localStorage saat diketik
 inputLinksEl.addEventListener('input',()=>{ localStorage.setItem(`${pageKey}_inputLinks`,inputLinksEl.value); processLinks(); });
 excludedShopsEl.addEventListener('input',()=>{ localStorage.setItem(`${pageKey}_excludedShops`,excludedShopsEl.value); processLinks(); });
 
-// Fungsi utama
+// 🔹 Fungsi utama
 function processLinks(){
   const rawLines=inputLinksEl.value.split('\n').map(l=>l.trim());
   const excludedShopIds=excludedShopsEl.value.split('\n').map(id=>id.trim()).filter(Boolean);
@@ -175,7 +181,7 @@ function processLinks(){
   let pages=[], currentLinks=[];
   for(let i=0;i<rawLines.length;i++){
     const line=rawLines[i];
-    if(line==='' || line==='###'){ // pemisah halaman
+    if(line==='' || line==='###'){ 
       if(currentLinks.length>0){ pages.push(currentLinks); currentLinks=[]; }
     }else if(/\/product\/\d+\/\d+/.test(line)){
       const match=line.match(/\/product\/(\d+)\/\d+/);
@@ -186,28 +192,34 @@ function processLinks(){
   }
   if(currentLinks.length>0) pages.push(currentLinks);
 
-  allLinks=pages; currentPage=1; showPage(currentPage); renderPagination();
+  allLinks=pages; 
+  if(!localStorage.getItem(`${pageKey}_currentPage`)) currentPage=1;
+  showPage(currentPage); 
+  renderPagination();
 
   const totalLinks=rawLines.filter(l=>l && l!=='###').length;
   document.getElementById('stats').textContent=`Total link diinput: ${totalLinks}\nTotal halaman: ${allLinks.length}`;
-  outputDiv.style.display=allLinks.length?'block':'none';
 }
 
+// 🔹 Menampilkan halaman tertentu
 function showPage(page){
   if(page<1||page>allLinks.length) return;
+  currentPage=page;
   const pageLinks=allLinks[page-1];
   outputDiv.innerHTML=pageLinks.map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
-  currentPage=page; highlightActivePage();
+  highlightActivePage();
+  localStorage.setItem(`${pageKey}_currentPage`, currentPage);
 }
 
+// 🔹 Copy link halaman ini
 function copyToClipboard(){
   if(!allLinks.length) return;
   const text=allLinks[currentPage-1].join('\n');
   navigator.clipboard.writeText(text).then(()=>alert(`Link di halaman ${currentPage} berhasil disalin!`)).catch(()=>alert('Gagal menyalin!'));
 }
 
+// 🔹 Pagination
 function renderPagination(){
-  const pagination=document.getElementById('pagination');
   pagination.innerHTML='';
   for(let i=1;i<=allLinks.length;i++){
     const btn=document.createElement('button');
@@ -225,6 +237,5 @@ function highlightActivePage(){
   });
 }
 </script>
-
 </body>
 </html>
