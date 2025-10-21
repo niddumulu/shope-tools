@@ -63,7 +63,7 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
   reader.onload = function(event) {
     const text = event.target.result;
     const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
-    const headers = rows[0].split(',').map(h => h.trim());
+    const headers = rows[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
     const productIndex = headers.indexOf('productLink');
 
     if (productIndex === -1) {
@@ -76,7 +76,11 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
     const links = [];
     for (let i = 1; i < rows.length; i++) {
       const cols = rows[i].split(',');
-      const link = cols[productIndex]?.trim();
+      let link = cols[productIndex]?.trim();
+
+      // Hapus tanda petik di awal/akhir link
+      link = link.replace(/^"|"$/g, '');
+
       if (link) links.push(link);
     }
 
