@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tampilkan productLink dari CSV</title>
+<title>Tampilkan productLink dari CSV (Hapus Duplikat Otomatis)</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -42,6 +42,15 @@
   button.copy-all:hover {
     background: #0056b3;
   }
+  #report {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 14px;
+    color: #444;
+  }
+  #report span {
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
@@ -51,6 +60,7 @@
 <button class="copy-all" id="copyAllBtn" style="display:none;">Copy Semua Link</button>
 
 <div id="linksBox">(Data akan muncul di sini setelah memilih file CSV)</div>
+<div id="report"></div>
 
 <script>
 let allLinks = "";
@@ -70,23 +80,36 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
       document.getElementById('linksBox').innerHTML =
         '❌ Kolom <b>productLink</b> tidak ditemukan di header CSV.';
       document.getElementById('copyAllBtn').style.display = 'none';
+      document.getElementById('report').innerHTML = '';
       return;
     }
 
-    const links = [];
+    const rawLinks = [];
     for (let i = 1; i < rows.length; i++) {
       const cols = rows[i].split(',');
       let link = cols[productIndex]?.trim();
-
-      // Hapus tanda petik di awal/akhir link
       link = link.replace(/^"|"$/g, '');
-
-      if (link) links.push(link);
+      if (link) rawLinks.push(link);
     }
 
-    allLinks = links.join('\n');
+    // --- Hilangkan duplikat ---
+    const uniqueLinks = [...new Set(rawLinks)];
+    const total = rawLinks.length;
+    const duplikat = total - uniqueLinks.length;
+
+    allLinks = uniqueLinks.join('\n');
     document.getElementById('linksBox').textContent = allLinks;
-    document.getElementById('copyAllBtn').style.display = links.length ? 'block' : 'none';
+    document.getElementById('copyAllBtn').style.display = uniqueLinks.length ? 'block' : 'none';
+
+    // --- Laporan hasil ---
+    let reportText = `<span>Total link:</span> ${total} | `;
+    reportText += `<span>Unik:</span> ${uniqueLinks.length}`;
+    if (duplikat > 0) {
+      reportText += ` | ⚠️ <span>Duplikat dihapus:</span> ${duplikat}`;
+    } else {
+      reportText += ` | ✅ Tidak ada duplikat`;
+    }
+    document.getElementById('report').innerHTML = reportText;
   };
   reader.readAsText(file);
 });
@@ -94,7 +117,7 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
 document.getElementById('copyAllBtn').addEventListener('click', function() {
   if (!allLinks) return;
   navigator.clipboard.writeText(allLinks).then(() => {
-    alert('✅ Semua link berhasil disalin ke clipboard!');
+    alert('✅ Semua link unik berhasil disalin ke clipboard!');
   });
 });
 </script>
