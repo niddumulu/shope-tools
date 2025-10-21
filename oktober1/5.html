@@ -85,23 +85,29 @@ const pageKey = location.pathname.split('/').pop().replace(/\.[^/.]+$/,'');
 
 // === Tombol tampil/sembunyi toko ===
 toggleTokoBtn.addEventListener('click',()=>{
-  if(tokoContainer.style.display==='none'){
+  const isHidden = tokoContainer.style.display==='none';
+  if(isHidden){
     tokoContainer.style.display='block';
     toggleTokoBtn.innerHTML='🔽 Sembunyikan ID Toko';
+    localStorage.setItem(`${pageKey}_showToko`, 'true');
   }else{
     tokoContainer.style.display='none';
     toggleTokoBtn.innerHTML='▶️ Tampilkan ID Toko';
+    localStorage.setItem(`${pageKey}_showToko`, 'false');
   }
 });
 
 // === Tombol tampil/sembunyi output ===
 toggleOutputBtn.addEventListener('click',()=>{
-  if(outputDiv.style.display==='none'){
+  const isHidden = outputDiv.style.display==='none';
+  if(isHidden){
     outputDiv.style.display='block';
     toggleOutputBtn.innerHTML='🔽 Sembunyikan Output Link';
+    localStorage.setItem(`${pageKey}_showOutput`, 'true');
   }else{
     outputDiv.style.display='none';
     toggleOutputBtn.innerHTML='▶️ Tampilkan Output Link';
+    localStorage.setItem(`${pageKey}_showOutput`, 'false');
   }
 });
 
@@ -110,6 +116,26 @@ window.onload=()=>{
   if(localStorage.getItem(`${pageKey}_inputLinks`)) inputLinksEl.value=localStorage.getItem(`${pageKey}_inputLinks`);
   if(localStorage.getItem(`${pageKey}_excludedShops`)) excludedShopsEl.value=localStorage.getItem(`${pageKey}_excludedShops`);
   currentPage = parseInt(localStorage.getItem(`${pageKey}_lastPage`)) || 1;
+
+  // Pulihkan status tampil/sembunyi
+  const showToko = localStorage.getItem(`${pageKey}_showToko`);
+  if(showToko === 'false'){
+    tokoContainer.style.display='none';
+    toggleTokoBtn.innerHTML='▶️ Tampilkan ID Toko';
+  }else{
+    tokoContainer.style.display='block';
+    toggleTokoBtn.innerHTML='🔽 Sembunyikan ID Toko';
+  }
+
+  const showOutput = localStorage.getItem(`${pageKey}_showOutput`);
+  if(showOutput === 'false'){
+    outputDiv.style.display='none';
+    toggleOutputBtn.innerHTML='▶️ Tampilkan Output Link';
+  }else{
+    outputDiv.style.display='block';
+    toggleOutputBtn.innerHTML='🔽 Sembunyikan Output Link';
+  }
+
   processLinks();
 };
 
@@ -192,7 +218,6 @@ function processLinks(){
   if(currentLinks.length>0) pages.push(currentLinks);
   allLinks=pages;
 
-  // Ambil halaman terakhir tersimpan
   const savedPage = parseInt(localStorage.getItem(`${pageKey}_lastPage`)) || 1;
   currentPage = Math.min(savedPage, allLinks.length) || 1;
 
