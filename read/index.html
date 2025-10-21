@@ -3,20 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tampilkan Data dari CSV</title>
+<title>Tampilkan Kolom productLink dari CSV</title>
 <style>
   body {
     font-family: Arial, sans-serif;
     margin: 20px auto;
-    max-width: 900px;
+    max-width: 700px;
   }
-  h2 {
-    text-align: center;
-  }
-  input[type="file"] {
-    display: block;
-    margin: 20px auto;
-  }
+  h2 { text-align: center; }
+  input[type="file"] { display: block; margin: 20px auto; }
   table {
     width: 100%;
     border-collapse: collapse;
@@ -27,17 +22,13 @@
     padding: 6px 10px;
     text-align: left;
   }
-  th {
-    background-color: #f2f2f2;
-  }
-  tr:nth-child(even) {
-    background-color: #fafafa;
-  }
+  th { background-color: #f2f2f2; }
+  tr:nth-child(even) { background-color: #fafafa; }
 </style>
 </head>
 <body>
 
-<h2>Penampil Data dari File CSV</h2>
+<h2>Tampilkan Kolom <code>productLink</code> dari CSV</h2>
 <input type="file" id="csvFile" accept=".csv" />
 <div id="output"></div>
 
@@ -50,17 +41,23 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
   reader.onload = function(event) {
     const text = event.target.result;
     const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
-    let html = '<table>';
-    rows.forEach((row, index) => {
-      const cols = row.split(',');
-      html += '<tr>';
-      cols.forEach(col => {
-        html += index === 0
-          ? `<th>${col.trim()}</th>`
-          : `<td>${col.trim()}</td>`;
-      });
-      html += '</tr>';
-    });
+    const headers = rows[0].split(',').map(h => h.trim());
+    const productIndex = headers.indexOf('productLink');
+
+    if (productIndex === -1) {
+      document.getElementById('output').innerHTML =
+        '<p style="color:red;">Kolom <b>productLink</b> tidak ditemukan di header CSV.</p>';
+      return;
+    }
+
+    let html = '<table><tr><th>productLink</th></tr>';
+    for (let i = 1; i < rows.length; i++) {
+      const cols = rows[i].split(',');
+      const link = cols[productIndex]?.trim();
+      if (link) {
+        html += `<tr><td><a href="${link}" target="_blank">${link}</a></td></tr>`;
+      }
+    }
     html += '</table>';
     document.getElementById('output').innerHTML = html;
   };
