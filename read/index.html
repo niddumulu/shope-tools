@@ -3,27 +3,59 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tampilkan Kolom productLink dari CSV</title>
+<title>Tampilkan productLink dari CSV</title>
 <style>
   body {
     font-family: Arial, sans-serif;
     margin: 20px auto;
-    max-width: 700px;
+    max-width: 800px;
+    background: #f7f7f9;
   }
-  h2 { text-align: center; }
-  input[type="file"] { display: block; margin: 20px auto; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
+  h2 {
+    text-align: center;
+    margin-bottom: 15px;
   }
-  th, td {
-    border: 1px solid #ccc;
+  input[type="file"] {
+    display: block;
+    margin: 10px auto 20px auto;
+  }
+  #output {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .link-box {
+    background: #f0f0f5;
+    padding: 8px;
+    border-radius: 8px;
+    word-break: break-all;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  button.copy-btn {
+    background: #007bff;
+    color: white;
+    border: none;
     padding: 6px 10px;
-    text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    align-self: flex-end;
+    transition: background 0.2s;
   }
-  th { background-color: #f2f2f2; }
-  tr:nth-child(even) { background-color: #fafafa; }
+  button.copy-btn:hover {
+    background: #0056b3;
+  }
 </style>
 </head>
 <body>
@@ -50,19 +82,29 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
       return;
     }
 
-    let html = '<table><tr><th>productLink</th></tr>';
+    let html = '';
     for (let i = 1; i < rows.length; i++) {
       const cols = rows[i].split(',');
       const link = cols[productIndex]?.trim();
       if (link) {
-        html += `<tr><td><a href="${link}" target="_blank">${link}</a></td></tr>`;
+        html += `
+          <div class="card">
+            <div class="link-box"><a href="${link}" target="_blank">${link}</a></div>
+            <button class="copy-btn" onclick="copyToClipboard('${link}')">Copy</button>
+          </div>
+        `;
       }
     }
-    html += '</table>';
     document.getElementById('output').innerHTML = html;
   };
   reader.readAsText(file);
 });
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Link disalin:\n' + text);
+  });
+}
 </script>
 
 </body>
