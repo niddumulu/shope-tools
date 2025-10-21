@@ -25,6 +25,7 @@
   #tokoContainer { margin-top:10px; }
   #toggleOutputBtn { width:100%;padding:10px;margin-top:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold; }
   #toggleOutputBtn:hover { background:#e6c72b; }
+  #lastFetchInfo { font-size:0.9rem; color:#555; margin-top:4px; }
   @media (max-width:480px){
     h2,h3{ font-size:1rem; }
     textarea{ height:120px; font-size:0.9rem; }
@@ -44,15 +45,14 @@
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
 </div>
+<div id="lastFetchInfo">Terakhir update: -</div>
 
 <div class="sponsor">Disponsori oleh <strong>Kios Tembakau MadGazan</strong></div>
 
-<!-- Tombol untuk tampil/sembunyi toko -->
 <button id="toggleTokoBtn" style="width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold;">
   🔽 Sembunyikan ID Toko
 </button>
 
-<!-- Container toko -->
 <div id="tokoContainer">
   <h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
   <textarea id="excludedShops" placeholder="Contoh: 123456789&#10;987654321"></textarea>
@@ -66,8 +66,6 @@
 <div id="stats"></div>
 
 <h3>Output (maks 100 per halaman)</h3>
-
-<!-- Tombol tampil/sembunyi output -->
 <button id="toggleOutputBtn">🔽 Sembunyikan Output Link</button>
 <div id="output"></div>
 <button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
@@ -81,9 +79,9 @@ const tokoContainer = document.getElementById('tokoContainer');
 const toggleTokoBtn = document.getElementById('toggleTokoBtn');
 const toggleOutputBtn = document.getElementById('toggleOutputBtn');
 const outputDiv = document.getElementById('output');
+const lastFetchInfo = document.getElementById('lastFetchInfo');
 const pageKey = location.pathname.split('/').pop().replace(/\.[^/.]+$/,'');
 
-// === Tombol tampil/sembunyi toko ===
 toggleTokoBtn.addEventListener('click',()=>{
   const isHidden = tokoContainer.style.display==='none';
   if(isHidden){
@@ -97,7 +95,6 @@ toggleTokoBtn.addEventListener('click',()=>{
   }
 });
 
-// === Tombol tampil/sembunyi output ===
 toggleOutputBtn.addEventListener('click',()=>{
   const isHidden = outputDiv.style.display==='none';
   if(isHidden){
@@ -111,13 +108,11 @@ toggleOutputBtn.addEventListener('click',()=>{
   }
 });
 
-// === Saat halaman dimuat ===
 window.onload=()=>{
   if(localStorage.getItem(`${pageKey}_inputLinks`)) inputLinksEl.value=localStorage.getItem(`${pageKey}_inputLinks`);
   if(localStorage.getItem(`${pageKey}_excludedShops`)) excludedShopsEl.value=localStorage.getItem(`${pageKey}_excludedShops`);
   currentPage = parseInt(localStorage.getItem(`${pageKey}_lastPage`)) || 1;
 
-  // Pulihkan status tampil/sembunyi
   const showToko = localStorage.getItem(`${pageKey}_showToko`);
   if(showToko === 'false'){
     tokoContainer.style.display='none';
@@ -137,10 +132,14 @@ window.onload=()=>{
   }
 
   processLinks();
+  updateLastFetchDisplay();
 };
 
-// === Ambil limabaru.txt ===
 document.getElementById('ambilLinksBtn').addEventListener('click',async ()=>{
+  await manualFetchLimabaru();
+});
+
+async function manualFetchLimabaru(){
   try{
     const res=await fetch('limabarupria.txt?t='+Date.now(),{cache:'no-store'});
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -148,11 +147,12 @@ document.getElementById('ambilLinksBtn').addEventListener('click',async ()=>{
     const rows=text.split(/\r?\n/).map(r=>r.trim()).filter(Boolean);
     inputLinksEl.value=rows.join("\n");
     localStorage.setItem(`${pageKey}_inputLinks`,inputLinksEl.value);
+    localStorage.setItem(`${pageKey}_lastFetchTime`, Date.now());
     processLinks();
+    updateLastFetchDisplay();
   }catch(e){alert("Gagal mengambil limabaru.txt: "+e.message);}
-});
+}
 
-// === Ambil data_toko.txt ===
 document.getElementById('ambilTokoBtn').addEventListener('click',async ()=>{
   try{
     const res=await fetch('data_toko.txt?t='+Date.now(),{cache:'no-store'});
@@ -165,7 +165,6 @@ document.getElementById('ambilTokoBtn').addEventListener('click',async ()=>{
   }catch(e){alert("Gagal mengambil data_toko.txt: "+e.message);}
 });
 
-// === Clear/copy links ===
 document.getElementById('clearInputLinksBtn').addEventListener('click',()=>{
   inputLinksEl.value='';
   localStorage.removeItem(`${pageKey}_inputLinks`);
@@ -177,7 +176,6 @@ document.getElementById('copyInputLinksBtn').addEventListener('click',()=>{
   navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!")).catch(()=>alert("Gagal menyalin!"));
 });
 
-// === Clear/copy toko ===
 document.getElementById('clearInputTokoBtn').addEventListener('click',()=>{
   excludedShopsEl.value='';
   localStorage.removeItem(`${pageKey}_excludedShops`);
@@ -189,7 +187,6 @@ document.getElementById('copyInputTokoBtn').addEventListener('click',()=>{
   navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!")).catch(()=>alert("Gagal menyalin!"));
 });
 
-// === Simpan input saat diketik ===
 inputLinksEl.addEventListener('input',()=>{
   localStorage.setItem(`${pageKey}_inputLinks`,inputLinksEl.value);
   processLinks();
@@ -199,7 +196,6 @@ excludedShopsEl.addEventListener('input',()=>{
   processLinks();
 });
 
-// === FUNGSI UTAMA ===
 function processLinks(){
   const rawLines=inputLinksEl.value.split('\n').map(l=>l.trim());
   const excludedShopIds=excludedShopsEl.value.split('\n').map(id=>id.trim()).filter(Boolean);
@@ -263,6 +259,49 @@ function highlightActivePage(){
     if(parseInt(btn.textContent)===currentPage) btn.classList.add('active');
   });
 }
+
+// === Auto-refresh setiap 30 menit ===
+const REFRESH_INTERVAL = 30 * 60 * 1000;
+const LAST_FETCH_KEY = `${pageKey}_lastFetchTime`;
+
+async function autoFetchLimabaru(){
+  try{
+    const res=await fetch('limabarupria.txt?t='+Date.now(),{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text=await res.text();
+    const rows=text.split(/\r?\n/).map(r=>r.trim()).filter(Boolean);
+    inputLinksEl.value=rows.join("\n");
+    localStorage.setItem(`${pageKey}_inputLinks`,inputLinksEl.value);
+    localStorage.setItem(LAST_FETCH_KEY, Date.now());
+    processLinks();
+    updateLastFetchDisplay();
+    console.log("✅ Auto-fetch berhasil:", new Date().toLocaleString());
+  }catch(e){
+    console.warn("❌ Gagal auto-fetch limabaru.txt:", e.message);
+  }
+}
+
+function updateLastFetchDisplay(){
+  const t=parseInt(localStorage.getItem(LAST_FETCH_KEY));
+  if(!t){ lastFetchInfo.textContent="Terakhir update: belum pernah"; return; }
+  const d=new Date(t);
+  lastFetchInfo.textContent="Terakhir update: "+d.toLocaleString('id-ID');
+}
+
+window.addEventListener("load",()=>{
+  const now=Date.now();
+  const lastFetch=parseInt(localStorage.getItem(LAST_FETCH_KEY))||0;
+  const elapsed=now-lastFetch;
+
+  if(elapsed>=REFRESH_INTERVAL){
+    autoFetchLimabaru();
+  }else{
+    const sisa=REFRESH_INTERVAL-elapsed;
+    console.log(`⏳ Auto-fetch akan dijalankan dalam ${Math.round(sisa/60000)} menit`);
+    setTimeout(autoFetchLimabaru,sisa);
+  }
+  setInterval(autoFetchLimabaru,REFRESH_INTERVAL);
+});
 </script>
 </body>
 </html>
