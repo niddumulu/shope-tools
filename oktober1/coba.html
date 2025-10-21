@@ -23,8 +23,8 @@
   #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   #tokoContainer { margin-top:10px; }
-  #toggleOutputBtn { width:100%;padding:10px;margin-top:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold; }
-  #toggleOutputBtn:hover { background:#e6c72b; }
+  #toggleOutputBtn, #toggleTokoBtn { width:100%;padding:10px;margin-top:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold; }
+  #toggleOutputBtn:hover, #toggleTokoBtn:hover { background:#e6c72b; }
   @media (max-width:480px){
     h2,h3{ font-size:1rem; }
     textarea{ height:120px; font-size:0.9rem; }
@@ -47,10 +47,8 @@
 
 <div class="sponsor">Disponsori oleh <strong>Kios Tembakau MadGazan</strong></div>
 
-<!-- Tombol untuk tampil/sembunyi toko -->
-<button id="toggleTokoBtn" style="width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold;">
-  🔽 Sembunyikan ID Toko
-</button>
+<!-- Tombol tampil/sembunyi toko -->
+<button id="toggleTokoBtn">🔽 Sembunyikan ID Toko</button>
 
 <!-- Container toko -->
 <div id="tokoContainer">
@@ -85,31 +83,58 @@ const pageKey = location.pathname.split('/').pop().replace(/\.[^/.]+$/,'');
 
 // === Tombol tampil/sembunyi toko ===
 toggleTokoBtn.addEventListener('click',()=>{
-  if(tokoContainer.style.display==='none'){
+  const isHidden = tokoContainer.style.display==='none';
+  if(isHidden){
     tokoContainer.style.display='block';
     toggleTokoBtn.innerHTML='🔽 Sembunyikan ID Toko';
+    localStorage.setItem(`${pageKey}_showToko`, 'true');
   }else{
     tokoContainer.style.display='none';
     toggleTokoBtn.innerHTML='▶️ Tampilkan ID Toko';
+    localStorage.setItem(`${pageKey}_showToko`, 'false');
   }
 });
 
 // === Tombol tampil/sembunyi output ===
 toggleOutputBtn.addEventListener('click',()=>{
-  if(outputDiv.style.display==='none'){
+  const isHidden = outputDiv.style.display==='none';
+  if(isHidden){
     outputDiv.style.display='block';
     toggleOutputBtn.innerHTML='🔽 Sembunyikan Output Link';
+    localStorage.setItem(`${pageKey}_showOutput`, 'true');
   }else{
     outputDiv.style.display='none';
     toggleOutputBtn.innerHTML='▶️ Tampilkan Output Link';
+    localStorage.setItem(`${pageKey}_showOutput`, 'false');
   }
 });
 
 // === Saat halaman dimuat ===
 window.onload=()=>{
+  // Pulihkan input & halaman terakhir
   if(localStorage.getItem(`${pageKey}_inputLinks`)) inputLinksEl.value=localStorage.getItem(`${pageKey}_inputLinks`);
   if(localStorage.getItem(`${pageKey}_excludedShops`)) excludedShopsEl.value=localStorage.getItem(`${pageKey}_excludedShops`);
   currentPage = parseInt(localStorage.getItem(`${pageKey}_lastPage`)) || 1;
+
+  // Pulihkan status tampilan toko & output
+  const showToko = localStorage.getItem(`${pageKey}_showToko`);
+  if(showToko === 'false'){
+    tokoContainer.style.display='none';
+    toggleTokoBtn.innerHTML='▶️ Tampilkan ID Toko';
+  } else {
+    tokoContainer.style.display='block';
+    toggleTokoBtn.innerHTML='🔽 Sembunyikan ID Toko';
+  }
+
+  const showOutput = localStorage.getItem(`${pageKey}_showOutput`);
+  if(showOutput === 'false'){
+    outputDiv.style.display='none';
+    toggleOutputBtn.innerHTML='▶️ Tampilkan Output Link';
+  } else {
+    outputDiv.style.display='block';
+    toggleOutputBtn.innerHTML='🔽 Sembunyikan Output Link';
+  }
+
   processLinks();
 };
 
@@ -192,7 +217,6 @@ function processLinks(){
   if(currentLinks.length>0) pages.push(currentLinks);
   allLinks=pages;
 
-  // Ambil halaman terakhir tersimpan
   const savedPage = parseInt(localStorage.getItem(`${pageKey}_lastPage`)) || 1;
   currentPage = Math.min(savedPage, allLinks.length) || 1;
 
