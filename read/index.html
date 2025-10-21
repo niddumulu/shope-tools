@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tampilkan productLink dari CSV (Hapus Duplikat Otomatis)</title>
+<title>Tampilkan productLink dari Banyak CSV</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -11,10 +11,7 @@
     max-width: 800px;
     background: #f7f7f9;
   }
-  h2 {
-    text-align: center;
-    margin-bottom: 15px;
-  }
+  h2 { text-align: center; margin-bottom: 15px; }
   input[type="file"], button {
     display: block;
     margin: 10px auto;
@@ -39,25 +36,21 @@
     cursor: pointer;
     font-size: 14px;
   }
-  button.copy-all:hover {
-    background: #0056b3;
-  }
+  button.copy-all:hover { background: #0056b3; }
   #report {
     margin-top: 10px;
     text-align: center;
     font-size: 14px;
     color: #444;
   }
-  #report span {
-    font-weight: bold;
-  }
+  #report span { font-weight: bold; }
 </style>
 </head>
 <body>
 
-<h2>Tampilkan Kolom <code>productLink</code> dari CSV</h2>
-<input type="file" id="csvFile" accept=".csv" />
-<button class="copy-all" id="copyAllBtn" style="display:none;">Copy Semua Link</button>
+<h2>Gabung & Tampilkan Kolom <code>productLink</code> dari Beberapa CSV</h2>
+<input type="file" id="csvFile" accept=".csv" multiple />
+<button class="copy-all" id="copyAllBtn" style="display:none;">Copy Semua Link Unik</button>
 
 <div id="linksBox">(Data akan muncul di sini setelah memilih file CSV)</div>
 <div id="report"></div>
@@ -65,53 +58,54 @@
 <script>
 let allLinks = "";
 
-document.getElementById('csvFile').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+// Fungsi untuk memproses isi CSV
+function parseCSV(text) {
+  const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
+  const headers = rows[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  const productIndex = headers.indexOf('productLink');
+  const links = [];
 
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    const text = event.target.result;
-    const rows = text.split(/\r?\n/).filter(row => row.trim() !== '');
-    const headers = rows[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    const productIndex = headers.indexOf('productLink');
+  if (productIndex === -1) return links;
 
-    if (productIndex === -1) {
-      document.getElementById('linksBox').innerHTML =
-        '❌ Kolom <b>productLink</b> tidak ditemukan di header CSV.';
-      document.getElementById('copyAllBtn').style.display = 'none';
-      document.getElementById('report').innerHTML = '';
-      return;
-    }
+  for (let i = 1; i < rows.length; i++) {
+    const cols = rows[i].split(',');
+    let link = cols[productIndex]?.trim().replace(/^"|"$/g, '');
+    if (link) links.push(link);
+  }
+  return links;
+}
 
-    const rawLinks = [];
-    for (let i = 1; i < rows.length; i++) {
-      const cols = rows[i].split(',');
-      let link = cols[productIndex]?.trim();
-      link = link.replace(/^"|"$/g, '');
-      if (link) rawLinks.push(link);
-    }
+document.getElementById('csvFile').addEventListener('change', async function(e) {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
 
-    // --- Hilangkan duplikat ---
-    const uniqueLinks = [...new Set(rawLinks)];
-    const total = rawLinks.length;
-    const duplikat = total - uniqueLinks.length;
+  let combinedLinks = [];
+  let totalRead = 0;
 
-    allLinks = uniqueLinks.join('\n');
-    document.getElementById('linksBox').textContent = allLinks;
-    document.getElementById('copyAllBtn').style.display = uniqueLinks.length ? 'block' : 'none';
+  for (const file of files) {
+    const text = await file.text();
+    const links = parseCSV(text);
+    combinedLinks = combinedLinks.concat(links);
+    totalRead += links.length;
+  }
 
-    // --- Laporan hasil ---
-    let reportText = `<span>Total link:</span> ${total} | `;
-    reportText += `<span>Unik:</span> ${uniqueLinks.length}`;
-    if (duplikat > 0) {
-      reportText += ` | ⚠️ <span>Duplikat dihapus:</span> ${duplikat}`;
-    } else {
-      reportText += ` | ✅ Tidak ada duplikat`;
-    }
-    document.getElementById('report').innerHTML = reportText;
-  };
-  reader.readAsText(file);
+  // Hapus duplikat
+  const uniqueLinks = [...new Set(combinedLinks)];
+  const duplikat = totalRead - uniqueLinks.length;
+
+  allLinks = uniqueLinks.join('\n');
+  document.getElementById('linksBox').textContent = allLinks;
+  document.getElementById('copyAllBtn').style.display = uniqueLinks.length ? 'block' : 'none';
+
+  // Laporan hasil
+  let reportText = `<span>Total link dari semua file:</span> ${totalRead} | `;
+  reportText += `<span>Unik:</span> ${uniqueLinks.length}`;
+  if (duplikat > 0) {
+    reportText += ` | ⚠️ <span>Duplikat dihapus:</span> ${duplikat}`;
+  } else {
+    reportText += ` | ✅ Tidak ada duplikat`;
+  }
+  document.getElementById('report').innerHTML = reportText;
 });
 
 document.getElementById('copyAllBtn').addEventListener('click', function() {
