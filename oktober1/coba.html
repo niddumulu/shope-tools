@@ -8,7 +8,7 @@
   body { font-family: Arial, sans-serif; margin: 15px; max-width: 700px; margin-left:auto; margin-right:auto; }
   h2,h3 { font-size: 1.2rem; margin-bottom: 8px; }
   textarea { width:100%; height:150px; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; }
-  #output { margin-top:10px; }
+  #output { display:none; margin-top:10px; }
   #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
   #output a:hover { text-decoration:underline; }
   .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
@@ -23,8 +23,11 @@
   #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   #tokoContainer { margin-top:10px; }
-  #toggleOutputBtn { width:100%;padding:10px;margin-top:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold; }
-  #toggleOutputBtn:hover { background:#e6c72b; }
+  #toggleTokoBtn, #toggleOutputBtn {
+    width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;
+    background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold;
+  }
+  #toggleTokoBtn:hover, #toggleOutputBtn:hover { background:#e6c72b; }
   @media (max-width:480px){
     h2,h3{ font-size:1rem; }
     textarea{ height:120px; font-size:0.9rem; }
@@ -37,20 +40,21 @@
 </style>
 </head>
 <body>
+
 <h2>Masukkan Link Shopee</h2>
 <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
 <div class="input-buttons">
-  <button id="ambilLinksBtn">Ambil dari lima.txt</button>
+  <button id="ambilLinksBtn">Ambil dari satu.txt</button>
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
 </div>
 
-<div class="sponsor">Disponsori oleh <strong>Kios Tembakau MadGazan</strong></div>
+<div class="sponsor">
+  Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
+</div>
 
-<!-- Tombol untuk tampil/sembunyi toko -->
-<button id="toggleTokoBtn" style="width:100%;padding:10px;margin-bottom:10px;border:none;border-radius:6px;background:#ffd42a;color:#b36b00;cursor:pointer;font-weight:bold;">
-  🔽 Sembunyikan ID Toko
-</button>
+<!-- Tombol tampil/sembunyi ID toko -->
+<button id="toggleTokoBtn">🔽 Sembunyikan ID Toko</button>
 
 <!-- Container toko -->
 <div id="tokoContainer">
@@ -66,72 +70,45 @@
 <div id="stats"></div>
 
 <h3>Output (maks 100 per halaman)</h3>
-
-<!-- Tombol tampil/sembunyi output -->
+<!-- Tombol tampil/sembunyi Output -->
 <button id="toggleOutputBtn">🔽 Sembunyikan Output Link</button>
+
 <div id="output"></div>
 <button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
+
 <div class="pagination" id="pagination"></div>
 
 <script>
-let allLinks = [], currentPage = 1, maxPerPage = 100;
-const inputLinksEl = document.getElementById('inputLinks');
-const excludedShopsEl = document.getElementById('excludedShops');
-const tokoContainer = document.getElementById('tokoContainer');
-const toggleTokoBtn = document.getElementById('toggleTokoBtn');
-const toggleOutputBtn = document.getElementById('toggleOutputBtn');
-const outputDiv = document.getElementById('output');
-const pageKey = location.pathname.split('/').pop().replace(/\.[^/.]+$/,'');
+let allLinks=[], currentPage=1, maxPerPage=100;
+const inputLinksEl=document.getElementById('inputLinks');
+const excludedShopsEl=document.getElementById('excludedShops');
+const tokoContainer=document.getElementById('tokoContainer');
+const toggleTokoBtn=document.getElementById('toggleTokoBtn');
+const toggleOutputBtn=document.getElementById('toggleOutputBtn');
+const outputDiv=document.getElementById('output');
+const pageKey=location.pathname.split('/').pop().replace(/\.[^/.]+$/,'');
 
-// === Tombol tampil/sembunyi toko ===
-toggleTokoBtn.addEventListener('click',()=>{
-  const isHidden = tokoContainer.style.display==='none';
-  if(isHidden){
-    tokoContainer.style.display='block';
-    toggleTokoBtn.innerHTML='🔽 Sembunyikan ID Toko';
-    localStorage.setItem(`${pageKey}_showToko`, 'true');
-  }else{
-    tokoContainer.style.display='none';
-    toggleTokoBtn.innerHTML='▶️ Tampilkan ID Toko';
-    localStorage.setItem(`${pageKey}_showToko`, 'false');
-  }
-});
-
-// === Tombol tampil/sembunyi output ===
-toggleOutputBtn.addEventListener('click',()=>{
-  const isHidden = outputDiv.style.display==='none';
-  if(isHidden){
-    outputDiv.style.display='block';
-    toggleOutputBtn.innerHTML='🔽 Sembunyikan Output Link';
-    localStorage.setItem(`${pageKey}_showOutput`, 'true');
-  }else{
-    outputDiv.style.display='none';
-    toggleOutputBtn.innerHTML='▶️ Tampilkan Output Link';
-    localStorage.setItem(`${pageKey}_showOutput`, 'false');
-  }
-});
-
-// === Saat halaman dimuat ===
-window.onload=()=>{
+// === Status tampil/sembunyi tersimpan ===
+window.onload=()=>{ 
   if(localStorage.getItem(`${pageKey}_inputLinks`)) inputLinksEl.value=localStorage.getItem(`${pageKey}_inputLinks`);
   if(localStorage.getItem(`${pageKey}_excludedShops`)) excludedShopsEl.value=localStorage.getItem(`${pageKey}_excludedShops`);
-  currentPage = parseInt(localStorage.getItem(`${pageKey}_lastPage`)) || 1;
-
-  // Pulihkan status tampil/sembunyi
-  const showToko = localStorage.getItem(`${pageKey}_showToko`);
-  if(showToko === 'false'){
-    tokoContainer.style.display='none';
+  
+  // Restore status tampil/sembunyi toko
+  const tokoVisible=localStorage.getItem(`${pageKey}_tokoVisible`);
+  if(tokoVisible==='false'){ 
+    tokoContainer.style.display='none'; 
     toggleTokoBtn.innerHTML='▶️ Tampilkan ID Toko';
-  }else{
+  } else {
     tokoContainer.style.display='block';
     toggleTokoBtn.innerHTML='🔽 Sembunyikan ID Toko';
   }
 
-  const showOutput = localStorage.getItem(`${pageKey}_showOutput`);
-  if(showOutput === 'false'){
+  // Restore status tampil/sembunyi output
+  const outputVisible=localStorage.getItem(`${pageKey}_outputVisible`);
+  if(outputVisible==='false'){ 
     outputDiv.style.display='none';
     toggleOutputBtn.innerHTML='▶️ Tampilkan Output Link';
-  }else{
+  } else {
     outputDiv.style.display='block';
     toggleOutputBtn.innerHTML='🔽 Sembunyikan Output Link';
   }
@@ -139,17 +116,33 @@ window.onload=()=>{
   processLinks();
 };
 
-// === Ambil lima.txt ===
+// === Tombol tampil/sembunyi toko ===
+toggleTokoBtn.addEventListener('click',()=>{
+  const visible=tokoContainer.style.display!=='none';
+  tokoContainer.style.display=visible?'none':'block';
+  toggleTokoBtn.innerHTML=visible?'▶️ Tampilkan ID Toko':'🔽 Sembunyikan ID Toko';
+  localStorage.setItem(`${pageKey}_tokoVisible`,!visible);
+});
+
+// === Tombol tampil/sembunyi output ===
+toggleOutputBtn.addEventListener('click',()=>{
+  const visible=outputDiv.style.display!=='none';
+  outputDiv.style.display=visible?'none':'block';
+  toggleOutputBtn.innerHTML=visible?'▶️ Tampilkan Output Link':'🔽 Sembunyikan Output Link';
+  localStorage.setItem(`${pageKey}_outputVisible`,!visible);
+});
+
+// === Ambil satu.txt ===
 document.getElementById('ambilLinksBtn').addEventListener('click',async ()=>{
   try{
-    const res=await fetch('lima.txt?t='+Date.now(),{cache:'no-store'});
+    const res=await fetch('satu.txt?t='+Date.now(),{cache:'no-store'});
     if(!res.ok) throw new Error('HTTP '+res.status);
     const text=await res.text();
     const rows=text.split(/\r?\n/).map(r=>r.trim()).filter(Boolean);
     inputLinksEl.value=rows.join("\n");
     localStorage.setItem(`${pageKey}_inputLinks`,inputLinksEl.value);
     processLinks();
-  }catch(e){alert("Gagal mengambil lima.txt: "+e.message);}
+  }catch(e){alert("Gagal mengambil satu.txt: "+e.message);}
 });
 
 // === Ambil data_toko.txt ===
@@ -165,7 +158,7 @@ document.getElementById('ambilTokoBtn').addEventListener('click',async ()=>{
   }catch(e){alert("Gagal mengambil data_toko.txt: "+e.message);}
 });
 
-// === Clear/copy links ===
+// === Clear/copy input ===
 document.getElementById('clearInputLinksBtn').addEventListener('click',()=>{
   inputLinksEl.value='';
   localStorage.removeItem(`${pageKey}_inputLinks`);
@@ -174,10 +167,8 @@ document.getElementById('clearInputLinksBtn').addEventListener('click',()=>{
 document.getElementById('copyInputLinksBtn').addEventListener('click',()=>{
   const text=inputLinksEl.value.trim();
   if(!text){alert("Input kosong!"); return;}
-  navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!")).catch(()=>alert("Gagal menyalin!"));
+  navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!"));
 });
-
-// === Clear/copy toko ===
 document.getElementById('clearInputTokoBtn').addEventListener('click',()=>{
   excludedShopsEl.value='';
   localStorage.removeItem(`${pageKey}_excludedShops`);
@@ -186,10 +177,10 @@ document.getElementById('clearInputTokoBtn').addEventListener('click',()=>{
 document.getElementById('copyInputTokoBtn').addEventListener('click',()=>{
   const text=excludedShopsEl.value.trim();
   if(!text){alert("Input kosong!"); return;}
-  navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!")).catch(()=>alert("Gagal menyalin!"));
+  navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!"));
 });
 
-// === Simpan input saat diketik ===
+// === Simpan input otomatis ===
 inputLinksEl.addEventListener('input',()=>{
   localStorage.setItem(`${pageKey}_inputLinks`,inputLinksEl.value);
   processLinks();
@@ -199,7 +190,7 @@ excludedShopsEl.addEventListener('input',()=>{
   processLinks();
 });
 
-// === FUNGSI UTAMA ===
+// === Fungsi utama ===
 function processLinks(){
   const rawLines=inputLinksEl.value.split('\n').map(l=>l.trim());
   const excludedShopIds=excludedShopsEl.value.split('\n').map(id=>id.trim()).filter(Boolean);
@@ -216,14 +207,7 @@ function processLinks(){
     }
   }
   if(currentLinks.length>0) pages.push(currentLinks);
-  allLinks=pages;
-
-  const savedPage = parseInt(localStorage.getItem(`${pageKey}_lastPage`)) || 1;
-  currentPage = Math.min(savedPage, allLinks.length) || 1;
-
-  showPage(currentPage);
-  renderPagination();
-
+  allLinks=pages; currentPage=1; showPage(currentPage); renderPagination();
   const totalLinks=rawLines.filter(l=>l && l!=='###').length;
   document.getElementById('stats').textContent=`Total link diinput: ${totalLinks}\nTotal halaman: ${allLinks.length}`;
   outputDiv.style.display=allLinks.length?'block':'none';
@@ -232,16 +216,14 @@ function processLinks(){
 function showPage(page){
   if(page<1||page>allLinks.length) return;
   const pageLinks=allLinks[page-1];
-  outputDiv.innerHTML=pageLinks.map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
-  currentPage=page;
-  localStorage.setItem(`${pageKey}_lastPage`, page);
-  highlightActivePage();
+  outputDiv.innerHTML=pageLinks.map(l=>`<a href="${l}" target="_blank">${l}</a>`).join('');
+  currentPage=page; highlightActivePage();
 }
 
 function copyToClipboard(){
   if(!allLinks.length) return;
   const text=allLinks[currentPage-1].join('\n');
-  navigator.clipboard.writeText(text).then(()=>alert(`Link di halaman ${currentPage} berhasil disalin!`)).catch(()=>alert('Gagal menyalin!'));
+  navigator.clipboard.writeText(text).then(()=>alert(`Link di halaman ${currentPage} berhasil disalin!`));
 }
 
 function renderPagination(){
@@ -249,8 +231,7 @@ function renderPagination(){
   pagination.innerHTML='';
   for(let i=1;i<=allLinks.length;i++){
     const btn=document.createElement('button');
-    btn.textContent=i;
-    btn.className='page-btn';
+    btn.textContent=i; btn.className='page-btn';
     if(i===currentPage) btn.classList.add('active');
     btn.addEventListener('click',()=>showPage(i));
     pagination.appendChild(btn);
@@ -264,5 +245,6 @@ function highlightActivePage(){
   });
 }
 </script>
+
 </body>
 </html>
