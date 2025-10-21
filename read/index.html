@@ -15,45 +15,31 @@
     text-align: center;
     margin-bottom: 15px;
   }
-  input[type="file"] {
+  input[type="file"], button {
     display: block;
-    margin: 10px auto 20px auto;
+    margin: 10px auto;
   }
-  #output {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 15px;
-  }
-  .card {
+  #linksBox {
     background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
     padding: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  .link-box {
-    background: #f0f0f5;
-    padding: 8px;
-    border-radius: 8px;
-    word-break: break-all;
-    margin-bottom: 8px;
+    min-height: 150px;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    font-family: monospace;
     font-size: 14px;
   }
-  button.copy-btn {
+  button.copy-all {
     background: #007bff;
     color: white;
     border: none;
-    padding: 6px 10px;
+    padding: 8px 14px;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 13px;
-    align-self: flex-end;
-    transition: background 0.2s;
+    font-size: 14px;
   }
-  button.copy-btn:hover {
+  button.copy-all:hover {
     background: #0056b3;
   }
 </style>
@@ -62,9 +48,13 @@
 
 <h2>Tampilkan Kolom <code>productLink</code> dari CSV</h2>
 <input type="file" id="csvFile" accept=".csv" />
-<div id="output"></div>
+<button class="copy-all" id="copyAllBtn" style="display:none;">Copy Semua Link</button>
+
+<div id="linksBox">(Data akan muncul di sini setelah memilih file CSV)</div>
 
 <script>
+let allLinks = "";
+
 document.getElementById('csvFile').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -77,34 +67,32 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
     const productIndex = headers.indexOf('productLink');
 
     if (productIndex === -1) {
-      document.getElementById('output').innerHTML =
-        '<p style="color:red;">Kolom <b>productLink</b> tidak ditemukan di header CSV.</p>';
+      document.getElementById('linksBox').innerHTML =
+        '❌ Kolom <b>productLink</b> tidak ditemukan di header CSV.';
+      document.getElementById('copyAllBtn').style.display = 'none';
       return;
     }
 
-    let html = '';
+    const links = [];
     for (let i = 1; i < rows.length; i++) {
       const cols = rows[i].split(',');
       const link = cols[productIndex]?.trim();
-      if (link) {
-        html += `
-          <div class="card">
-            <div class="link-box"><a href="${link}" target="_blank">${link}</a></div>
-            <button class="copy-btn" onclick="copyToClipboard('${link}')">Copy</button>
-          </div>
-        `;
-      }
+      if (link) links.push(link);
     }
-    document.getElementById('output').innerHTML = html;
+
+    allLinks = links.join('\n');
+    document.getElementById('linksBox').textContent = allLinks;
+    document.getElementById('copyAllBtn').style.display = links.length ? 'block' : 'none';
   };
   reader.readAsText(file);
 });
 
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
-    alert('Link disalin:\n' + text);
+document.getElementById('copyAllBtn').addEventListener('click', function() {
+  if (!allLinks) return;
+  navigator.clipboard.writeText(allLinks).then(() => {
+    alert('✅ Semua link berhasil disalin ke clipboard!');
   });
-}
+});
 </script>
 
 </body>
