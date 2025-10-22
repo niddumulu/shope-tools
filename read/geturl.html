@@ -23,8 +23,8 @@
   <h2>Baca File CSV Shopee</h2>
 
   <div class="menu-bar">
+    <input type="file" id="csvFile" accept=".csv">
     <div class="buttons" id="menuButtons">
-      <input type="file" id="csvFile" accept=".csv">
       <button id="toggleHeaders">Pilih Kolom</button>
       <button id="showData">Tampilkan Data</button>
       <button id="toggleLinks">Lihat Link</button>
@@ -54,7 +54,6 @@ document.getElementById('toggleLinks').addEventListener('click', () => {
 document.getElementById('copyLinks').addEventListener('click', copyAllLinks);
 document.getElementById('modeLinkSaja').addEventListener('change', toggleModeLinkSaja);
 
-// === Muat preferensi mode dari localStorage ===
 window.addEventListener('load', () => {
   const savedMode = localStorage.getItem('modeLinkSaja');
   if (savedMode === 'true') {
