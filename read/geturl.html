@@ -8,11 +8,43 @@
   body {
     font-family: Arial, sans-serif;
     margin: 20px;
-    max-width: 900px;
+    max-width: 1000px;
     margin-left: auto;
     margin-right: auto;
   }
-  h2 { text-align: center; }
+  h2 {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+
+  /* ===== Toolbar ===== */
+  #toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 15px;
+  }
+  #toolbar button, #toolbar input[type="file"] {
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #toolbar input[type="file"] {
+    background: #17a2b8;
+  }
+  #toolbar button:hover {
+    opacity: 0.85;
+  }
+  .toggle-btn {
+    background: #6c757d !important;
+  }
+
+  /* ===== Kontainer ===== */
   #headerList, #csvContainer, #linkContainer {
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -20,10 +52,12 @@
     margin-top: 15px;
     background: #f9f9f9;
   }
+
+  /* ===== Tabel ===== */
   table {
     border-collapse: collapse;
     width: 100%;
-    margin-top: 15px;
+    margin-top: 10px;
   }
   th, td {
     border: 1px solid #aaa;
@@ -32,22 +66,8 @@
   }
   th { background: #eee; }
   tr:nth-child(even) { background: #fafafa; }
-  button {
-    margin-top: 10px;
-    padding: 8px 15px;
-    border: none;
-    background: #007bff;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  button:hover { background: #0056b3; }
-  .toggle-btn {
-    background: #6c757d;
-  }
-  .toggle-btn:hover {
-    background: #5a6268;
-  }
+
+  /* ===== Link List ===== */
   .link-item {
     padding: 5px;
   }
@@ -57,26 +77,29 @@
 
 <h2>Baca File CSV dan Generate Link Shopee</h2>
 
-<input type="file" id="csvFile" accept=".csv"><br>
+<!-- Toolbar menu -->
+<div id="toolbar">
+  <input type="file" id="csvFile" accept=".csv">
+  <button id="toggleHeader" class="toggle-btn" style="display:none;">Sembunyikan Menu Kolom</button>
+  <button id="showDataBtn" style="display:none;">Tampilkan</button>
+  <button id="toggleResult" class="toggle-btn" style="display:none;">Sembunyikan Hasil</button>
+  <button id="generateLinkBtn" style="display:none;">Generate Link Shopee</button>
+  <button id="toggleLink" class="toggle-btn" style="display:none;">Sembunyikan Link</button>
+</div>
 
 <!-- Menu pilih kolom -->
 <div id="headerList" style="display:none;"></div>
-<button id="toggleHeader" class="toggle-btn" style="display:none;">Sembunyikan Menu Kolom</button>
-<button id="showDataBtn" style="display:none;">Tampilkan</button>
 
 <!-- Tabel hasil -->
 <div id="csvContainer" style="display:none;">
   <table id="csvTable"></table>
 </div>
-<button id="toggleResult" class="toggle-btn" style="display:none;">Sembunyikan Hasil</button>
 
 <!-- Generate link -->
-<button id="generateLinkBtn" style="display:none;">Generate Link Shopee</button>
 <div id="linkContainer" style="display:none;">
   <h3>Hasil Generate Link</h3>
   <div id="linkList"></div>
 </div>
-<button id="toggleLink" class="toggle-btn" style="display:none;">Sembunyikan Link</button>
 
 <script>
 let csvData = [];
@@ -160,7 +183,7 @@ document.getElementById('showDataBtn').addEventListener('click', function() {
   document.getElementById('generateLinkBtn').style.display = 'inline-block';
 });
 
-// tombol sembunyikan/tampilkan menu kolom
+// sembunyikan/tampilkan menu kolom
 document.getElementById('toggleHeader').addEventListener('click', function() {
   const div = document.getElementById('headerList');
   if (div.style.display === 'none') {
@@ -172,7 +195,7 @@ document.getElementById('toggleHeader').addEventListener('click', function() {
   }
 });
 
-// tombol sembunyikan/tampilkan hasil tabel
+// sembunyikan/tampilkan hasil tabel
 document.getElementById('toggleResult').addEventListener('click', function() {
   const div = document.getElementById('csvContainer');
   if (div.style.display === 'none') {
@@ -213,7 +236,7 @@ document.getElementById('generateLinkBtn').addEventListener('click', function() 
   document.getElementById('toggleLink').style.display = 'inline-block';
 });
 
-// tombol sembunyikan/tampilkan hasil link
+// sembunyikan/tampilkan hasil link
 document.getElementById('toggleLink').addEventListener('click', function() {
   const div = document.getElementById('linkContainer');
   if (div.style.display === 'none') {
