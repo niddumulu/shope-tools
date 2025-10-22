@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baca CSV Pilih Kolom + Auto Sort + Toggle Menu</title>
+<title>Baca CSV + Auto Sort + Generate Link Shopee</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -13,18 +13,17 @@
     margin-right: auto;
   }
   h2 { text-align: center; }
-  #headerList {
+  #headerList, #csvContainer, #linkContainer {
     border: 1px solid #ccc;
     border-radius: 6px;
     padding: 10px;
     margin-top: 15px;
-    width: fit-content;
     background: #f9f9f9;
   }
   table {
     border-collapse: collapse;
     width: 100%;
-    margin-top: 20px;
+    margin-top: 15px;
   }
   th, td {
     border: 1px solid #aaa;
@@ -34,7 +33,7 @@
   th { background: #eee; }
   tr:nth-child(even) { background: #fafafa; }
   button {
-    margin-top: 15px;
+    margin-top: 10px;
     padding: 8px 15px;
     border: none;
     background: #007bff;
@@ -43,26 +42,47 @@
     cursor: pointer;
   }
   button:hover { background: #0056b3; }
-  .hidden { display: none; }
+  .toggle-btn {
+    background: #6c757d;
+  }
+  .toggle-btn:hover {
+    background: #5a6268;
+  }
+  .link-item {
+    padding: 5px;
+  }
 </style>
 </head>
 <body>
 
-<h2>Baca File CSV dan Pilih Kolom</h2>
+<h2>Baca File CSV dan Generate Link Shopee</h2>
 
 <input type="file" id="csvFile" accept=".csv"><br>
 
-<button id="toggleHeaderList" class="hidden">Tampilkan/Sembunyikan Menu Kolom</button>
-<div id="headerList" class="hidden"></div>
-
+<!-- Menu pilih kolom -->
+<div id="headerList" style="display:none;"></div>
+<button id="toggleHeader" class="toggle-btn" style="display:none;">Sembunyikan Menu Kolom</button>
 <button id="showDataBtn" style="display:none;">Tampilkan</button>
-<button id="toggleTableBtn" class="hidden">Sembunyikan Hasil</button>
 
-<table id="csvTable"></table>
+<!-- Tabel hasil -->
+<div id="csvContainer" style="display:none;">
+  <table id="csvTable"></table>
+</div>
+<button id="toggleResult" class="toggle-btn" style="display:none;">Sembunyikan Hasil</button>
+
+<!-- Generate link -->
+<button id="generateLinkBtn" style="display:none;">Generate Link Shopee</button>
+<div id="linkContainer" style="display:none;">
+  <h3>Hasil Generate Link</h3>
+  <div id="linkList"></div>
+</div>
+<button id="toggleLink" class="toggle-btn" style="display:none;">Sembunyikan Link</button>
 
 <script>
 let csvData = [];
 let headers = [];
+
+// kolom default dicentang
 const defaultChecked = ["ID Shop", "ID Barang", "Total Komisi per Produk(Rp)"];
 
 document.getElementById('csvFile').addEventListener('change', function(e) {
@@ -87,16 +107,11 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
       headerDiv.appendChild(document.createElement('br'));
     });
 
-    document.getElementById('toggleHeaderList').classList.remove('hidden');
-    document.getElementById('headerList').classList.remove('hidden');
+    document.getElementById('headerList').style.display = 'block';
+    document.getElementById('toggleHeader').style.display = 'inline-block';
     document.getElementById('showDataBtn').style.display = 'inline-block';
-    document.getElementById('csvTable').innerHTML = '';
   };
   reader.readAsText(file);
-});
-
-document.getElementById('toggleHeaderList').addEventListener('click', () => {
-  document.getElementById('headerList').classList.toggle('hidden');
 });
 
 document.getElementById('showDataBtn').addEventListener('click', function() {
@@ -116,8 +131,8 @@ document.getElementById('showDataBtn').addEventListener('click', function() {
   let dataToShow = csvData.slice(1);
   if (komisiIndex !== -1) {
     dataToShow.sort((a, b) => {
-      const valA = parseFloat(a[komisiIndex]?.replace(/[^\d.-]/g, "")) || 0;
-      const valB = parseFloat(b[komisiIndex]?.replace(/[^\d.-]/g, "")) || 0;
+      const valA = parseFloat((a[komisiIndex] || '').replace(/[^\d.-]/g, "")) || 0;
+      const valB = parseFloat((b[komisiIndex] || '').replace(/[^\d.-]/g, "")) || 0;
       return valB - valA;
     });
   }
@@ -140,14 +155,74 @@ document.getElementById('showDataBtn').addEventListener('click', function() {
     table.appendChild(tr);
   });
 
-  document.getElementById('toggleTableBtn').classList.remove('hidden');
-  document.getElementById('csvTable').classList.remove('hidden');
+  document.getElementById('csvContainer').style.display = 'block';
+  document.getElementById('toggleResult').style.display = 'inline-block';
+  document.getElementById('generateLinkBtn').style.display = 'inline-block';
 });
 
-document.getElementById('toggleTableBtn').addEventListener('click', function() {
-  const table = document.getElementById('csvTable');
-  const isHidden = table.classList.toggle('hidden');
-  this.textContent = isHidden ? 'Tampilkan Hasil' : 'Sembunyikan Hasil';
+// tombol sembunyikan/tampilkan menu kolom
+document.getElementById('toggleHeader').addEventListener('click', function() {
+  const div = document.getElementById('headerList');
+  if (div.style.display === 'none') {
+    div.style.display = 'block';
+    this.textContent = 'Sembunyikan Menu Kolom';
+  } else {
+    div.style.display = 'none';
+    this.textContent = 'Tampilkan Menu Kolom';
+  }
+});
+
+// tombol sembunyikan/tampilkan hasil tabel
+document.getElementById('toggleResult').addEventListener('click', function() {
+  const div = document.getElementById('csvContainer');
+  if (div.style.display === 'none') {
+    div.style.display = 'block';
+    this.textContent = 'Sembunyikan Hasil';
+  } else {
+    div.style.display = 'none';
+    this.textContent = 'Tampilkan Hasil';
+  }
+});
+
+// generate link Shopee
+document.getElementById('generateLinkBtn').addEventListener('click', function() {
+  const shopIndex = headers.findIndex(h => h.trim() === "ID Shop");
+  const productIndex = headers.findIndex(h => h.trim() === "ID Barang");
+  const linkList = document.getElementById('linkList');
+  linkList.innerHTML = '';
+
+  if (shopIndex === -1 || productIndex === -1) {
+    linkList.innerHTML = '<p style="color:red;">Kolom ID Shop atau ID Barang tidak ditemukan!</p>';
+    return;
+  }
+
+  const dataRows = csvData.slice(1);
+  dataRows.forEach(row => {
+    const shopId = row[shopIndex];
+    const productId = row[productIndex];
+    if (shopId && productId) {
+      const link = `https://shopee.co.id/product/${shopId}/${productId}`;
+      const div = document.createElement('div');
+      div.className = 'link-item';
+      div.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
+      linkList.appendChild(div);
+    }
+  });
+
+  document.getElementById('linkContainer').style.display = 'block';
+  document.getElementById('toggleLink').style.display = 'inline-block';
+});
+
+// tombol sembunyikan/tampilkan hasil link
+document.getElementById('toggleLink').addEventListener('click', function() {
+  const div = document.getElementById('linkContainer');
+  if (div.style.display === 'none') {
+    div.style.display = 'block';
+    this.textContent = 'Sembunyikan Link';
+  } else {
+    div.style.display = 'none';
+    this.textContent = 'Tampilkan Link';
+  }
 });
 </script>
 
