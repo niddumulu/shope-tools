@@ -48,6 +48,8 @@
 
 <script>
 let csvData=[], headers=[];
+let sortedData=[]; // 🔹 simpan hasil sort untuk digunakan ulang
+
 const defaultChecked=["ID Shop","ID Barang","Total Komisi per Produk(Rp)"];
 
 document.getElementById('csvFile').addEventListener('change',e=>{
@@ -86,14 +88,17 @@ document.getElementById('showDataBtn').onclick=()=>{
   if(checked.length===0){table.innerHTML='<tr><td>Tidak ada kolom dipilih</td></tr>';return;}
 
   const komisiIndex=headers.findIndex(h=>h.trim()==="Total Komisi per Produk(Rp)");
-  let data=csvData.slice(1);
-  if(komisiIndex!==-1)data.sort((a,b)=>(parseFloat(b[komisiIndex].replace(/[^\d.-]/g,''))||0)-(parseFloat(a[komisiIndex].replace(/[^\d.-]/g,''))||0));
+  sortedData=csvData.slice(1); // 🔹 Simpan data terurut global
+
+  if(komisiIndex!==-1) {
+    sortedData.sort((a,b)=>(parseFloat(b[komisiIndex].replace(/[^\d.-]/g,''))||0)-(parseFloat(a[komisiIndex].replace(/[^\d.-]/g,''))||0));
+  }
 
   const head=document.createElement('tr');
   checked.forEach(i=>{const th=document.createElement('th');th.textContent=headers[i];head.appendChild(th);});
   table.appendChild(head);
 
-  data.forEach(r=>{
+  sortedData.forEach(r=>{
     const tr=document.createElement('tr');
     checked.forEach(i=>{const td=document.createElement('td');td.textContent=r[i]||'';tr.appendChild(td);});
     table.appendChild(tr);
@@ -108,7 +113,9 @@ document.getElementById('toggleLinks').onclick=()=>{
     const shopIndex=headers.findIndex(h=>h.trim()==="ID Shop");
     const prodIndex=headers.findIndex(h=>h.trim()==="ID Barang");
     if(shopIndex===-1||prodIndex===-1){linkSec.innerHTML='Kolom ID Shop atau ID Barang tidak ditemukan';return;}
-    const links=csvData.slice(1).map(r=>`https://shopee.co.id/product/${r[shopIndex]}/${r[prodIndex]}`);
+    
+    // 🔹 gunakan data hasil sort, bukan urutan asli
+    const links=sortedData.map(r=>`https://shopee.co.id/product/${r[shopIndex]}/${r[prodIndex]}`);
     linkSec.innerHTML=links.map(l=>`<a href="${l}" target="_blank">${l}</a>`).join('<br>');
     document.getElementById('copyLinksBtn').style.display='inline-block';
   }
@@ -118,7 +125,7 @@ document.getElementById('toggleLinks').onclick=()=>{
 document.getElementById('copyLinksBtn').onclick=()=>{
   const links=[...document.querySelectorAll('#linkSection a')].map(a=>a.href).join('\n');
   navigator.clipboard.writeText(links);
-  alert('✅ Semua link berhasil disalin ke clipboard!');
+  alert('✅ Semua link (urut dari komisi tertinggi) berhasil disalin ke clipboard!');
 };
 </script>
 
