@@ -1,165 +1,155 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baca CSV & Generate Link Shopee</title>
+<title>Baca CSV Pilih Kolom + Auto Sort + Toggle Menu</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; max-width: 900px; margin-left:auto; margin-right:auto; }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
   h2 { text-align: center; }
-  .menu-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 8px; }
-  .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-  button { padding: 6px 12px; border: 1px solid #aaa; background: #f5f5f5; border-radius: 6px; cursor: pointer; }
-  button:hover { background: #e5e5e5; }
+  #headerList {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 15px;
+    width: fit-content;
+    background: #f9f9f9;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+  }
+  th, td {
+    border: 1px solid #aaa;
+    padding: 8px;
+    text-align: left;
+  }
+  th { background: #eee; }
+  tr:nth-child(even) { background: #fafafa; }
+  button {
+    margin-top: 15px;
+    padding: 8px 15px;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover { background: #0056b3; }
   .hidden { display: none; }
-  #headers label { display: flex; align-items: center; gap: 5px; padding: 3px 0; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-  th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
-  th { background: #f0f0f0; }
-  #links a { display: block; margin: 2px 0; }
 </style>
 </head>
 <body>
-  <h2>Baca File CSV Shopee</h2>
 
-  <div class="menu-bar">
-    <input type="file" id="csvFile" accept=".csv">
-    <div class="buttons" id="menuButtons">
-      <button id="toggleHeaders">Pilih Kolom</button>
-      <button id="showData">Tampilkan Data</button>
-      <button id="toggleLinks">Lihat Link</button>
-      <button id="generateLinks">Generate Link</button>
-      <button id="copyLinks">Salin Semua Link</button>
-    </div>
-    <label><input type="checkbox" id="modeLinkSaja"> Mode Link Saja</label>
-  </div>
+<h2>Baca File CSV dan Pilih Kolom</h2>
 
-  <div id="headers" class="hidden"></div>
-  <div id="output" class="hidden"></div>
-  <div id="links" class="hidden"></div>
+<input type="file" id="csvFile" accept=".csv"><br>
+
+<button id="toggleHeaderList" class="hidden">Tampilkan/Sembunyikan Menu Kolom</button>
+<div id="headerList" class="hidden"></div>
+
+<button id="showDataBtn" style="display:none;">Tampilkan</button>
+<button id="toggleTableBtn" class="hidden">Sembunyikan Hasil</button>
+
+<table id="csvTable"></table>
 
 <script>
 let csvData = [];
 let headers = [];
+const defaultChecked = ["ID Shop", "ID Barang", "Total Komisi per Produk(Rp)"];
 
-document.getElementById('csvFile').addEventListener('change', handleFile);
-document.getElementById('toggleHeaders').addEventListener('click', () => {
-  document.getElementById('headers').classList.toggle('hidden');
-});
-document.getElementById('showData').addEventListener('click', showFilteredData);
-document.getElementById('generateLinks').addEventListener('click', generateLinks);
-document.getElementById('toggleLinks').addEventListener('click', () => {
-  document.getElementById('links').classList.toggle('hidden');
-});
-document.getElementById('copyLinks').addEventListener('click', copyAllLinks);
-document.getElementById('modeLinkSaja').addEventListener('change', toggleModeLinkSaja);
-
-window.addEventListener('load', () => {
-  const savedMode = localStorage.getItem('modeLinkSaja');
-  if (savedMode === 'true') {
-    document.getElementById('modeLinkSaja').checked = true;
-    toggleModeLinkSaja();
-  }
-});
-
-function handleFile(event) {
-  const file = event.target.files[0];
+document.getElementById('csvFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
   if (!file) return;
+
   const reader = new FileReader();
-  reader.onload = function(e) {
-    const text = e.target.result;
-    const rows = text.split('\n').filter(r => r.trim() !== '');
-    headers = rows[0].split(',').map(h => h.trim());
-    csvData = rows.slice(1).map(row => row.split(',').map(c => c.trim()));
-    showHeaders();
+  reader.onload = function(event) {
+    const text = event.target.result;
+    const rows = text.split('\n').map(r => r.trim()).filter(r => r);
+    csvData = rows.map(r => r.split(',').map(c => c.replace(/^"|"$/g, '')));
+    headers = csvData[0];
+
+    const headerDiv = document.getElementById('headerList');
+    headerDiv.innerHTML = '<b>Pilih kolom yang ingin ditampilkan:</b><br><br>';
+
+    headers.forEach((h, i) => {
+      const label = document.createElement('label');
+      const isChecked = defaultChecked.includes(h.trim());
+      label.innerHTML = `${i + 1}. <input type="checkbox" value="${i}" ${isChecked ? 'checked' : ''}> ${h}`;
+      headerDiv.appendChild(label);
+      headerDiv.appendChild(document.createElement('br'));
+    });
+
+    document.getElementById('toggleHeaderList').classList.remove('hidden');
+    document.getElementById('headerList').classList.remove('hidden');
+    document.getElementById('showDataBtn').style.display = 'inline-block';
+    document.getElementById('csvTable').innerHTML = '';
   };
   reader.readAsText(file);
-}
+});
 
-function showHeaders() {
-  const container = document.getElementById('headers');
-  container.innerHTML = '';
-  headers.forEach((h, i) => {
-    const id = 'chk' + i;
-    const checked = ['ID Shop','ID Barang','Total Komisi per Produk(Rp)'].includes(h);
-    container.innerHTML += `<label><input type="checkbox" id="${id}" ${checked ? 'checked' : ''}> ${i+1}. ${h}</label>`;
-  });
-  container.classList.remove('hidden');
-}
+document.getElementById('toggleHeaderList').addEventListener('click', () => {
+  document.getElementById('headerList').classList.toggle('hidden');
+});
 
-function showFilteredData() {
-  const selectedIndexes = headers.map((_, i) => document.getElementById('chk' + i)?.checked ? i : null).filter(i => i !== null);
-  const table = document.createElement('table');
+document.getElementById('showDataBtn').addEventListener('click', function() {
+  const checkedIndexes = Array.from(document.querySelectorAll('#headerList input[type="checkbox"]:checked'))
+    .map(cb => parseInt(cb.value));
+
+  const table = document.getElementById('csvTable');
+  table.innerHTML = '';
+
+  if (checkedIndexes.length === 0) {
+    table.innerHTML = '<tr><td colspan="99" style="text-align:center;">Tidak ada kolom dipilih</td></tr>';
+    return;
+  }
+
+  const komisiIndex = headers.findIndex(h => h.trim() === "Total Komisi per Produk(Rp)");
+
+  let dataToShow = csvData.slice(1);
+  if (komisiIndex !== -1) {
+    dataToShow.sort((a, b) => {
+      const valA = parseFloat(a[komisiIndex]?.replace(/[^\d.-]/g, "")) || 0;
+      const valB = parseFloat(b[komisiIndex]?.replace(/[^\d.-]/g, "")) || 0;
+      return valB - valA;
+    });
+  }
+
   const headerRow = document.createElement('tr');
-  selectedIndexes.forEach(i => {
+  checkedIndexes.forEach(i => {
     const th = document.createElement('th');
     th.textContent = headers[i];
     headerRow.appendChild(th);
   });
   table.appendChild(headerRow);
-  let filtered = csvData.slice().sort((a, b) => {
-    const idx = headers.indexOf('Total Komisi per Produk(Rp)');
-    const valA = parseInt(a[idx].replace(/[^\d]/g, '') || '0');
-    const valB = parseInt(b[idx].replace(/[^\d]/g, '') || '0');
-    return valB - valA;
-  });
-  filtered.forEach(row => {
+
+  dataToShow.forEach(row => {
     const tr = document.createElement('tr');
-    selectedIndexes.forEach(i => {
+    checkedIndexes.forEach(i => {
       const td = document.createElement('td');
-      td.textContent = row[i];
+      td.textContent = row[i] || '';
       tr.appendChild(td);
     });
     table.appendChild(tr);
   });
-  const output = document.getElementById('output');
-  output.innerHTML = '';
-  output.appendChild(table);
-  output.classList.remove('hidden');
-}
 
-function generateLinks() {
-  const idShopIdx = headers.indexOf('ID Shop');
-  const idBarangIdx = headers.indexOf('ID Barang');
-  const linksDiv = document.getElementById('links');
-  linksDiv.innerHTML = '';
-  let sorted = csvData.slice().sort((a, b) => {
-    const idx = headers.indexOf('Total Komisi per Produk(Rp)');
-    const valA = parseInt(a[idx].replace(/[^\d]/g, '') || '0');
-    const valB = parseInt(b[idx].replace(/[^\d]/g, '') || '0');
-    return valB - valA;
-  });
-  sorted.forEach(row => {
-    const link = `https://shopee.co.id/product/${row[idShopIdx]}/${row[idBarangIdx]}`;
-    const a = document.createElement('a');
-    a.href = link;
-    a.textContent = link;
-    a.target = '_blank';
-    linksDiv.appendChild(a);
-  });
-  linksDiv.classList.remove('hidden');
-}
+  document.getElementById('toggleTableBtn').classList.remove('hidden');
+  document.getElementById('csvTable').classList.remove('hidden');
+});
 
-function copyAllLinks() {
-  const links = Array.from(document.querySelectorAll('#links a')).map(a => a.href).join('\n');
-  navigator.clipboard.writeText(links);
-  alert('Semua link berhasil disalin!');
-}
-
-function toggleModeLinkSaja() {
-  const mode = document.getElementById('modeLinkSaja').checked;
-  const menuButtons = document.getElementById('menuButtons');
-  localStorage.setItem('modeLinkSaja', mode);
-  if (mode) {
-    menuButtons.classList.add('hidden');
-    document.getElementById('headers').classList.add('hidden');
-    document.getElementById('output').classList.add('hidden');
-    generateLinks();
-    document.getElementById('links').classList.remove('hidden');
-  } else {
-    menuButtons.classList.remove('hidden');
-  }
-}
+document.getElementById('toggleTableBtn').addEventListener('click', function() {
+  const table = document.getElementById('csvTable');
+  const isHidden = table.classList.toggle('hidden');
+  this.textContent = isHidden ? 'Tampilkan Hasil' : 'Sembunyikan Hasil';
+});
 </script>
+
 </body>
 </html>
