@@ -3,250 +3,105 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baca CSV + Auto Sort + Generate Link Shopee</title>
+<title>Baca CSV + Menu & Copy Link</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    max-width: 1000px;
-    margin-left: auto;
-    margin-right: auto;
+  body {font-family: Arial, sans-serif; margin: 20px; max-width: 900px; margin-inline:auto;}
+  h2 {text-align:center;}
+  .menu {display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:15px;}
+  button {
+    padding:8px 15px; border:none; border-radius:4px; cursor:pointer;
+    background:#007bff; color:white;
   }
-  h2 {
-    text-align: center;
-    margin-bottom: 25px;
-  }
-
-  /* ===== Toolbar ===== */
-  #toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    margin-bottom: 15px;
-  }
-  #toolbar button, #toolbar input[type="file"] {
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  #toolbar input[type="file"] {
-    background: #17a2b8;
-  }
-  #toolbar button:hover {
-    opacity: 0.85;
-  }
-  .toggle-btn {
-    background: #6c757d !important;
-  }
-
-  /* ===== Kontainer ===== */
-  #headerList, #csvContainer, #linkContainer {
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    padding: 10px;
-    margin-top: 15px;
-    background: #f9f9f9;
-  }
-
-  /* ===== Tabel ===== */
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 10px;
-  }
-  th, td {
-    border: 1px solid #aaa;
-    padding: 8px;
-    text-align: left;
-  }
-  th { background: #eee; }
-  tr:nth-child(even) { background: #fafafa; }
-
-  /* ===== Link List ===== */
-  .link-item {
-    padding: 5px;
-  }
+  button:hover {background:#0056b3;}
+  #headerList,#csvTable,#linkSection{margin-top:15px;}
+  table {border-collapse:collapse; width:100%;}
+  th,td{border:1px solid #aaa; padding:8px;}
+  th{background:#eee;}
+  tr:nth-child(even){background:#fafafa;}
 </style>
 </head>
 <body>
 
-<h2>Baca File CSV dan Generate Link Shopee</h2>
-
-<!-- Toolbar menu -->
-<div id="toolbar">
+<h2>Baca File CSV dan Pilih Kolom</h2>
+<div class="menu">
   <input type="file" id="csvFile" accept=".csv">
-  <button id="toggleHeader" class="toggle-btn" style="display:none;">Sembunyikan Menu Kolom</button>
-  <button id="showDataBtn" style="display:none;">Tampilkan</button>
-  <button id="toggleResult" class="toggle-btn" style="display:none;">Sembunyikan Hasil</button>
-  <button id="generateLinkBtn" style="display:none;">Generate Link Shopee</button>
-  <button id="toggleLink" class="toggle-btn" style="display:none;">Sembunyikan Link</button>
+  <button id="toggleHeaders" style="display:none;">Tampilkan/Sembunyikan Kolom</button>
+  <button id="showDataBtn" style="display:none;">Tampilkan Data</button>
+  <button id="toggleLinks" style="display:none;">Tampilkan/Sembunyikan Link</button>
+  <button id="copyLinksBtn" style="display:none;">Salin Semua Link</button>
 </div>
 
-<!-- Menu pilih kolom -->
-<div id="headerList" style="display:none;"></div>
-
-<!-- Tabel hasil -->
-<div id="csvContainer" style="display:none;">
-  <table id="csvTable"></table>
-</div>
-
-<!-- Generate link -->
-<div id="linkContainer" style="display:none;">
-  <h3>Hasil Generate Link</h3>
-  <div id="linkList"></div>
-</div>
+<div id="headerList"></div>
+<table id="csvTable"></table>
+<div id="linkSection" style="display:none;"></div>
 
 <script>
-let csvData = [];
-let headers = [];
+let csvData=[], headers=[];
+const defaultChecked=["ID Shop","ID Barang","Total Komisi per Produk(Rp)"];
 
-// kolom default dicentang
-const defaultChecked = ["ID Shop", "ID Barang", "Total Komisi per Produk(Rp)"];
-
-document.getElementById('csvFile').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    const text = event.target.result;
-    const rows = text.split('\n').map(r => r.trim()).filter(r => r);
-    csvData = rows.map(r => r.split(',').map(c => c.replace(/^"|"$/g, '')));
-    headers = csvData[0];
-
-    const headerDiv = document.getElementById('headerList');
-    headerDiv.innerHTML = '<b>Pilih kolom yang ingin ditampilkan:</b><br><br>';
-
-    headers.forEach((h, i) => {
-      const label = document.createElement('label');
-      const isChecked = defaultChecked.includes(h.trim());
-      label.innerHTML = `${i + 1}. <input type="checkbox" value="${i}" ${isChecked ? 'checked' : ''}> ${h}`;
-      headerDiv.appendChild(label);
-      headerDiv.appendChild(document.createElement('br'));
+document.getElementById('csvFile').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const rows=ev.target.result.split('\n').map(r=>r.trim()).filter(r=>r);
+    csvData=rows.map(r=>r.split(',').map(c=>c.replace(/^"|"$/g,'')));
+    headers=csvData[0];
+    const hList=document.getElementById('headerList');
+    hList.innerHTML='<b>Pilih kolom yang ingin ditampilkan:</b><br><br>';
+    headers.forEach((h,i)=>{
+      const label=document.createElement('label');
+      const checked=defaultChecked.includes(h.trim());
+      label.innerHTML=`${i+1}. <input type="checkbox" value="${i}" ${checked?'checked':''}> ${h}`;
+      hList.appendChild(label);
+      hList.appendChild(document.createElement('br'));
     });
-
-    document.getElementById('headerList').style.display = 'block';
-    document.getElementById('toggleHeader').style.display = 'inline-block';
-    document.getElementById('showDataBtn').style.display = 'inline-block';
+    document.getElementById('toggleHeaders').style.display='inline-block';
+    document.getElementById('showDataBtn').style.display='inline-block';
   };
   reader.readAsText(file);
 });
 
-document.getElementById('showDataBtn').addEventListener('click', function() {
-  const checkedIndexes = Array.from(document.querySelectorAll('#headerList input[type="checkbox"]:checked'))
-    .map(cb => parseInt(cb.value));
+document.getElementById('toggleHeaders').onclick=()=>{
+  const div=document.getElementById('headerList');
+  div.style.display=div.style.display==='none'?'block':'none';
+};
 
-  const table = document.getElementById('csvTable');
-  table.innerHTML = '';
-
-  if (checkedIndexes.length === 0) {
-    table.innerHTML = '<tr><td colspan="99" style="text-align:center;">Tidak ada kolom dipilih</td></tr>';
-    return;
-  }
-
-  const komisiIndex = headers.findIndex(h => h.trim() === "Total Komisi per Produk(Rp)");
-
-  let dataToShow = csvData.slice(1);
-  if (komisiIndex !== -1) {
-    dataToShow.sort((a, b) => {
-      const valA = parseFloat((a[komisiIndex] || '').replace(/[^\d.-]/g, "")) || 0;
-      const valB = parseFloat((b[komisiIndex] || '').replace(/[^\d.-]/g, "")) || 0;
-      return valB - valA;
-    });
-  }
-
-  const headerRow = document.createElement('tr');
-  checkedIndexes.forEach(i => {
-    const th = document.createElement('th');
-    th.textContent = headers[i];
-    headerRow.appendChild(th);
-  });
-  table.appendChild(headerRow);
-
-  dataToShow.forEach(row => {
-    const tr = document.createElement('tr');
-    checkedIndexes.forEach(i => {
-      const td = document.createElement('td');
-      td.textContent = row[i] || '';
-      tr.appendChild(td);
-    });
+document.getElementById('showDataBtn').onclick=()=>{
+  const checked=Array.from(document.querySelectorAll('#headerList input:checked')).map(cb=>+cb.value);
+  const table=document.getElementById('csvTable'); table.innerHTML='';
+  if(checked.length===0){table.innerHTML='<tr><td>Tidak ada kolom dipilih</td></tr>';return;}
+  const komisiIndex=headers.findIndex(h=>h.trim()==="Total Komisi per Produk(Rp)");
+  let data=csvData.slice(1);
+  if(komisiIndex!==-1)data.sort((a,b)=>(parseFloat(b[komisiIndex].replace(/[^\d.-]/g,''))||0)-(parseFloat(a[komisiIndex].replace(/[^\d.-]/g,''))||0));
+  const head=document.createElement('tr');
+  checked.forEach(i=>{const th=document.createElement('th');th.textContent=headers[i];head.appendChild(th);});
+  table.appendChild(head);
+  data.forEach(r=>{
+    const tr=document.createElement('tr');
+    checked.forEach(i=>{const td=document.createElement('td');td.textContent=r[i]||'';tr.appendChild(td);});
     table.appendChild(tr);
   });
+  document.getElementById('toggleLinks').style.display='inline-block';
+};
 
-  document.getElementById('csvContainer').style.display = 'block';
-  document.getElementById('toggleResult').style.display = 'inline-block';
-  document.getElementById('generateLinkBtn').style.display = 'inline-block';
-});
-
-// sembunyikan/tampilkan menu kolom
-document.getElementById('toggleHeader').addEventListener('click', function() {
-  const div = document.getElementById('headerList');
-  if (div.style.display === 'none') {
-    div.style.display = 'block';
-    this.textContent = 'Sembunyikan Menu Kolom';
-  } else {
-    div.style.display = 'none';
-    this.textContent = 'Tampilkan Menu Kolom';
+document.getElementById('toggleLinks').onclick=()=>{
+  const linkSec=document.getElementById('linkSection');
+  if(linkSec.innerHTML===''){
+    const shopIndex=headers.findIndex(h=>h.trim()==="ID Shop");
+    const prodIndex=headers.findIndex(h=>h.trim()==="ID Barang");
+    if(shopIndex===-1||prodIndex===-1){linkSec.innerHTML='Kolom ID Shop atau ID Barang tidak ditemukan';return;}
+    const links=csvData.slice(1).map(r=>`https://shopee.co.id/product/${r[shopIndex]}/${r[prodIndex]}`);
+    linkSec.innerHTML=links.map(l=>`<a href="${l}" target="_blank">${l}</a>`).join('<br>');
+    document.getElementById('copyLinksBtn').style.display='inline-block';
   }
-});
+  linkSec.style.display=linkSec.style.display==='none'?'block':'none';
+};
 
-// sembunyikan/tampilkan hasil tabel
-document.getElementById('toggleResult').addEventListener('click', function() {
-  const div = document.getElementById('csvContainer');
-  if (div.style.display === 'none') {
-    div.style.display = 'block';
-    this.textContent = 'Sembunyikan Hasil';
-  } else {
-    div.style.display = 'none';
-    this.textContent = 'Tampilkan Hasil';
-  }
-});
-
-// generate link Shopee
-document.getElementById('generateLinkBtn').addEventListener('click', function() {
-  const shopIndex = headers.findIndex(h => h.trim() === "ID Shop");
-  const productIndex = headers.findIndex(h => h.trim() === "ID Barang");
-  const linkList = document.getElementById('linkList');
-  linkList.innerHTML = '';
-
-  if (shopIndex === -1 || productIndex === -1) {
-    linkList.innerHTML = '<p style="color:red;">Kolom ID Shop atau ID Barang tidak ditemukan!</p>';
-    return;
-  }
-
-  const dataRows = csvData.slice(1);
-  dataRows.forEach(row => {
-    const shopId = row[shopIndex];
-    const productId = row[productIndex];
-    if (shopId && productId) {
-      const link = `https://shopee.co.id/product/${shopId}/${productId}`;
-      const div = document.createElement('div');
-      div.className = 'link-item';
-      div.innerHTML = `<a href="${link}" target="_blank">${link}</a>`;
-      linkList.appendChild(div);
-    }
-  });
-
-  document.getElementById('linkContainer').style.display = 'block';
-  document.getElementById('toggleLink').style.display = 'inline-block';
-});
-
-// sembunyikan/tampilkan hasil link
-document.getElementById('toggleLink').addEventListener('click', function() {
-  const div = document.getElementById('linkContainer');
-  if (div.style.display === 'none') {
-    div.style.display = 'block';
-    this.textContent = 'Sembunyikan Link';
-  } else {
-    div.style.display = 'none';
-    this.textContent = 'Tampilkan Link';
-  }
-});
+document.getElementById('copyLinksBtn').onclick=()=>{
+  const links=[...document.querySelectorAll('#linkSection a')].map(a=>a.href).join('\n');
+  navigator.clipboard.writeText(links);
+  alert('Semua link berhasil disalin!');
+};
 </script>
 
 </body>
