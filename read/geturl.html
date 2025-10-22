@@ -12,9 +12,7 @@
     margin-left: auto;
     margin-right: auto;
   }
-  h2 {
-    text-align: center;
-  }
+  h2 { text-align: center; }
   #headerList {
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -33,12 +31,8 @@
     padding: 8px;
     text-align: left;
   }
-  th {
-    background: #eee;
-  }
-  tr:nth-child(even) {
-    background: #fafafa;
-  }
+  th { background: #eee; }
+  tr:nth-child(even) { background: #fafafa; }
   button {
     margin-top: 15px;
     padding: 8px 15px;
@@ -48,9 +42,7 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  button:hover {
-    background: #0056b3;
-  }
+  button:hover { background: #0056b3; }
 </style>
 </head>
 <body>
@@ -118,8 +110,8 @@ document.getElementById('showDataBtn').addEventListener('click', function() {
   let dataToShow = csvData.slice(1);
   if (komisiIndex !== -1) {
     dataToShow.sort((a, b) => {
-      const valA = parseFloat(a[komisiIndex]?.replace(/[^\d.-]/g, "")) || 0;
-      const valB = parseFloat(b[komisiIndex]?.replace/[^\d.-]/g, "")) || 0;
+      const valA = parseFloat((a[komisiIndex] || '').replace(/[^\d.-]/g, "")) || 0;
+      const valB = parseFloat((b[komisiIndex] || '').replace(/[^\d.-]/g, "")) || 0;
       return valB - valA; // descending
     });
   }
