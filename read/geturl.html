@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baca CSV Pilih Kolom</title>
+<title>Baca CSV Pilih Kolom + Auto Sort</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -87,7 +87,7 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
 
     headers.forEach((h, i) => {
       const label = document.createElement('label');
-      const isChecked = defaultChecked.includes(h.trim()); // otomatis centang jika cocok
+      const isChecked = defaultChecked.includes(h.trim());
       label.innerHTML = `${i + 1}. <input type="checkbox" value="${i}" ${isChecked ? 'checked' : ''}> ${h}`;
       headerDiv.appendChild(label);
       headerDiv.appendChild(document.createElement('br'));
@@ -111,6 +111,20 @@ document.getElementById('showDataBtn').addEventListener('click', function() {
     return;
   }
 
+  // cari index kolom "Total Komisi per Produk(Rp)"
+  const komisiIndex = headers.findIndex(h => h.trim() === "Total Komisi per Produk(Rp)");
+
+  // jika kolom komisi ada, urutkan berdasarkan nilainya
+  let dataToShow = csvData.slice(1);
+  if (komisiIndex !== -1) {
+    dataToShow.sort((a, b) => {
+      const valA = parseFloat(a[komisiIndex]?.replace(/[^\d.-]/g, "")) || 0;
+      const valB = parseFloat(b[komisiIndex]?.replace/[^\d.-]/g, "")) || 0;
+      return valB - valA; // descending
+    });
+  }
+
+  // buat header tabel
   const headerRow = document.createElement('tr');
   checkedIndexes.forEach(i => {
     const th = document.createElement('th');
@@ -119,7 +133,8 @@ document.getElementById('showDataBtn').addEventListener('click', function() {
   });
   table.appendChild(headerRow);
 
-  csvData.slice(1).forEach(row => {
+  // isi tabel hasil sorting
+  dataToShow.forEach(row => {
     const tr = document.createElement('tr');
     checkedIndexes.forEach(i => {
       const td = document.createElement('td');
