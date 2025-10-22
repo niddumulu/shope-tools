@@ -3,42 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baca File CSV</title>
+<title>Baca CSV Pilih Kolom</title>
 <style>
   body {
     font-family: Arial, sans-serif;
     margin: 20px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  h2 {
     text-align: center;
   }
-  input[type="file"] {
-    margin: 15px 0;
+  #headerList {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 15px;
+    width: fit-content;
+    background: #f9f9f9;
   }
   table {
     border-collapse: collapse;
-    margin: 20px auto;
-    width: 90%;
-    max-width: 900px;
+    width: 100%;
+    margin-top: 20px;
   }
   th, td {
     border: 1px solid #aaa;
-    padding: 8px 10px;
+    padding: 8px;
     text-align: left;
   }
   th {
-    background: #f2f2f2;
+    background: #eee;
   }
   tr:nth-child(even) {
     background: #fafafa;
+  }
+  button {
+    margin-top: 15px;
+    padding: 8px 15px;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #0056b3;
   }
 </style>
 </head>
 <body>
 
-<h2>Baca dan Tampilkan File CSV</h2>
-<input type="file" id="csvFile" accept=".csv">
+<h2>Baca File CSV dan Pilih Kolom</h2>
+
+<input type="file" id="csvFile" accept=".csv"><br>
+
+<div id="headerList"></div>
+<button id="showDataBtn" style="display:none;">Tampilkan</button>
+
 <table id="csvTable"></table>
 
 <script>
+let csvData = []; // simpan data CSV
+let headers = []; // simpan header
+
 document.getElementById('csvFile').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -47,21 +76,56 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
   reader.onload = function(event) {
     const text = event.target.result;
     const rows = text.split('\n').map(r => r.trim()).filter(r => r);
-    const table = document.getElementById('csvTable');
-    table.innerHTML = ''; // kosongkan tabel
+    csvData = rows.map(r => r.split(',').map(c => c.replace(/^"|"$/g, '')));
+    headers = csvData[0];
 
-    rows.forEach((row, i) => {
-      const cols = row.split(',').map(c => c.replace(/^"|"$/g, '')); // hapus tanda kutip
-      const tr = document.createElement('tr');
-      cols.forEach(col => {
-        const cell = document.createElement(i === 0 ? 'th' : 'td');
-        cell.textContent = col;
-        tr.appendChild(cell);
-      });
-      table.appendChild(tr);
+    // tampilkan header secara vertikal
+    const headerDiv = document.getElementById('headerList');
+    headerDiv.innerHTML = '<b>Pilih kolom yang ingin ditampilkan:</b><br><br>';
+    headers.forEach((h, i) => {
+      const label = document.createElement('label');
+      label.innerHTML = `${i+1}. <input type="checkbox" value="${i}" checked> ${h}`;
+      headerDiv.appendChild(label);
+      headerDiv.appendChild(document.createElement('br'));
     });
+
+    document.getElementById('showDataBtn').style.display = 'inline-block';
+    document.getElementById('csvTable').innerHTML = ''; // kosongkan tabel lama
   };
   reader.readAsText(file);
+});
+
+document.getElementById('showDataBtn').addEventListener('click', function() {
+  const checkedIndexes = Array.from(document.querySelectorAll('#headerList input[type="checkbox"]:checked'))
+    .map(cb => parseInt(cb.value));
+
+  const table = document.getElementById('csvTable');
+  table.innerHTML = '';
+
+  if (checkedIndexes.length === 0) {
+    table.innerHTML = '<tr><td colspan="99" style="text-align:center;">Tidak ada kolom dipilih</td></tr>';
+    return;
+  }
+
+  // buat header tabel
+  const headerRow = document.createElement('tr');
+  checkedIndexes.forEach(i => {
+    const th = document.createElement('th');
+    th.textContent = headers[i];
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  // isi tabel
+  csvData.slice(1).forEach(row => {
+    const tr = document.createElement('tr');
+    checkedIndexes.forEach(i => {
+      const td = document.createElement('td');
+      td.textContent = row[i] || '';
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
 });
 </script>
 
