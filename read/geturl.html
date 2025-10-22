@@ -65,8 +65,11 @@
 <table id="csvTable"></table>
 
 <script>
-let csvData = []; // simpan data CSV
-let headers = []; // simpan header
+let csvData = [];
+let headers = [];
+
+// kolom default yang otomatis dicentang
+const defaultChecked = ["ID Shop", "ID Barang", "Total Komisi per Produk(Rp)"];
 
 document.getElementById('csvFile').addEventListener('change', function(e) {
   const file = e.target.files[0];
@@ -79,18 +82,19 @@ document.getElementById('csvFile').addEventListener('change', function(e) {
     csvData = rows.map(r => r.split(',').map(c => c.replace(/^"|"$/g, '')));
     headers = csvData[0];
 
-    // tampilkan header secara vertikal
     const headerDiv = document.getElementById('headerList');
     headerDiv.innerHTML = '<b>Pilih kolom yang ingin ditampilkan:</b><br><br>';
+
     headers.forEach((h, i) => {
       const label = document.createElement('label');
-      label.innerHTML = `${i+1}. <input type="checkbox" value="${i}" checked> ${h}`;
+      const isChecked = defaultChecked.includes(h.trim()); // otomatis centang jika cocok
+      label.innerHTML = `${i + 1}. <input type="checkbox" value="${i}" ${isChecked ? 'checked' : ''}> ${h}`;
       headerDiv.appendChild(label);
       headerDiv.appendChild(document.createElement('br'));
     });
 
     document.getElementById('showDataBtn').style.display = 'inline-block';
-    document.getElementById('csvTable').innerHTML = ''; // kosongkan tabel lama
+    document.getElementById('csvTable').innerHTML = '';
   };
   reader.readAsText(file);
 });
@@ -107,7 +111,6 @@ document.getElementById('showDataBtn').addEventListener('click', function() {
     return;
   }
 
-  // buat header tabel
   const headerRow = document.createElement('tr');
   checkedIndexes.forEach(i => {
     const th = document.createElement('th');
@@ -116,7 +119,6 @@ document.getElementById('showDataBtn').addEventListener('click', function() {
   });
   table.appendChild(headerRow);
 
-  // isi tabel
   csvData.slice(1).forEach(row => {
     const tr = document.createElement('tr');
     checkedIndexes.forEach(i => {
