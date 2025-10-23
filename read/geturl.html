@@ -1,133 +1,290 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baca CSV Shopee Tools</title>
-<style>
-  body {font-family: Arial, sans-serif; margin: 20px; max-width: 900px; margin-inline:auto;}
-  h2 {text-align:center;}
-  .menu {
-    display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
-    background:#f1f1f1; padding:10px; border-radius:8px; margin-bottom:20px;
-  }
-  button, input[type="file"]::file-selector-button {
-    padding:8px 15px;
-    border:none;
-    border-radius:4px;
-    cursor:pointer;
-    background:#007bff;
-    color:white;
-    font-weight:bold;
-  }
-  button:hover, input[type="file"]::file-selector-button:hover {
-    background:#0056b3;
-  }
-  #headerList,#csvTable,#linkSection{margin-top:15px;}
-  table {border-collapse:collapse; width:100%;}
-  th,td{border:1px solid #aaa; padding:8px;}
-  th{background:#eee;}
-  tr:nth-child(even){background:#fafafa;}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Baca CSV Shopee Tools</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 900px;
+      margin-inline: auto;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .menu {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    button,
+    input[type="file"]::file-selector-button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+
+    button:hover,
+    input[type="file"]::file-selector-button:hover {
+      background: #0056b3;
+    }
+
+    #headerList,
+    #csvTable,
+    #linkSection {
+      margin-top: 15px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    th,
+    td {
+      border: 1px solid #aaa;
+      padding: 8px;
+    }
+
+    th {
+      background: #eee;
+    }
+
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    /* Area link produk */
+    #linkSection {
+      margin-top: 25px;
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    #copyLinksBtn {
+      display: none;
+      margin-bottom: 10px;
+      background: #28a745;
+    }
+
+    #copyLinksBtn:hover {
+      background: #1e7e34;
+    }
+
+    /* Sponsor style */
+    .sponsor {
+      background-color: #fffae6;
+      border: 1px solid #ffd42a;
+      padding: 12px;
+      margin: 10px 0 20px 0;
+      font-weight: bold;
+      text-align: center;
+      color: #b36b00;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(255,212,42,0.5);
+      font-size: 1rem;
+    }
+  </style>
 </head>
+
 <body>
+  <h2>📂 Read Report Affiliate Shopee - CSV</h2>
 
-<h2>📂 Pembaca CSV Shopee + Generator Link</h2>
+  <div class="menu">
+    <label>
+      <strong>1️⃣ Pilih File:</strong>
+      <input type="file" id="csvFile" accept=".csv">
+    </label>
+    <button id="toggleHeaders" style="display:none;">2️⃣ Pilih Kolom</button>
+    <button id="showDataBtn" style="display:none;">3️⃣ Tampilkan Data</button>
+    <button id="toggleLinks" style="display:none;">4️⃣ Lihat Link Produk</button>
+  </div>
 
-<div class="menu">
-  <label><strong>1️⃣ Pilih File:</strong> <input type="file" id="csvFile" accept=".csv"></label>
-  <button id="toggleHeaders" style="display:none;">2️⃣ Pilih Kolom</button>
-  <button id="showDataBtn" style="display:none;">3️⃣ Tampilkan Data</button>
-  <button id="toggleLinks" style="display:none;">4️⃣ Lihat Link Produk</button>
-  <button id="copyLinksBtn" style="display:none;">📋 Salin Semua Link</button>
-</div>
+  <!-- 🔹 Sponsor diletakkan di bawah menu -->
+  <div class="sponsor">
+    Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
+  </div>
 
-<div id="headerList" style="display:none;"></div>
-<table id="csvTable"></table>
-<div id="linkSection" style="display:none;"></div>
+  <div id="headerList" style="display:none;"></div>
+  <table id="csvTable" style="display:none;"></table>
 
-<script>
-let csvData=[], headers=[];
-let sortedData=[]; // 🔹 simpan hasil sort untuk digunakan ulang
+  <!-- Bagian link produk + tombol salin -->
+  <div id="linkSection" style="display:none;">
+    <button id="copyLinksBtn">📋 Salin Semua Link</button>
+    <div id="linkList"></div>
+  </div>
 
-const defaultChecked=["ID Shop","ID Barang","Total Komisi per Produk(Rp)"];
+  <script>
+    let csvData = [], headers = [];
+    let sortedData = [];
 
-document.getElementById('csvFile').addEventListener('change',e=>{
-  const file=e.target.files[0]; if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    const rows=ev.target.result.split('\n').map(r=>r.trim()).filter(r=>r);
-    csvData=rows.map(r=>r.split(',').map(c=>c.replace(/^"|"$/g,'')));
-    headers=csvData[0];
+    const defaultChecked = ["ID Shop", "ID Barang", "Total Komisi per Produk(Rp)"];
 
-    const hList=document.getElementById('headerList');
-    hList.innerHTML='<b>Pilih kolom yang ingin ditampilkan:</b><br><br>';
-    headers.forEach((h,i)=>{
-      const label=document.createElement('label');
-      const checked=defaultChecked.includes(h.trim());
-      label.innerHTML=`${i+1}. <input type="checkbox" value="${i}" ${checked?'checked':''}> ${h}`;
-      hList.appendChild(label);
-      hList.appendChild(document.createElement('br'));
+    // Elemen utama
+    const csvInput = document.getElementById('csvFile');
+    const headerListDiv = document.getElementById('headerList');
+    const tableEl = document.getElementById('csvTable');
+    const linkSection = document.getElementById('linkSection');
+    const linkList = document.getElementById('linkList');
+
+    const btnHeaders = document.getElementById('toggleHeaders');
+    const btnShowData = document.getElementById('showDataBtn');
+    const btnShowLinks = document.getElementById('toggleLinks');
+    const btnCopyLinks = document.getElementById('copyLinksBtn');
+
+    function resetUI() {
+      tableEl.style.display = 'none';
+      tableEl.innerHTML = '';
+      headerListDiv.innerHTML = '';
+      linkList.innerHTML = '';
+      linkSection.style.display = 'none';
+      btnCopyLinks.style.display = 'none';
+
+      btnHeaders.style.display = 'none';
+      btnShowData.style.display = 'none';
+      btnShowData.textContent = '3️⃣ Tampilkan Data';
+      btnShowLinks.style.display = 'none';
+    }
+
+    csvInput.addEventListener('change', e => {
+      resetUI();
+
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const rows = ev.target.result
+          .split('\n')
+          .map(r => r.trim())
+          .filter(r => r);
+
+        csvData = rows.map(r => r.split(',').map(c => c.replace(/^"|"$/g, '')));
+        headers = csvData[0];
+
+        headerListDiv.innerHTML = '<b>Pilih kolom yang ingin ditampilkan:</b><br><br>';
+        headers.forEach((h, i) => {
+          const label = document.createElement('label');
+          const checked = defaultChecked.includes(h.trim());
+          label.innerHTML = `${i + 1}. <input type="checkbox" value="${i}" ${checked ? 'checked' : ''}> ${h}`;
+          headerListDiv.appendChild(label);
+          headerListDiv.appendChild(document.createElement('br'));
+        });
+
+        headerListDiv.style.display = 'block';
+        btnHeaders.style.display = 'inline-block';
+        btnShowData.style.display = 'inline-block';
+      };
+
+      reader.readAsText(file);
     });
 
-    hList.style.display='block';
-    document.getElementById('toggleHeaders').style.display='inline-block';
-    document.getElementById('showDataBtn').style.display='inline-block';
-  };
-  reader.readAsText(file);
-});
+    btnHeaders.onclick = () => {
+      headerListDiv.style.display = headerListDiv.style.display === 'none' ? 'block' : 'none';
+    };
 
-document.getElementById('toggleHeaders').onclick=()=>{
-  const div=document.getElementById('headerList');
-  div.style.display=div.style.display==='none'?'block':'none';
-};
+    btnShowData.onclick = () => {
+      const tableVisible = tableEl.style.display === 'table';
 
-document.getElementById('showDataBtn').onclick=()=>{
-  const checked=Array.from(document.querySelectorAll('#headerList input:checked')).map(cb=>+cb.value);
-  const table=document.getElementById('csvTable'); table.innerHTML='';
-  if(checked.length===0){table.innerHTML='<tr><td>Tidak ada kolom dipilih</td></tr>';return;}
+      if (tableVisible) {
+        tableEl.style.display = 'none';
+        btnShowData.textContent = '3️⃣ Tampilkan Data';
+        return;
+      }
 
-  const komisiIndex=headers.findIndex(h=>h.trim()==="Total Komisi per Produk(Rp)");
-  sortedData=csvData.slice(1); // 🔹 Simpan data terurut global
+      const checked = Array.from(document.querySelectorAll('#headerList input:checked')).map(cb => +cb.value);
+      if (checked.length === 0) {
+        alert('⚠️ Silakan pilih minimal satu kolom untuk ditampilkan.');
+        return;
+      }
 
-  if(komisiIndex!==-1) {
-    sortedData.sort((a,b)=>(parseFloat(b[komisiIndex].replace(/[^\d.-]/g,''))||0)-(parseFloat(a[komisiIndex].replace(/[^\d.-]/g,''))||0));
-  }
+      tableEl.innerHTML = '';
+      linkSection.style.display = 'none';
+      btnCopyLinks.style.display = 'none';
 
-  const head=document.createElement('tr');
-  checked.forEach(i=>{const th=document.createElement('th');th.textContent=headers[i];head.appendChild(th);});
-  table.appendChild(head);
+      const komisiIndex = headers.findIndex(h => h.trim() === "Total Komisi per Produk(Rp)");
+      sortedData = csvData.slice(1);
 
-  sortedData.forEach(r=>{
-    const tr=document.createElement('tr');
-    checked.forEach(i=>{const td=document.createElement('td');td.textContent=r[i]||'';tr.appendChild(td);});
-    table.appendChild(tr);
-  });
+      if (komisiIndex !== -1) {
+        sortedData.sort((a, b) =>
+          (parseFloat(b[komisiIndex].replace(/[^\d.-]/g, '')) || 0) -
+          (parseFloat(a[komisiIndex].replace(/[^\d.-]/g, '')) || 0)
+        );
+      }
 
-  document.getElementById('toggleLinks').style.display='inline-block';
-};
+      const head = document.createElement('tr');
+      checked.forEach(i => {
+        const th = document.createElement('th');
+        th.textContent = headers[i];
+        head.appendChild(th);
+      });
+      tableEl.appendChild(head);
 
-document.getElementById('toggleLinks').onclick=()=>{
-  const linkSec=document.getElementById('linkSection');
-  if(linkSec.innerHTML===''){
-    const shopIndex=headers.findIndex(h=>h.trim()==="ID Shop");
-    const prodIndex=headers.findIndex(h=>h.trim()==="ID Barang");
-    if(shopIndex===-1||prodIndex===-1){linkSec.innerHTML='Kolom ID Shop atau ID Barang tidak ditemukan';return;}
-    
-    // 🔹 gunakan data hasil sort, bukan urutan asli
-    const links=sortedData.map(r=>`https://shopee.co.id/product/${r[shopIndex]}/${r[prodIndex]}`);
-    linkSec.innerHTML=links.map(l=>`<a href="${l}" target="_blank">${l}</a>`).join('<br>');
-    document.getElementById('copyLinksBtn').style.display='inline-block';
-  }
-  linkSec.style.display=linkSec.style.display==='none'?'block':'none';
-};
+      sortedData.forEach(r => {
+        const tr = document.createElement('tr');
+        checked.forEach(i => {
+          const td = document.createElement('td');
+          td.textContent = r[i] || '';
+          tr.appendChild(td);
+        });
+        tableEl.appendChild(tr);
+      });
 
-document.getElementById('copyLinksBtn').onclick=()=>{
-  const links=[...document.querySelectorAll('#linkSection a')].map(a=>a.href).join('\n');
-  navigator.clipboard.writeText(links);
-  alert('✅ Semua link (urut dari komisi tertinggi) berhasil disalin ke clipboard!');
-};
-</script>
+      tableEl.style.display = 'table';
+      btnShowData.textContent = '🔽 Sembunyikan Data';
+      btnShowLinks.style.display = 'inline-block';
+    };
 
+    btnShowLinks.onclick = () => {
+      if (linkList.innerHTML === '') {
+        const shopIndex = headers.findIndex(h => h.trim() === "ID Shop");
+        const prodIndex = headers.findIndex(h => h.trim() === "ID Barang");
+
+        if (shopIndex === -1 || prodIndex === -1) {
+          linkList.innerHTML = 'Kolom ID Shop atau ID Barang tidak ditemukan';
+          return;
+        }
+
+        const links = sortedData.map(r =>
+          `https://shopee.co.id/product/${r[shopIndex]}/${r[prodIndex]}`
+        );
+
+        linkList.innerHTML = links
+          .map(l => `<a href="${l}" target="_blank">${l}</a>`)
+          .join('<br>');
+      }
+
+      const showing = linkSection.style.display === 'block';
+      linkSection.style.display = showing ? 'none' : 'block';
+      btnCopyLinks.style.display = showing ? 'none' : 'inline-block';
+    };
+
+    btnCopyLinks.onclick = () => {
+      const links = [...document.querySelectorAll('#linkList a')]
+        .map(a => a.href)
+        .join('\n');
+
+      navigator.clipboard.writeText(links);
+      alert('✅ Semua link (urut dari komisi tertinggi) berhasil disalin ke clipboard!');
+    };
+  </script>
 </body>
 </html>
