@@ -40,7 +40,7 @@
 <h2>Masukkan Link Shopee</h2>
 <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
 <div class="input-buttons">
-  <button id="ambilLinksBtn">Ambil dari limabaru.txt</button>
+  <button id="ambilLinksBtn">Ambil dari lima.txt</button>
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
 </div>
@@ -142,14 +142,14 @@ window.onload=()=>{
 // === Ambil limabaru.txt ===
 document.getElementById('ambilLinksBtn').addEventListener('click',async ()=>{
   try{
-    const res=await fetch('limabarupria.txt?t='+Date.now(),{cache:'no-store'});
+    const res=await fetch('lima.txt?t='+Date.now(),{cache:'no-store'});
     if(!res.ok) throw new Error('HTTP '+res.status);
     const text=await res.text();
     const rows=text.split(/\r?\n/).map(r=>r.trim()).filter(Boolean);
     inputLinksEl.value=rows.join("\n");
     localStorage.setItem(`${pageKey}_inputLinks`,inputLinksEl.value);
     processLinks();
-  }catch(e){alert("Gagal mengambil limabaru.txt: "+e.message);}
+  }catch(e){alert("Gagal mengambil lima.txt: "+e.message);}
 });
 
 // === Ambil data_toko.txt ===
