@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Link Shopee Pagination</title>
+<title>Produk Laku di Live MadGazan</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; }
-  h2,h3 { font-size: 1.2rem; margin-bottom: 8px; }
+  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
+  h1,h2,h3 { color:#b36b00; text-align:center; }
+  h1 { font-size:1.6rem; margin-bottom:5px; }
+  h2 { font-size:1.2rem; margin-bottom:10px; }
   textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
   textarea { height:150px; }
   #output { display:none; margin-top:10px; }
@@ -23,12 +25,13 @@
   .input-buttons button:hover { background:#eee; }
   #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
+  footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
   @media (max-width:720px){
     body { padding:12px; }
     textarea{ height:120px; }
   }
   @media (max-width:480px){
-    h2,h3{ font-size:1rem; }
+    h1,h2,h3{ font-size:1rem; }
     textarea{ height:120px; font-size:0.9rem; }
     #output{ font-size:0.85rem; }
     .page-btn{ padding:8px 12px; font-size:0.9rem; }
@@ -40,15 +43,18 @@
 </head>
 <body>
 
-<h2>Masukkan Link Shopee</h2>
-<textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
+<h1>Produk Laku di Live MadGazan</h1>
+<h2>Manajemen Link Shopee Akun 1</h2>
+
+<textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
+
 <div class="input-buttons">
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
   <button id="hapusDuplikatBtn">Hapus Duplikat Sekarang</button>
 </div>
 
-<h3>List File TXT (untuk Input Links)</h3>
+<h3>Daftar File TXT Produk</h3>
 <select id="fileDropdown">
   <option value="">-- Pilih File TXT --</option>
   <option value="jalb.txt">jalb.txt</option>
@@ -62,16 +68,21 @@
 </div>
 
 <div class="sponsor">
-  Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
+  Disponsori oleh <strong>Kios Tembakau MadGazan</strong><br>
+  Solusi hemat untuk perokok bijak 🚬💨
 </div>
 
 <div id="stats"></div>
 
-<h3>Output (akun 1)</h3>
+<h3>Output (Produk Siap Live)</h3>
 <div id="output"></div>
 <button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
 
 <div class="pagination" id="pagination"></div>
+
+<footer>
+  © 2025 Kios Tembakau MadGazan — Semua Hak Dilindungi
+</footer>
 
 <script>
 const MAX_PER_PAGE = 100;
@@ -94,7 +105,6 @@ window.addEventListener('load', () => {
   if (savedDropdown) dropdownEl.value = savedDropdown;
   processLinks();
 
-  // Setelah proses selesai baru set halaman terakhir
   if (savedPage && savedPage <= allPages.length) {
     currentPage = savedPage;
     showPage(currentPage);
