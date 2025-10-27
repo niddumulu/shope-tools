@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Link Shopee Pagination</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-left:auto; margin-right:auto; }
+  h2,h3 { font-size: 1.2rem; margin-bottom: 8px; }
+  textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  textarea { height:150px; }
+  #output { display:none; margin-top:10px; }
+  #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
+  #output a:hover { text-decoration:underline; }
+  .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .page-btn { padding:10px 14px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background-color:white; font-size:1rem; min-width:40px; }
+  .page-btn:hover { background-color:#ffd42a; color:#b36b00; }
+  .active { font-weight:bold; background-color:#ffd42a; color:#b36b00; border-color:#b36b00; }
+  #copyBtn { margin-top:12px; padding:12px; font-size:1rem; cursor:pointer; border:none; background-color:#ffd42a; color:#b36b00; border-radius:6px; width:100%; }
+  #copyBtn:hover { background-color:#e6c72b; }
+  .input-buttons { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .input-buttons button { flex:1; padding:10px; font-size:0.95rem; cursor:pointer; border:1px solid #ccc; border-radius:6px; background:#f5f5f5; }
+  .input-buttons button:hover { background:#eee; }
+  #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
+  .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
+  @media (max-width:720px){
+    body { padding:12px; }
+    textarea{ height:120px; }
+  }
+  @media (max-width:480px){
+    h2,h3{ font-size:1rem; }
+    textarea{ height:120px; font-size:0.9rem; }
+    #output{ font-size:0.85rem; }
+    .page-btn{ padding:8px 12px; font-size:0.9rem; }
+    #copyBtn{ font-size:0.95rem; }
+    .input-buttons{ flex-direction:column; }
+    .input-buttons button{ flex:unset; width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<h2>Masukkan Link Shopee</h2>
+<textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
+<div class="input-buttons">
+  <button id="ambilLinksBtn">Ambil dari satu.txt</button>
+  <button id="clearInputLinksBtn">Clear Input Links</button>
+  <button id="copyInputLinksBtn">Copy Input Links</button>
+  <button id="hapusDuplikatBtn">Hapus Duplikat Sekarang</button>
+</div>
+
+<h3>List File TXT (untuk Input Links)</h3>
+<select id="fileDropdown">
+  <option value="">-- Pilih File TXT --</option>
+  <option value="jalb.txt">jalb.txt</option>
+  <option value="rano.txt">rano.txt</option>
+  <option value="indah.txt">indah.txt</option>
+  <option value="rini.txt">rini.txt</option>
+  <option value="nurbad.txt">nurbad.txt</option>
+</select>
+<div class="input-buttons">
+  <button id="ambilFileListLinksBtn">Ambil ke Input Links</button>
+</div>
+
+<div class="sponsor">
+  Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
+</div>
+
+<div id="stats"></div>
+
+<h3>Output (akun 1)</h3>
+<div id="output"></div>
+<button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
+
+<div class="pagination" id="pagination"></div>
+
+<script>
+const MAX_PER_PAGE = 100;
+let allPages = [];
+let currentPage = 1;
+
+const inputLinksEl = document.getElementById('inputLinks');
+const statsEl = document.getElementById('stats');
+const outputEl = document.getElementById('output');
+const paginationEl = document.getElementById('pagination');
+
+/* Restore localStorage */
+window.addEventListener('load', () => {
+  const savedInput = localStorage.getItem('inputList');
+  if (savedInput) inputLinksEl.value = savedInput;
+  processLinks();
+});
+
+/* Save input automatically */
+inputLinksEl.addEventListener('input', () => {
+  localStorage.setItem('inputList', inputLinksEl.value);
+  processLinks();
+});
+
+/* Tombol ambil file dropdown */
+document.getElementById('ambilFileListLinksBtn').addEventListener('click', async () => {
+  const selectedFile = document.getElementById('fileDropdown').value;
+  if (!selectedFile) { alert('Pilih file TXT dulu!'); return; }
+  try {
+    const res = await fetch(selectedFile + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    inputLinksEl.value = text.trim();
+    localStorage.setItem('inputList', inputLinksEl.value);
+    processLinks();
+    alert('Berhasil mengambil ' + selectedFile);
+  } catch (e) {
+    alert('Gagal mengambil ' + selectedFile + ': ' + e.message);
+  }
+});
+
+/* Tombol lain */
+document.getElementById('ambilLinksBtn').addEventListener('click', async () => {
+  try {
+    const res = await fetch('satu.txt?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    inputLinksEl.value = text.trim();
+    localStorage.setItem('inputList', inputLinksEl.value);
+    processLinks();
+    alert('Berhasil mengambil satu.txt');
+  } catch (e) {
+    alert('Gagal mengambil satu.txt: ' + e.message);
+  }
+});
+document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
+  inputLinksEl.value = '';
+  localStorage.removeItem('inputList');
+  processLinks();
+});
+document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
+  const text = inputLinksEl.value.trim();
+  if (!text) return alert('Input kosong!');
+  navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
+});
+document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
+  const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const unique = [...new Set(lines)];
+  inputLinksEl.value = unique.join('\n');
+  localStorage.setItem('inputList', inputLinksEl.value);
+  processLinks();
+  alert('Duplikat dihapus!');
+});
+
+function processLinks() {
+  const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const unique = [...new Set(raw)];
+  const dup = raw.length - unique.length;
+
+  allPages = [];
+  for (let i = 0; i < unique.length; i += MAX_PER_PAGE) {
+    allPages.push(unique.slice(i, i + MAX_PER_PAGE));
+  }
+  currentPage = Math.min(currentPage, allPages.length) || 1;
+  renderStats(raw.length, unique.length, dup);
+  renderPagination();
+  showPage(currentPage);
+}
+
+function renderStats(total, uniq, dup) {
+  statsEl.textContent =
+    `Total link diinput: ${total}\n` +
+    `Link unik: ${uniq}\n` +
+    `Duplikat dihapus: ${dup}\n` +
+    `Total halaman: ${allPages.length}`;
+}
+
+function showPage(page) {
+  if (!allPages.length) { outputEl.style.display = 'none'; return; }
+  currentPage = page;
+  outputEl.innerHTML = allPages[page - 1]
+    .map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
+  outputEl.style.display = 'block';
+  highlightActivePage();
+}
+
+function renderPagination() {
+  paginationEl.innerHTML = '';
+  for (let i = 1; i <= allPages.length; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.className = 'page-btn';
+    if (i === currentPage) btn.classList.add('active');
+    btn.onclick = () => showPage(i);
+    paginationEl.appendChild(btn);
+  }
+}
+
+function highlightActivePage() {
+  document.querySelectorAll('.page-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.textContent) === currentPage);
+  });
+}
+
+function copyToClipboard() {
+  if (!allPages.length) return alert('Tidak ada link!');
+  const text = allPages[currentPage - 1].join('\n');
+  navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
+}
+</script>
+</body>
+</html>
