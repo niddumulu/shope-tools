@@ -43,7 +43,6 @@
 <h2>Masukkan Link Shopee</h2>
 <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
 <div class="input-buttons">
-  <button id="ambilLinksBtn">Ambil dari satu.txt</button>
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
   <button id="hapusDuplikatBtn">Hapus Duplikat Sekarang</button>
@@ -114,20 +113,7 @@ document.getElementById('ambilFileListLinksBtn').addEventListener('click', async
   }
 });
 
-/* Tombol lain */
-document.getElementById('ambilLinksBtn').addEventListener('click', async () => {
-  try {
-    const res = await fetch('satu.txt?t=' + Date.now(), { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    inputLinksEl.value = text.trim();
-    localStorage.setItem('inputList', inputLinksEl.value);
-    processLinks();
-    alert('Berhasil mengambil satu.txt');
-  } catch (e) {
-    alert('Gagal mengambil satu.txt: ' + e.message);
-  }
-});
+/* Tombol clear, copy, hapus duplikat */
 document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
   inputLinksEl.value = '';
   localStorage.removeItem('inputList');
@@ -147,6 +133,7 @@ document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
   alert('Duplikat dihapus!');
 });
 
+/* Fungsi utama */
 function processLinks() {
   const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(raw)];
