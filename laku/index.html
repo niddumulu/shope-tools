@@ -3,11 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Link Shopee Pagination</title>
+<title>Produk Laku di Live MadGazan</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-left:auto; margin-right:auto; }
-  h2,h3 { font-size: 1.2rem; margin-bottom: 8px; }
-  textarea { width:100%; height:150px; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
+  h1,h2,h3 { color:#b36b00; text-align:center; }
+  h1 { font-size:1.6rem; margin-bottom:5px; }
+  h2 { font-size:1.2rem; margin-bottom:10px; }
+  textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  textarea { height:150px; }
   #output { display:none; margin-top:10px; }
   #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
   #output a:hover { text-decoration:underline; }
@@ -22,12 +25,13 @@
   .input-buttons button:hover { background:#eee; }
   #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
+  footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
   @media (max-width:720px){
     body { padding:12px; }
     textarea{ height:120px; }
   }
   @media (max-width:480px){
-    h2,h3{ font-size:1rem; }
+    h1,h2,h3{ font-size:1rem; }
     textarea{ height:120px; font-size:0.9rem; }
     #output{ font-size:0.85rem; }
     .page-btn{ padding:8px 12px; font-size:0.9rem; }
@@ -39,214 +43,153 @@
 </head>
 <body>
 
-<h2>Masukkan Link Shopee</h2>
-<textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
+<h1>Produk Laku di Live MadGazan</h1>
+<h2>Manajemen Shopee Live</h2>
+
+<textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
+
 <div class="input-buttons">
-  <button id="ambilLinksBtn">Ambil dari satu.txt</button>
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
   <button id="hapusDuplikatBtn">Hapus Duplikat Sekarang</button>
 </div>
 
-<h3>List File TXT (untuk Input Links)</h3>
-<textarea id="fileListLinks" placeholder="contoh:
-satu.txt
-dua.txt
-tiga.txt"></textarea>
+<h3>Daftar File TXT Produk</h3>
+<select id="fileDropdown">
+  <option value="">-- Pilih File TXT --</option>
+  <option value="jalb.txt">jalb.txt</option>
+  <option value="rano.txt">rano.txt</option>
+  <option value="indah.txt">indah.txt</option>
+  <option value="rini.txt">rini.txt</option>
+  <option value="nurbad.txt">nurbad.txt</option>
+</select>
 <div class="input-buttons">
-  <button id="ambilFileListLinksBtn">Ambil Semua ke Input Links</button>
-  <button id="clearFileListBtn">Clear List File</button>
-  <button id="copyFileListBtn">Copy List File</button>
+  <button id="ambilFileListLinksBtn">Ambil ke Input Links</button>
 </div>
 
 <div class="sponsor">
-  Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
+  Disponsori oleh <strong>Kios Tembakau MadGazan</strong><br>
+  Solusi hemat untuk perokok bijak 🚬💨
 </div>
 
 <div id="stats"></div>
 
-<h3>Output (akun 1)</h3>
+<h3>Output (Produk Siap Live)</h3>
 <div id="output"></div>
 <button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
 
 <div class="pagination" id="pagination"></div>
 
-<script>
-/* Config */
-const MAX_PER_PAGE = 100;
-const STORAGE_KEY_INPUT = 'inputList';
-const STORAGE_KEY_FILELIST = 'fileListLinks';
+<footer>
+  © 2025 Kios Tembakau MadGazan — Semua Hak Dilindungi
+</footer>
 
-/* State */
+<script>
+const MAX_PER_PAGE = 100;
 let allPages = [];
 let currentPage = 1;
 
-/* Elements */
 const inputLinksEl = document.getElementById('inputLinks');
-const fileListLinksEl = document.getElementById('fileListLinks');
 const statsEl = document.getElementById('stats');
 const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
+const dropdownEl = document.getElementById('fileDropdown');
 
-/* --- LocalStorage: restore on load --- */
+/* Restore localStorage */
 window.addEventListener('load', () => {
-  try {
-    const savedInput = localStorage.getItem(STORAGE_KEY_INPUT);
-    const savedFileList = localStorage.getItem(STORAGE_KEY_FILELIST);
-    if (savedInput) inputLinksEl.value = savedInput;
-    if (savedFileList) fileListLinksEl.value = savedFileList;
-  } catch (e) {
-    console.warn('LocalStorage read error', e);
-  }
+  const savedInput = localStorage.getItem('inputList');
+  const savedDropdown = localStorage.getItem('selectedFile');
+  const savedPage = parseInt(localStorage.getItem('currentPage') || '1');
+
+  if (savedInput) inputLinksEl.value = savedInput;
+  if (savedDropdown) dropdownEl.value = savedDropdown;
   processLinks();
+
+  if (savedPage && savedPage <= allPages.length) {
+    currentPage = savedPage;
+    showPage(currentPage);
+  }
 });
 
-/* --- Auto-save on input changes --- */
+/* Simpan input otomatis */
 inputLinksEl.addEventListener('input', () => {
-  try {
-    localStorage.setItem(STORAGE_KEY_INPUT, inputLinksEl.value);
-  } catch (e) {
-    console.warn('LocalStorage write error', e);
-  }
+  localStorage.setItem('inputList', inputLinksEl.value);
   processLinks();
 });
-fileListLinksEl.addEventListener('input', () => {
-  try {
-    localStorage.setItem(STORAGE_KEY_FILELIST, fileListLinksEl.value);
-  } catch (e) {
-    console.warn('LocalStorage write error', e);
-  }
+
+/* Simpan dropdown otomatis */
+dropdownEl.addEventListener('change', () => {
+  localStorage.setItem('selectedFile', dropdownEl.value);
 });
 
-/* --- Button actions --- */
-/* Ambil dari satu.txt (butuh dijalankan lewat server agar fetch sukses) */
-document.getElementById('ambilLinksBtn').addEventListener('click', async () => {
+/* Tombol ambil file dropdown */
+document.getElementById('ambilFileListLinksBtn').addEventListener('click', async () => {
+  const selectedFile = dropdownEl.value;
+  if (!selectedFile) { alert('Pilih file TXT dulu!'); return; }
   try {
-    const res = await fetch('satu.txt?t=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch(selectedFile + '?t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     inputLinksEl.value = text.trim();
-    try { localStorage.setItem(STORAGE_KEY_INPUT, inputLinksEl.value); } catch(e){}
+    localStorage.setItem('inputList', inputLinksEl.value);
     processLinks();
-    alert('Berhasil mengambil satu.txt');
+    alert('Berhasil mengambil ' + selectedFile);
   } catch (e) {
-    alert('Gagal mengambil satu.txt: ' + e.message);
+    alert('Gagal mengambil ' + selectedFile + ': ' + e.message);
   }
 });
 
-/* Clear / Copy input links */
+/* Tombol lain */
 document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
   inputLinksEl.value = '';
-  try { localStorage.removeItem(STORAGE_KEY_INPUT); } catch(e){}
+  localStorage.removeItem('inputList');
   processLinks();
 });
 document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
   const text = inputLinksEl.value.trim();
-  if (!text) { alert('Input kosong!'); return; }
-  navigator.clipboard.writeText(text).then(() => alert('Isi input berhasil disalin!')).catch(() => alert('Gagal menyalin!'));
+  if (!text) return alert('Input kosong!');
+  navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
 });
-
-/* Tombol hapus duplikat manual */
 document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
   const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(lines)];
-  const duplicates = lines.length - unique.length;
   inputLinksEl.value = unique.join('\n');
-  try { localStorage.setItem(STORAGE_KEY_INPUT, inputLinksEl.value); } catch(e){}
+  localStorage.setItem('inputList', inputLinksEl.value);
   processLinks();
-  alert(`Berhasil hapus ${duplicates} duplikat!`);
+  alert('Duplikat dihapus!');
 });
 
-/* Ambil semua file yang ada di fileListLinks */
-document.getElementById('ambilFileListLinksBtn').addEventListener('click', () => {
-  loadFromFileList(fileListLinksEl, inputLinksEl);
-});
-
-/* Clear / Copy file list */
-document.getElementById('clearFileListBtn').addEventListener('click', () => {
-  fileListLinksEl.value = '';
-  try { localStorage.removeItem(STORAGE_KEY_FILELIST); } catch(e){}
-});
-document.getElementById('copyFileListBtn').addEventListener('click', () => {
-  const text = fileListLinksEl.value.trim();
-  if (!text) { alert('List file kosong!'); return; }
-  navigator.clipboard.writeText(text).then(() => alert('List file berhasil disalin!')).catch(() => alert('Gagal menyalin!'));
-});
-
-/* Copy current page links */
-function copyToClipboard() {
-  if (!allPages.length) { alert('Tidak ada link untuk disalin!'); return; }
-  const text = allPages[currentPage - 1].join('\n');
-  navigator.clipboard.writeText(text).then(() => alert(`Link di halaman ${currentPage} berhasil disalin!`)).catch(() => alert('Gagal menyalin!'));
-}
-
-/* --- Helper: load from file list --- */
-async function loadFromFileList(listTextarea, targetTextarea) {
-  const list = listTextarea.value.split('\n').map(s => s.trim()).filter(Boolean);
-  if (!list.length) { alert('List file kosong!'); return; }
-
-  let combined = [];
-  for (let fname of list) {
-    try {
-      const res = await fetch(fname + '?t=' + Date.now(), { cache: 'no-store' });
-      if (!res.ok) { console.warn('Skip (not found):', fname); continue; }
-      const text = await res.text();
-      const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
-      combined.push(...rows);
-    } catch (e) {
-      console.warn('Gagal fetch', fname, e);
-    }
-  }
-  targetTextarea.value = combined.join('\n');
-  try { localStorage.setItem(STORAGE_KEY_INPUT, targetTextarea.value); } catch(e){}
-  processLinks();
-}
-
-/* --- Core processing & pagination (hapus duplikat otomatis) --- */
+/* Fungsi utama */
 function processLinks() {
   const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
-  const uniqueLinks = [...new Set(raw)];
-  const duplicateCount = raw.length - uniqueLinks.length;
+  const unique = [...new Set(raw)];
+  const dup = raw.length - unique.length;
 
   allPages = [];
-  for (let i = 0; i < uniqueLinks.length; i += MAX_PER_PAGE) {
-    allPages.push(uniqueLinks.slice(i, i + MAX_PER_PAGE));
+  for (let i = 0; i < unique.length; i += MAX_PER_PAGE) {
+    allPages.push(unique.slice(i, i + MAX_PER_PAGE));
   }
+  if (currentPage > allPages.length) currentPage = 1;
 
-  if (allPages.length === 0) {
-    currentPage = 1;
-  } else {
-    currentPage = Math.min(currentPage, allPages.length);
-  }
-
-  renderStats(raw.length, uniqueLinks.length, duplicateCount);
+  renderStats(raw.length, unique.length, dup);
   renderPagination();
   showPage(currentPage);
 }
 
-/* --- UI renderers --- */
-function renderStats(totalInput, totalUnique, duplicateCount) {
+function renderStats(total, uniq, dup) {
   statsEl.textContent =
-    `Total link diinput: ${totalInput}\n` +
-    `Link unik (setelah hapus duplikat): ${totalUnique}\n` +
-    `Duplikat dihapus: ${duplicateCount}\n` +
+    `Total link diinput: ${total}\n` +
+    `Link unik: ${uniq}\n` +
+    `Duplikat dihapus: ${dup}\n` +
     `Total halaman: ${allPages.length}`;
 }
 
 function showPage(page) {
-  if (!allPages.length) {
-    outputEl.innerHTML = '';
-    outputEl.style.display = 'none';
-    return;
-  }
-  if (page < 1) page = 1;
-  if (page > allPages.length) page = allPages.length;
+  if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
-  const pageLinks = allPages[page - 1];
-  outputEl.innerHTML = pageLinks.map(l => {
-    const safe = l.replace(/"/g, '&quot;');
-    return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
-  }).join('');
+  localStorage.setItem('currentPage', page);
+  outputEl.innerHTML = allPages[page - 1]
+    .map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
   outputEl.style.display = 'block';
   highlightActivePage();
 }
@@ -258,18 +201,22 @@ function renderPagination() {
     btn.textContent = i;
     btn.className = 'page-btn';
     if (i === currentPage) btn.classList.add('active');
-    btn.addEventListener('click', () => showPage(i));
+    btn.onclick = () => showPage(i);
     paginationEl.appendChild(btn);
   }
 }
 
 function highlightActivePage() {
   document.querySelectorAll('.page-btn').forEach(btn => {
-    btn.classList.remove('active');
-    if (parseInt(btn.textContent, 10) === currentPage) btn.classList.add('active');
+    btn.classList.toggle('active', parseInt(btn.textContent) === currentPage);
   });
 }
-</script>
 
+function copyToClipboard() {
+  if (!allPages.length) return alert('Tidak ada link!');
+  const text = allPages[currentPage - 1].join('\n');
+  navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
+}
+</script>
 </body>
 </html>
