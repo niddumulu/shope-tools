@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -107,26 +108,13 @@ const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
 
-/* === IDENTIFIER UNIK === */
-if (!localStorage.getItem('madgazan_unique_id')) {
-  const uid = Date.now().toString(36) + Math.random().toString(36).substring(2,10);
-  localStorage.setItem('madgazan_unique_id', uid);
-}
-const UNIQUE_ID = localStorage.getItem('madgazan_unique_id');
-
 /* === Penyimpanan & Pemulihan === */
-function getStorageKey() {
-  const base = location.hostname + location.pathname.replace(/\W+/g, '_');
-  const filePart = dropdownEl.value || 'default';
-  return 'appData_' + base + '_' + filePart + '_' + UNIQUE_ID;
-}
-
+function getStorageKey() { return 'appData_' + (dropdownEl.value || 'default'); }
 function saveAppData() {
   const key = getStorageKey();
-  const data = { inputList: inputLinksEl.value, currentPage, savedAt: new Date().toISOString() };
+  const data = { inputList: inputLinksEl.value, currentPage };
   localStorage.setItem(key, JSON.stringify(data));
 }
-
 function loadAppData() {
   const key = getStorageKey();
   const data = JSON.parse(localStorage.getItem(key) || '{}');
@@ -136,12 +124,12 @@ function loadAppData() {
 
 /* === Saat Halaman Dibuka === */
 window.addEventListener('load', () => {
-  const savedDropdown = localStorage.getItem('selectedFile_' + UNIQUE_ID);
+  const savedDropdown = localStorage.getItem('selectedFile');
   if (savedDropdown) dropdownEl.value = savedDropdown;
   loadAppData(); processLinks(); showPage(currentPage);
 });
 dropdownEl.addEventListener('change', () => {
-  localStorage.setItem('selectedFile_' + UNIQUE_ID, dropdownEl.value);
+  localStorage.setItem('selectedFile', dropdownEl.value);
   loadAppData(); processLinks(); showPage(currentPage);
 });
 inputLinksEl.addEventListener('input', () => { processLinks(); saveAppData(); });
@@ -256,8 +244,7 @@ async function syncAllFiles() {
       const res = await fetch(opt.value + '?t=' + Date.now());
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const text = await res.text();
-      const key = 'appData_' + location.hostname + '_' + opt.value + '_' + UNIQUE_ID;
-      localStorage.setItem(key, JSON.stringify({ inputList: text.trim(), currentPage: 1 }));
+      localStorage.setItem('appData_' + opt.value, JSON.stringify({ inputList: text.trim(), currentPage: 1 }));
       success++; lastText = text.trim(); lastFile = opt.value;
     } catch { fail++; }
   }
@@ -265,13 +252,14 @@ async function syncAllFiles() {
   if (lastText) {
     inputLinksEl.value = lastText;
     dropdownEl.value = lastFile;
-    localStorage.setItem('selectedFile_' + UNIQUE_ID, lastFile);
+    localStorage.setItem('selectedFile', lastFile);
     processLinks(); showPage(1);
   }
 
   alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
 }
 
+/* === Tombol === */
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
 </script>
 </body>
