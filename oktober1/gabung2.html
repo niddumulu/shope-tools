@@ -27,6 +27,19 @@
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
   .backup-area { margin-top:25px; padding:12px; background:#fffbe6; border-radius:8px; border:1px solid #ffd42a; text-align:center; }
+  @media (max-width:720px){
+    body { padding:12px; }
+    textarea{ height:120px; }
+  }
+  @media (max-width:480px){
+    h1,h2,h3{ font-size:1rem; }
+    textarea{ height:120px; font-size:0.9rem; }
+    #output{ font-size:0.85rem; }
+    .page-btn{ padding:8px 12px; font-size:0.9rem; }
+    #copyBtn{ font-size:0.95rem; }
+    .input-buttons{ flex-direction:column; }
+    .input-buttons button{ flex:unset; width:100%; }
+  }
 </style>
 </head>
 <body>
@@ -79,8 +92,7 @@
   <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
 
   <!-- Tombol Singkron Semua File -->
-  <input type="file" id="syncAllFilesInput" accept=".txt" multiple style="display:none">
-  <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Singkron Semua File TXT (Offline)</button>
+  <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Singkron Semua File TXT</button>
 </div>
 
 <footer>
@@ -106,7 +118,10 @@ function getStorageKey() {
 }
 function saveAppData() {
   const key = getStorageKey();
-  const data = { inputList: inputLinksEl.value, currentPage: currentPage };
+  const data = {
+    inputList: inputLinksEl.value,
+    currentPage: currentPage
+  };
   localStorage.setItem(key, JSON.stringify(data));
 }
 function loadAppData() {
@@ -139,7 +154,7 @@ inputLinksEl.addEventListener('input', () => {
   saveAppData();
 });
 
-/* Tombol ambil file dropdown (online fetch) */
+/* Tombol ambil file dropdown */
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', async () => {
   const selectedFile = dropdownEl.value;
   if (!selectedFile) { alert('Pilih file TXT dulu!'); return; }
@@ -277,38 +292,42 @@ function resetLocalStorage() {
   }
 }
 
-/* === 🔄 FUNGSI SINGKRON SEMUA FILE (OFFLINE MODE) === */
-document.getElementById('syncAllBtn').addEventListener('click', () => {
-  document.getElementById('syncAllFilesInput').click();
-});
+/* === 🔄 FUNGSI SINGKRON SEMUA FILE === */
+document.getElementById('syncAllBtn').addEventListener('click', async () => {
+  const options = Array.from(dropdownEl.options).filter(o => o.value);
+  if (!options.length) return alert('Tidak ada file di dropdown.');
 
-document.getElementById('syncAllFilesInput').addEventListener('change', (event) => {
-  const files = Array.from(event.target.files);
-  if (!files.length) return alert('Tidak ada file yang dipilih.');
+  if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
 
-  let success = 0, fail = 0, lastFile = '', lastText = '';
+  let success = 0, fail = 0, lastText = '', lastFile = '';
 
-  files.forEach((file, idx) => {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const text = e.target.result.trim();
-      const key = 'appData_' + file.name;
-      localStorage.setItem(key, JSON.stringify({ inputList: text, currentPage: 1 }));
+  for (const opt of options) {
+    try {
+      const res = await fetch(opt.value + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const key = 'appData_' + opt.value;
+      const data = { inputList: text.trim(), currentPage: 1 };
+      localStorage.setItem(key, JSON.stringify(data));
       success++;
-      lastFile = file.name;
-      lastText = text;
+      lastText = text.trim();
+      lastFile = opt.value;
+      console.log(`✅ ${opt.value} berhasil disinkronkan.`);
+    } catch (e) {
+      console.warn(`❌ Gagal ambil ${opt.value}:`, e);
+      fail++;
+    }
+  }
 
-      if (idx === files.length - 1) {
-        inputLinksEl.value = lastText;
-        dropdownEl.value = ''; // agar tidak tumpang tindih
-        processLinks();
-        showPage(1);
-        alert(`✅ Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir: ${lastFile}`);
-      }
-    };
-    reader.onerror = () => fail++;
-    reader.readAsText(file);
-  });
+  if (lastText) {
+    inputLinksEl.value = lastText;
+    dropdownEl.value = lastFile;
+    localStorage.setItem('selectedFile', lastFile);
+    processLinks();
+    showPage(1);
+  }
+
+  alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
 });
 </script>
 </body>
