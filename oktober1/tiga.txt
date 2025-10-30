@@ -1,4 +1,4 @@
-###3.5###
+
 https://shopee.co.id/product/53881629/1971309016
 https://shopee.co.id/product/1393872140/25395426368
 https://shopee.co.id/product/110782560/27920352756
@@ -498,7 +498,7 @@ https://shopee.co.id/product/625130886/28978633819
 https://shopee.co.id/product/1086788381/22882906655
 https://shopee.co.id/product/29618259/19272900736
 https://shopee.co.id/product/1015146586/26620690150
-###3.6###
+
 https://shopee.co.id/product/145860858/24793190289
 https://shopee.co.id/product/110782560/27509904928
 https://shopee.co.id/product/110782560/27459915450
@@ -999,7 +999,7 @@ https://shopee.co.id/product/1403713224/24494084634
 https://shopee.co.id/product/43226748/19482193439
 https://shopee.co.id/product/37248082/9767603464
 https://shopee.co.id/product/1436664024/27272020680
-###3.7###
+
 https://shopee.co.id/product/1095463968/23158015554
 https://shopee.co.id/product/1393872140/43352320995
 https://shopee.co.id/product/37248082/2182641380
@@ -1500,7 +1500,6 @@ https://shopee.co.id/product/1086788381/23584556135
 https://shopee.co.id/product/1393872140/27926655488
 https://shopee.co.id/product/8853105/25491777221
 https://shopee.co.id/product/8853105/24141768424
-###3.8###
 https://shopee.co.id/product/110782560/2905333305
 https://shopee.co.id/product/110782560/3342001632
 https://shopee.co.id/product/70706960/18676472881
