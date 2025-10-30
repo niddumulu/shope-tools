@@ -1,126 +1,168 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LocalStorage Test - File, Page & InputList</title>
+<title>Produk Laku di Live MadGazan</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
+  h1,h2,h3 { color:#b36b00; text-align:center; }
+  textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  textarea { height:150px; }
+  #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; }
+  .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .page-btn { padding:8px 12px; border:1px solid #ccc; border-radius:6px; cursor:pointer; }
+  .active { background:#ffd42a; color:#b36b00; font-weight:bold; border-color:#b36b00; }
+</style>
 </head>
 <body>
-  <h2>📁 Tes LocalStorage (selectedFile + currentPage + inputList)</h2>
 
-  <label for="fileSelect">Pilih File:</label>
-  <select id="fileSelect">
-    <option value="rini.txt">rini.txt</option>
-    <option value="jalb.txt">jalb.txt</option>
-    <option value="madgaz.txt">madgaz.txt</option>
-  </select>
+<h1>Produk Laku di Live MadGazan</h1>
 
-  <hr>
+<textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee..."></textarea>
 
-  <div>
-    <p><b>Halaman Saat Ini:</b> <span id="pageNum">1</span></p>
-    <button id="prevBtn">⬅ Sebelumnya</button>
-    <button id="nextBtn">Berikutnya ➡</button>
-  </div>
+<div>
+  <button id="hapusDuplikatBtn">Hapus Duplikat</button>
+  <button id="clearInputLinksBtn">Clear</button>
+</div>
 
-  <hr>
+<h3>Pilih File</h3>
+<select id="fileDropdown">
+  <option value="">-- Pilih File TXT --</option>
+  <option value="jalb.txt">jalb.txt</option>
+  <option value="rano.txt">rano.txt</option>
+  <option value="indah.txt">indah.txt</option>
+  <option value="rini.txt">rini.txt</option>
+  <option value="nurbad.txt">nurbad.txt</option>
+</select>
 
-  <h3>Input List:</h3>
-  <ul id="listContainer"></ul>
+<div id="stats"></div>
+<div id="output"></div>
+<div id="pagination"></div>
 
-  <input type="text" id="newItem" placeholder="Masukkan link...">
-  <button id="addBtn">Tambah</button>
-  <button id="clearBtn">Hapus Semua</button>
+<script>
+const MAX_PER_PAGE = 100;
+let allPages = [];
+let currentPage = 1;
+let currentFile = '';
 
-  <script>
-    const fileSelect = document.getElementById('fileSelect');
-    const pageNum = document.getElementById('pageNum');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const listContainer = document.getElementById('listContainer');
-    const newItem = document.getElementById('newItem');
-    const addBtn = document.getElementById('addBtn');
-    const clearBtn = document.getElementById('clearBtn');
+const inputLinksEl = document.getElementById('inputLinks');
+const dropdownEl = document.getElementById('fileDropdown');
+const outputEl = document.getElementById('output');
+const paginationEl = document.getElementById('pagination');
+const statsEl = document.getElementById('stats');
 
-    // Inisialisasi
-    let selectedFile = localStorage.getItem('selectedFile') || fileSelect.value;
-    fileSelect.value = selectedFile;
+/* === Restore data saat halaman dibuka === */
+window.addEventListener('load', () => {
+  const savedFile = localStorage.getItem('selectedFile');
+  if (savedFile) {
+    currentFile = savedFile;
+    dropdownEl.value = currentFile;
+    restoreDataForFile(currentFile);
+  }
+});
 
-    function getKey(base) {
-      return `${base}_${selectedFile}`;
-    }
+/* === Ganti file dropdown === */
+dropdownEl.addEventListener('change', () => {
+  saveDataForFile(currentFile); // simpan dulu file lama
+  currentFile = dropdownEl.value;
+  localStorage.setItem('selectedFile', currentFile);
+  restoreDataForFile(currentFile);
+});
 
-    function loadData() {
-      const savedPage = localStorage.getItem(getKey('currentPage'));
-      const savedList = JSON.parse(localStorage.getItem(getKey('inputList')) || '[]');
+/* === Simpan data input setiap ketik === */
+inputLinksEl.addEventListener('input', () => {
+  if (!currentFile) return;
+  localStorage.setItem('inputList_' + currentFile, inputLinksEl.value);
+  processLinks();
+});
 
-      pageNum.textContent = savedPage || 1;
-      renderList(savedList);
-    }
+/* === Tombol hapus duplikat === */
+document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
+  const lines = inputLinksEl.value.split('\n').map(x=>x.trim()).filter(Boolean);
+  const unique = [...new Set(lines)];
+  inputLinksEl.value = unique.join('\n');
+  if (currentFile)
+    localStorage.setItem('inputList_' + currentFile, inputLinksEl.value);
+  processLinks();
+});
 
-    function savePage(page) {
-      localStorage.setItem(getKey('currentPage'), page);
-    }
+/* === Tombol clear === */
+document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
+  inputLinksEl.value = '';
+  if (currentFile)
+    localStorage.removeItem('inputList_' + currentFile);
+  processLinks();
+});
 
-    function saveList(list) {
-      localStorage.setItem(getKey('inputList'), JSON.stringify(list));
-    }
+/* === Fungsi pemrosesan utama === */
+function processLinks() {
+  const lines = inputLinksEl.value.split('\n').map(x=>x.trim()).filter(Boolean);
+  const unique = [...new Set(lines)];
+  const dup = lines.length - unique.length;
+  allPages = [];
+  for (let i=0; i<unique.length; i+=MAX_PER_PAGE)
+    allPages.push(unique.slice(i, i+MAX_PER_PAGE));
 
-    function renderList(list) {
-      listContainer.innerHTML = '';
-      list.forEach((item, i) => {
-        const li = document.createElement('li');
-        li.textContent = `${i + 1}. ${item}`;
-        listContainer.appendChild(li);
-      });
-    }
+  renderStats(lines.length, unique.length, dup);
+  renderPagination();
+  const savedPage = parseInt(localStorage.getItem('currentPage_' + currentFile) || '1');
+  showPage(savedPage);
+}
 
-    // Ganti file
-    fileSelect.addEventListener('change', () => {
-      selectedFile = fileSelect.value;
-      localStorage.setItem('selectedFile', selectedFile);
-      loadData();
-    });
+/* === Render info === */
+function renderStats(total, uniq, dup) {
+  statsEl.textContent = `Total: ${total} | Unik: ${uniq} | Duplikat: ${dup} | Halaman: ${allPages.length}`;
+}
 
-    // Navigasi halaman
-    prevBtn.addEventListener('click', () => {
-      let page = parseInt(pageNum.textContent);
-      if (page > 1) {
-        page--;
-        pageNum.textContent = page;
-        savePage(page);
-      }
-    });
+/* === Tampilkan halaman tertentu === */
+function showPage(page) {
+  if (!allPages.length) { outputEl.innerHTML = ''; paginationEl.innerHTML = ''; return; }
+  if (page < 1) page = 1;
+  if (page > allPages.length) page = allPages.length;
+  currentPage = page;
+  if (currentFile)
+    localStorage.setItem('currentPage_' + currentFile, page);
+  outputEl.innerHTML = allPages[page - 1].map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
+  highlightActivePage();
+}
 
-    nextBtn.addEventListener('click', () => {
-      let page = parseInt(pageNum.textContent);
-      page++;
-      pageNum.textContent = page;
-      savePage(page);
-    });
+/* === Render pagination === */
+function renderPagination() {
+  paginationEl.innerHTML = '';
+  for (let i = 1; i <= allPages.length; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.className = 'page-btn';
+    if (i === currentPage) btn.classList.add('active');
+    btn.onclick = () => showPage(i);
+    paginationEl.appendChild(btn);
+  }
+}
 
-    // Tambah input
-    addBtn.addEventListener('click', () => {
-      const value = newItem.value.trim();
-      if (value) {
-        const list = JSON.parse(localStorage.getItem(getKey('inputList')) || '[]');
-        list.push(value);
-        saveList(list);
-        renderList(list);
-        newItem.value = '';
-      }
-    });
+/* === Highlight aktif === */
+function highlightActivePage() {
+  document.querySelectorAll('.page-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.textContent) === currentPage);
+  });
+}
 
-    // Hapus semua input
-    clearBtn.addEventListener('click', () => {
-      if (confirm('Yakin ingin menghapus semua item?')) {
-        localStorage.removeItem(getKey('inputList'));
-        renderList([]);
-      }
-    });
+/* === Simpan dan restore data berdasarkan file === */
+function saveDataForFile(file) {
+  if (!file) return;
+  localStorage.setItem('inputList_' + file, inputLinksEl.value);
+  localStorage.setItem('currentPage_' + file, currentPage);
+}
 
-    // Load data awal
-    loadData();
-  </script>
+function restoreDataForFile(file) {
+  if (!file) return;
+  const inputData = localStorage.getItem('inputList_' + file) || '';
+  const savedPage = parseInt(localStorage.getItem('currentPage_' + file) || '1');
+  inputLinksEl.value = inputData;
+  currentPage = savedPage;
+  processLinks();
+  showPage(currentPage);
+}
+</script>
 </body>
 </html>
