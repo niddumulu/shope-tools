@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LocalStorage Test - File, Page & InputList</title>
+</head>
+<body>
+  <h2>📁 Tes LocalStorage (selectedFile + currentPage + inputList)</h2>
+
+  <label for="fileSelect">Pilih File:</label>
+  <select id="fileSelect">
+    <option value="rini.txt">rini.txt</option>
+    <option value="jalb.txt">jalb.txt</option>
+    <option value="madgaz.txt">madgaz.txt</option>
+  </select>
+
+  <hr>
+
+  <div>
+    <p><b>Halaman Saat Ini:</b> <span id="pageNum">1</span></p>
+    <button id="prevBtn">⬅ Sebelumnya</button>
+    <button id="nextBtn">Berikutnya ➡</button>
+  </div>
+
+  <hr>
+
+  <h3>Input List:</h3>
+  <ul id="listContainer"></ul>
+
+  <input type="text" id="newItem" placeholder="Masukkan link...">
+  <button id="addBtn">Tambah</button>
+  <button id="clearBtn">Hapus Semua</button>
+
+  <script>
+    const fileSelect = document.getElementById('fileSelect');
+    const pageNum = document.getElementById('pageNum');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const listContainer = document.getElementById('listContainer');
+    const newItem = document.getElementById('newItem');
+    const addBtn = document.getElementById('addBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    // Inisialisasi
+    let selectedFile = localStorage.getItem('selectedFile') || fileSelect.value;
+    fileSelect.value = selectedFile;
+
+    function getKey(base) {
+      return `${base}_${selectedFile}`;
+    }
+
+    function loadData() {
+      const savedPage = localStorage.getItem(getKey('currentPage'));
+      const savedList = JSON.parse(localStorage.getItem(getKey('inputList')) || '[]');
+
+      pageNum.textContent = savedPage || 1;
+      renderList(savedList);
+    }
+
+    function savePage(page) {
+      localStorage.setItem(getKey('currentPage'), page);
+    }
+
+    function saveList(list) {
+      localStorage.setItem(getKey('inputList'), JSON.stringify(list));
+    }
+
+    function renderList(list) {
+      listContainer.innerHTML = '';
+      list.forEach((item, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i + 1}. ${item}`;
+        listContainer.appendChild(li);
+      });
+    }
+
+    // Ganti file
+    fileSelect.addEventListener('change', () => {
+      selectedFile = fileSelect.value;
+      localStorage.setItem('selectedFile', selectedFile);
+      loadData();
+    });
+
+    // Navigasi halaman
+    prevBtn.addEventListener('click', () => {
+      let page = parseInt(pageNum.textContent);
+      if (page > 1) {
+        page--;
+        pageNum.textContent = page;
+        savePage(page);
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      let page = parseInt(pageNum.textContent);
+      page++;
+      pageNum.textContent = page;
+      savePage(page);
+    });
+
+    // Tambah input
+    addBtn.addEventListener('click', () => {
+      const value = newItem.value.trim();
+      if (value) {
+        const list = JSON.parse(localStorage.getItem(getKey('inputList')) || '[]');
+        list.push(value);
+        saveList(list);
+        renderList(list);
+        newItem.value = '';
+      }
+    });
+
+    // Hapus semua input
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Yakin ingin menghapus semua item?')) {
+        localStorage.removeItem(getKey('inputList'));
+        renderList([]);
+      }
+    });
+
+    // Load data awal
+    loadData();
+  </script>
+</body>
+</html>
