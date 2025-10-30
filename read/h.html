@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Penampil Kode HTML Langsung</title>
+<title>Penampil Kode HTML Langsung + Auto Save</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -28,19 +28,11 @@
     resize: vertical;
     box-sizing: border-box;
   }
-  button {
-    margin-top: 12px;
-    padding: 12px 20px;
-    background-color: #ffd42a;
-    color: #b36b00;
-    font-weight: bold;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    width: 100%;
-  }
-  button:hover {
-    background-color: #e6c72b;
+  .status {
+    font-size: 0.9rem;
+    color: #888;
+    text-align: right;
+    margin-top: 4px;
   }
   iframe {
     width: 100%;
@@ -55,22 +47,55 @@
 <body>
 
 <h1>🧩 Penampil Kode HTML Langsung</h1>
-<p>Tempelkan kode HTML di bawah ini, lalu klik <strong>"Tampilkan Hasil"</strong> untuk melihat tampilannya.</p>
+<p>Tempelkan kode HTML di bawah ini — hasilnya langsung muncul otomatis di bawah.</p>
 
 <textarea id="htmlInput" placeholder="Tempelkan kode HTML di sini..."></textarea>
-<button onclick="jalankanHTML()">Tampilkan Hasil</button>
+<div class="status" id="status">💾 Menunggu input...</div>
 
 <iframe id="htmlOutput"></iframe>
 
 <script>
+const inputEl = document.getElementById('htmlInput');
+const iframe = document.getElementById('htmlOutput');
+const statusEl = document.getElementById('status');
+const STORAGE_KEY = 'auto_html_sandbox_' + location.pathname.replace(/\W+/g, '_');
+
+// Fungsi menulis HTML ke iframe
 function jalankanHTML() {
-  const kode = document.getElementById('htmlInput').value;
-  const iframe = document.getElementById('htmlOutput');
+  const kode = inputEl.value;
   const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
   doc.write(kode);
   doc.close();
 }
+
+// Auto simpan ke localStorage
+let saveTimeout;
+function simpanAuto() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    localStorage.setItem(STORAGE_KEY, inputEl.value);
+    statusEl.textContent = '✅ Disimpan otomatis pada ' + new Date().toLocaleTimeString();
+  }, 800);
+}
+
+// Saat load halaman — pulihkan data sebelumnya
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    inputEl.value = saved;
+    jalankanHTML();
+    statusEl.textContent = '📂 Dimuat dari penyimpanan lokal';
+  } else {
+    statusEl.textContent = '💾 Belum ada data tersimpan';
+  }
+});
+
+// Jalankan otomatis saat input berubah
+inputEl.addEventListener('input', () => {
+  jalankanHTML();
+  simpanAuto();
+});
 </script>
 
 </body>
