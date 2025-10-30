@@ -27,6 +27,24 @@
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
   .backup-area { margin-top:25px; padding:12px; background:#fffbe6; border-radius:8px; border:1px solid #ffd42a; text-align:center; }
+  .comment-link { 
+    display:block; 
+    margin:25px auto; 
+    text-align:center; 
+  }
+  .comment-link a {
+    display:inline-block;
+    padding:12px 20px;
+    background-color:#ffd42a;
+    color:#b36b00;
+    border-radius:6px;
+    text-decoration:none;
+    font-weight:bold;
+    box-shadow:0 2px 4px rgba(0,0,0,0.1);
+  }
+  .comment-link a:hover {
+    background-color:#e6c72b;
+  }
   @media (max-width:720px){
     body { padding:12px; }
     textarea{ height:120px; }
@@ -91,6 +109,12 @@
   </div>
   <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
   <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Singkron Semua File TXT</button>
+</div>
+
+<!-- 🔗 Tambahan: Link ke halaman komentar -->
+<div class="comment-link">
+  <a href="https://niddumulu.github.io/gazan/comment.html?author=rewar.app&permlink=re-rewarapp-2025218t20112725z" 
+     target="_blank">💬 Kirim Komentar</a>
 </div>
 
 <footer>
