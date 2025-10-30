@@ -52,14 +52,17 @@
     color: #888;
     text-align: right;
     margin-top: 4px;
+    margin-bottom: 10px;
+  }
+  hr {
+    border: none;
+    border-top: 2px solid #ddd;
+    margin: 25px 0 15px 0;
   }
   iframe {
     width: 100%;
-    height: 600px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    margin-top: 20px;
-    background: white;
+    border: none;
+    display: block;
   }
 </style>
 </head>
@@ -78,6 +81,9 @@
 <textarea id="htmlInput" placeholder="Tempelkan kode HTML di sini..."></textarea>
 <div class="status" id="status">💾 Menunggu input...</div>
 
+<hr>
+
+<!-- 🔽 Hasil tampil di bawah (tanpa kotak kecil) -->
 <iframe id="htmlOutput"></iframe>
 
 <script>
@@ -89,13 +95,19 @@ const pasteBtn = document.getElementById('pasteBtn');
 const clearBtn = document.getElementById('clearBtn');
 const STORAGE_KEY = 'auto_html_sandbox_' + location.pathname.replace(/\W+/g, '_');
 
-// 🔹 Fungsi menulis HTML ke iframe
+// 🔹 Fungsi menulis HTML ke iframe + auto sesuaikan tinggi
 function jalankanHTML() {
   const kode = inputEl.value;
   const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
   doc.write(kode);
   doc.close();
+
+  // Tunggu render, lalu atur tinggi sesuai konten
+  setTimeout(() => {
+    const tinggi = doc.body.scrollHeight;
+    iframe.style.height = tinggi + 50 + 'px';
+  }, 100);
 }
 
 // 🔹 Auto simpan ke localStorage
