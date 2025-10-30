@@ -3,117 +3,158 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MadGazan HTML Sandbox</title>
+<title>Penampil Kode HTML Langsung + Auto Save</title>
 <style>
   body {
     font-family: Arial, sans-serif;
     background: #fffef9;
-    margin: 20px;
+    color: #333;
+    padding: 20px;
     max-width: 900px;
-    margin-inline: auto;
+    margin: auto;
   }
   h1 {
     text-align: center;
     color: #b36b00;
-    margin-bottom: 10px;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .toolbar button {
+    background-color: #ffd42a;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: #654321;
+    transition: background 0.2s;
+  }
+  .toolbar button:hover {
+    background-color: #f2c500;
   }
   textarea {
     width: 100%;
-    box-sizing: border-box;
+    height: 300px;
     font-family: monospace;
     font-size: 0.95rem;
     padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 6px;
+    border-radius: 8px;
     resize: vertical;
-    background: #fffff9;
-    min-height: 200px;
+    box-sizing: border-box;
+  }
+  .status {
+    font-size: 0.9rem;
+    color: #888;
+    text-align: right;
+    margin-top: 4px;
   }
   iframe {
     width: 100%;
-    height: 400px;
+    height: 600px;
     border: 1px solid #ccc;
-    margin-top: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
     background: white;
-    border-radius: 6px;
-  }
-  input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    font-size: 1rem;
-    margin-top: 10px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-  }
-  footer {
-    text-align: center;
-    color: #888;
-    font-size: 0.9rem;
-    margin-top: 25px;
   }
 </style>
 </head>
 <body>
 
-<h1>MadGazan HTML Sandbox 🔥</h1>
+<h1>🧩 Penampil Kode HTML Langsung</h1>
+<p>Tempelkan kode HTML di bawah ini — hasilnya langsung muncul otomatis di bawah.</p>
 
-<label for="projectName"><strong>Nama Project / Catatan:</strong></label>
-<input type="text" id="projectName" placeholder="Contoh: Produk Live MadGazan">
+<!-- 🔧 Toolbar tombol -->
+<div class="toolbar">
+  <button id="copyBtn">📋 Salin</button>
+  <button id="pasteBtn">📥 Tempel</button>
+  <button id="clearBtn">🗑️ Hapus</button>
+</div>
 
-<label for="codeInput"><strong>Kode HTML:</strong></label>
-<textarea id="codeInput" placeholder="Tempelkan kode HTML di sini..."></textarea>
+<textarea id="htmlInput" placeholder="Tempelkan kode HTML di sini..."></textarea>
+<div class="status" id="status">💾 Menunggu input...</div>
 
-<h3>Hasil Preview:</h3>
-<iframe id="preview"></iframe>
-
-<footer>© 2025 MadGazan Sandbox — Auto Save & Auto Run</footer>
+<iframe id="htmlOutput"></iframe>
 
 <script>
-const codeInput = document.getElementById('codeInput');
-const projectName = document.getElementById('projectName');
-const preview = document.getElementById('preview');
+const inputEl = document.getElementById('htmlInput');
+const iframe = document.getElementById('htmlOutput');
+const statusEl = document.getElementById('status');
+const copyBtn = document.getElementById('copyBtn');
+const pasteBtn = document.getElementById('pasteBtn');
+const clearBtn = document.getElementById('clearBtn');
+const STORAGE_KEY = 'auto_html_sandbox_' + location.pathname.replace(/\W+/g, '_');
 
-// Fungsi membuat key unik berdasarkan projectName
-function getStorageKey() {
-  const name = projectName.value.trim() || 'default';
-  return 'sandbox_' + name.replace(/\s+/g, '_');
-}
-
-// Auto load saat halaman dibuka
-window.addEventListener('load', () => {
-  const savedName = localStorage.getItem('sandbox_last_project');
-  if (savedName) projectName.value = savedName;
-
-  const key = getStorageKey();
-  const savedCode = localStorage.getItem(key);
-  if (savedCode) codeInput.value = savedCode;
-
-  updatePreview();
-});
-
-// Auto-save nama project
-projectName.addEventListener('input', () => {
-  localStorage.setItem('sandbox_last_project', projectName.value);
-  const key = getStorageKey();
-  localStorage.setItem(key, codeInput.value);
-  updatePreview();
-});
-
-// Auto-save dan auto-run saat kode diubah
-codeInput.addEventListener('input', () => {
-  const key = getStorageKey();
-  localStorage.setItem(key, codeInput.value);
-  updatePreview();
-});
-
-// Fungsi menampilkan hasil kode HTML
-function updatePreview() {
-  const doc = preview.contentDocument || preview.contentWindow.document;
+// 🔹 Fungsi menulis HTML ke iframe
+function jalankanHTML() {
+  const kode = inputEl.value;
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
-  doc.write(codeInput.value);
+  doc.write(kode);
   doc.close();
 }
+
+// 🔹 Auto simpan ke localStorage
+let saveTimeout;
+function simpanAuto() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    localStorage.setItem(STORAGE_KEY, inputEl.value);
+    statusEl.textContent = '✅ Disimpan otomatis pada ' + new Date().toLocaleTimeString();
+  }, 800);
+}
+
+// 🔹 Saat load halaman — pulihkan data sebelumnya
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    inputEl.value = saved;
+    jalankanHTML();
+    statusEl.textContent = '📂 Dimuat dari penyimpanan lokal';
+  } else {
+    statusEl.textContent = '💾 Belum ada data tersimpan';
+  }
+});
+
+// 🔹 Jalankan otomatis saat input berubah
+inputEl.addEventListener('input', () => {
+  jalankanHTML();
+  simpanAuto();
+});
+
+// 🔹 Tombol: SALIN
+copyBtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(inputEl.value).then(() => {
+    statusEl.textContent = '📋 Kode disalin ke clipboard';
+  });
+});
+
+// 🔹 Tombol: TEMPEL
+pasteBtn.addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    inputEl.value += (inputEl.value ? '\n' : '') + text;
+    jalankanHTML();
+    simpanAuto();
+    statusEl.textContent = '📥 Kode ditempel dari clipboard';
+  } catch {
+    alert('❌ Gagal menempel — izin clipboard mungkin diblokir.');
+  }
+});
+
+// 🔹 Tombol: HAPUS
+clearBtn.addEventListener('click', () => {
+  if (confirm('Yakin ingin menghapus semua kode?')) {
+    inputEl.value = '';
+    localStorage.removeItem(STORAGE_KEY);
+    jalankanHTML();
+    statusEl.textContent = '🗑️ Kode dihapus dan penyimpanan lokal dibersihkan';
+  }
+});
 </script>
 
 </body>
