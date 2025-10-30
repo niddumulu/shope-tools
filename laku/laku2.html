@@ -26,7 +26,6 @@
   #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
-  #showStorage { background-color:#d9edf7; color:#31708f; border-color:#bce8f1; }
   @media (max-width:720px){
     body { padding:12px; }
     textarea{ height:120px; }
@@ -66,7 +65,6 @@
 </select>
 <div class="input-buttons">
   <button id="ambilFileListLinksBtn">Ambil ke Input Links</button>
-  <button id="showStorage">Lihat Data LocalStorage</button>
 </div>
 
 <div class="sponsor">
@@ -96,11 +94,10 @@ const statsEl = document.getElementById('stats');
 const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
+
 const STORAGE_KEY = 'appData';
 
-/* ======================
-   LocalStorage Management
-====================== */
+/* 🔸 Simpan semua data sebagai satu objek */
 function saveAppData() {
   const data = {
     inputList: inputLinksEl.value,
@@ -110,6 +107,7 @@ function saveAppData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
+/* 🔸 Ambil data dari localStorage */
 function loadAppData() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return;
@@ -119,35 +117,50 @@ function loadAppData() {
     if (data.selectedFile) dropdownEl.value = data.selectedFile;
     if (data.currentPage) currentPage = data.currentPage;
   } catch (e) {
-    console.error('Gagal memuat data:', e);
+    console.error('Gagal parse localStorage:', e);
   }
 }
 
-/* Restore data saat halaman dibuka */
-window.addEventListener('load', () => {
+/* 🔸 Restore saat halaman dimuat */
+window.addEventListener('load', async () => {
   loadAppData();
+  if (dropdownEl.value) {
+    try {
+      const res = await fetch(dropdownEl.value + '?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) inputLinksEl.value = (await res.text()).trim();
+    } catch (e) { console.warn('Gagal fetch file:', e); }
+  }
   processLinks();
   if (currentPage && currentPage <= allPages.length) showPage(currentPage);
 });
 
-/* Tombol tampilkan localStorage */
-document.getElementById('showStorage').addEventListener('click', () => {
-  const data = localStorage.getItem(STORAGE_KEY);
-  if (!data) return alert('Belum ada data di localStorage!');
-  alert('Isi localStorage ("appData"):\n\n' + data);
-});
-
-/* Input event handlers */
+/* Simpan otomatis setiap perubahan input */
 inputLinksEl.addEventListener('input', () => {
   processLinks();
   saveAppData();
 });
-dropdownEl.addEventListener('change', saveAppData);
 
-/* Tombol ambil file dropdown */
+/* Simpan dan ambil file saat dropdown berubah */
+dropdownEl.addEventListener('change', async () => {
+  saveAppData();
+  const selectedFile = dropdownEl.value;
+  if (!selectedFile) return;
+  try {
+    const res = await fetch(selectedFile + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    inputLinksEl.value = text.trim();
+    processLinks();
+    saveAppData();
+  } catch (e) {
+    alert('Gagal mengambil ' + selectedFile + ': ' + e.message);
+  }
+});
+
+/* Tombol ambil file manual */
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', async () => {
   const selectedFile = dropdownEl.value;
-  if (!selectedFile) { alert('Pilih file TXT dulu!'); return; }
+  if (!selectedFile) return alert('Pilih file TXT dulu!');
   try {
     const res = await fetch(selectedFile + '?t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -161,7 +174,7 @@ document.getElementById('ambilFileListLinksBtn').addEventListener('click', async
   }
 });
 
-/* Tombol lainnya */
+/* Tombol-tombol lainnya */
 document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
   inputLinksEl.value = '';
   processLinks();
@@ -196,6 +209,7 @@ function processLinks() {
   renderStats(raw.length, unique.length, dup);
   renderPagination();
   showPage(currentPage);
+  saveAppData();
 }
 
 function renderStats(total, uniq, dup) {
@@ -209,7 +223,7 @@ function renderStats(total, uniq, dup) {
 function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
-  saveAppData(); // simpan posisi halaman terbaru
+  saveAppData();
   outputEl.innerHTML = allPages[page - 1]
     .map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
   outputEl.style.display = 'block';
