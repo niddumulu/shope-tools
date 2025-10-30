@@ -74,10 +74,16 @@
     height: 100vh !important;
   }
   .toggle-btn {
-    background-color: #d6d6d6;
+    background-color: #d6d6d6 !important;
+    color: #333;
   }
   .toggle-btn:hover {
-    background-color: #c2c2c2;
+    background-color: #c2c2c2 !important;
+  }
+  .top-toggle {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
   }
 </style>
 </head>
@@ -86,13 +92,17 @@
 <h1>🧩 Penampil Kode HTML Langsung</h1>
 <p>Tempelkan kode HTML di bawah ini — hasilnya langsung muncul otomatis di bawah.</p>
 
+<!-- Tombol toggle di luar editor -->
+<div class="top-toggle">
+  <button id="toggleViewBtn" class="toggle-btn">👁️ Lihat Hasil Saja</button>
+</div>
+
 <div id="editor-area">
   <!-- 🔧 Toolbar tombol -->
   <div class="toolbar">
     <button id="copyBtn">📋 Salin</button>
     <button id="pasteBtn">📥 Tempel</button>
     <button id="clearBtn">🗑️ Hapus</button>
-    <button id="toggleViewBtn" class="toggle-btn">👁️ Lihat Hasil Saja</button>
   </div>
 
   <textarea id="htmlInput" placeholder="Tempelkan kode HTML di sini..."></textarea>
@@ -187,7 +197,7 @@ clearBtn.addEventListener('click', () => {
   }
 });
 
-// 🔹 Tombol: Lihat hasil saja
+// 🔹 Tombol: Lihat hasil saja / Edit kode lagi
 toggleViewBtn.addEventListener('click', () => {
   const isHide = document.body.classList.toggle('hide-editor');
   toggleViewBtn.textContent = isHide ? '✏️ Edit Kode Lagi' : '👁️ Lihat Hasil Saja';
