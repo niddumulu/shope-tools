@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penampil Kode HTML Langsung</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #fffef9;
+    color: #333;
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+  }
+  h1 {
+    text-align: center;
+    color: #b36b00;
+  }
+  textarea {
+    width: 100%;
+    height: 300px;
+    font-family: monospace;
+    font-size: 0.95rem;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  button {
+    margin-top: 12px;
+    padding: 12px 20px;
+    background-color: #ffd42a;
+    color: #b36b00;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+  }
+  button:hover {
+    background-color: #e6c72b;
+  }
+  iframe {
+    width: 100%;
+    height: 600px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-top: 20px;
+    background: white;
+  }
+</style>
+</head>
+<body>
+
+<h1>🧩 Penampil Kode HTML Langsung</h1>
+<p>Tempelkan kode HTML di bawah ini, lalu klik <strong>"Tampilkan Hasil"</strong> untuk melihat tampilannya.</p>
+
+<textarea id="htmlInput" placeholder="Tempelkan kode HTML di sini..."></textarea>
+<button onclick="jalankanHTML()">Tampilkan Hasil</button>
+
+<iframe id="htmlOutput"></iframe>
+
+<script>
+function jalankanHTML() {
+  const kode = document.getElementById('htmlInput').value;
+  const iframe = document.getElementById('htmlOutput');
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(kode);
+  doc.close();
+}
+</script>
+
+</body>
+</html>
