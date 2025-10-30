@@ -98,6 +98,7 @@
 
 <script>
 const MAX_PER_PAGE = 100;
+const PAGE_OFFSET = 20; // supaya penomoran mulai dari 21
 let allPages = [];
 let currentPage = 1;
 
@@ -219,11 +220,12 @@ function showPage(page) {
   saveAppData(); // simpan posisi halaman untuk file aktif
 }
 
+/* === PENOMORAN MULAI DARI 21 === */
 function renderPagination() {
   paginationEl.innerHTML = '';
   for (let i = 1; i <= allPages.length; i++) {
     const btn = document.createElement('button');
-    btn.textContent = i;
+    btn.textContent = i + PAGE_OFFSET;
     btn.className = 'page-btn';
     if (i === currentPage) btn.classList.add('active');
     btn.onclick = () => showPage(i);
@@ -232,8 +234,8 @@ function renderPagination() {
 }
 
 function highlightActivePage() {
-  document.querySelectorAll('.page-btn').forEach(btn => {
-    btn.classList.toggle('active', parseInt(btn.textContent) === currentPage);
+  document.querySelectorAll('.page-btn').forEach((btn, index) => {
+    btn.classList.toggle('active', index + 1 === currentPage);
   });
 }
 
