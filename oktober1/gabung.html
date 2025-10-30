@@ -90,6 +90,9 @@
     <button onclick="importLocalStorage()">Import Data</button>
   </div>
   <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
+
+  <!-- Tombol Singkron Semua File -->
+  <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Singkron Semua File TXT</button>
 </div>
 
 <footer>
@@ -98,7 +101,7 @@
 
 <script>
 const MAX_PER_PAGE = 100;
-const PAGE_OFFSET = 20; // supaya penomoran mulai dari 21
+const PAGE_OFFSET = 20;
 let allPages = [];
 let currentPage = 1;
 
@@ -217,10 +220,9 @@ function showPage(page) {
     .map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
   outputEl.style.display = 'block';
   highlightActivePage();
-  saveAppData(); // simpan posisi halaman untuk file aktif
+  saveAppData();
 }
 
-/* === PENOMORAN MULAI DARI 21 === */
 function renderPagination() {
   paginationEl.innerHTML = '';
   for (let i = 1; i <= allPages.length; i++) {
@@ -245,7 +247,7 @@ function copyToClipboard() {
   navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
 }
 
-/* === 🧩 FITUR BACKUP / IMPORT LOCALSTORAGE === */
+/* === FITUR BACKUP / IMPORT LOCALSTORAGE === */
 function exportLocalStorage() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
@@ -289,6 +291,44 @@ function resetLocalStorage() {
     location.reload();
   }
 }
+
+/* === 🔄 FUNGSI SINGKRON SEMUA FILE === */
+document.getElementById('syncAllBtn').addEventListener('click', async () => {
+  const options = Array.from(dropdownEl.options).filter(o => o.value);
+  if (!options.length) return alert('Tidak ada file di dropdown.');
+
+  if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
+
+  let success = 0, fail = 0, lastText = '', lastFile = '';
+
+  for (const opt of options) {
+    try {
+      const res = await fetch(opt.value + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const key = 'appData_' + opt.value;
+      const data = { inputList: text.trim(), currentPage: 1 };
+      localStorage.setItem(key, JSON.stringify(data));
+      success++;
+      lastText = text.trim();
+      lastFile = opt.value;
+      console.log(`✅ ${opt.value} berhasil disinkronkan.`);
+    } catch (e) {
+      console.warn(`❌ Gagal ambil ${opt.value}:`, e);
+      fail++;
+    }
+  }
+
+  if (lastText) {
+    inputLinksEl.value = lastText;
+    dropdownEl.value = lastFile;
+    localStorage.setItem('selectedFile', lastFile);
+    processLinks();
+    showPage(1);
+  }
+
+  alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
+});
 </script>
 </body>
 </html>
