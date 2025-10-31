@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧩 Penampil Kode HTML Langsung + Multi Proyek</title>
+<title>Penampil Kode HTML Langsung + Multi Proyek</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -17,25 +17,25 @@
     text-align: center;
     color: #b36b00;
   }
-  #topbar {
+  .toolbar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
   }
-  #controls button {
-    padding: 6px 12px;
+  .toolbar button {
+    background-color: #ffd42a;
     border: none;
-    background: #b36b00;
-    color: white;
     border-radius: 6px;
-    cursor: pointer;
+    padding: 6px 10px;
     font-size: 0.9rem;
+    cursor: pointer;
+    color: #654321;
+    transition: background 0.2s;
   }
-  #controls button:hover {
-    background: #8a5200;
-  }
+  .toolbar button:hover { background-color: #f2c500; }
+
   textarea {
     width: 100%;
     height: 300px;
@@ -47,163 +47,170 @@
     resize: vertical;
     box-sizing: border-box;
   }
+  .status {
+    font-size: 0.9rem;
+    color: #888;
+    text-align: right;
+    margin-top: 4px;
+    margin-bottom: 10px;
+  }
+  hr {
+    border: none;
+    border-top: 2px solid #ddd;
+    margin: 25px 0 15px 0;
+  }
   iframe {
     width: 100%;
-    min-height: 600px;
-    border-top: 2px solid #ccc;
-    margin-top: 20px;
-    background: white;
+    border: none;
+    display: block;
+    transition: height 0.2s;
   }
-  .status {
-    text-align: right;
+  .hide-editor #editor-area { display: none; }
+  .hide-editor iframe { height: 100vh !important; }
+  .toggle-btn {
+    background-color: #d6d6d6 !important;
+    color: #333;
+  }
+  .toggle-btn:hover { background-color: #c2c2c2 !important; }
+  .top-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .project-name {
+    font-size: 0.95rem;
     color: #777;
-    font-size: 0.9rem;
-    margin-top: 5px;
   }
+  .new-btn {
+    background-color: #9be09b !important;
+    color: #004400;
+  }
+  .new-btn:hover { background-color: #7ed67e !important; }
 </style>
 </head>
 <body>
 
 <h1>🧩 Penampil Kode HTML Langsung</h1>
 
-<div id="topbar">
+<div class="top-toggle">
+  <div class="project-name" id="projectName"></div>
   <div>
-    <label for="projectName">Proyek:</label>
-    <input type="text" id="projectName" placeholder="misal: jeruk123" />
-  </div>
-  <div id="controls">
-    <button id="copyBtn">Salin</button>
-    <button id="pasteBtn">Tempel</button>
-    <button id="clearBtn">Hapus</button>
-    <button id="saveBtn">Simpan</button>
-    <button id="loadBtn">Buka Proyek</button>
+    <button id="newProjectBtn" class="new-btn">🆕 Buat Proyek Baru</button>
+    <button id="toggleViewBtn" class="toggle-btn">👁️ Lihat Hasil Saja</button>
   </div>
 </div>
 
-<textarea id="htmlInput" placeholder="Tulis atau tempelkan kode HTML di sini..."></textarea>
-<div class="status" id="status">💾 Menunggu input...</div>
+<div id="editor-area">
+  <div class="toolbar">
+    <button id="copyBtn">📋 Salin</button>
+    <button id="pasteBtn">📥 Tempel</button>
+    <button id="clearBtn">🗑️ Hapus</button>
+  </div>
+
+  <textarea id="htmlInput" placeholder="Tempelkan kode HTML di sini..."></textarea>
+  <div class="status" id="status">💾 Menunggu input...</div>
+  <hr>
+</div>
 
 <iframe id="htmlOutput"></iframe>
 
 <script>
+// --- 🔹 Ambil parameter proyek dari URL ---
+const params = new URLSearchParams(window.location.search);
+const project = params.get('project') || 'default';
+document.getElementById('projectName').textContent = '📁 Proyek: ' + project;
+
+// --- 🔹 Elemen utama ---
 const inputEl = document.getElementById('htmlInput');
 const iframe = document.getElementById('htmlOutput');
 const statusEl = document.getElementById('status');
-const projectNameInput = document.getElementById('projectName');
+const copyBtn = document.getElementById('copyBtn');
+const pasteBtn = document.getElementById('pasteBtn');
+const clearBtn = document.getElementById('clearBtn');
+const toggleViewBtn = document.getElementById('toggleViewBtn');
+const newProjectBtn = document.getElementById('newProjectBtn');
 
-function getProjectKey() {
-  const name = projectNameInput.value.trim() || 'default';
-  return 'auto_html_sandbox_proj_' + name.replace(/\W+/g, '_');
-}
+// --- 🔹 Storage unik per proyek ---
+const STORAGE_KEY = 'auto_html_sandbox_' + project;
 
+// --- 🔹 Fungsi render ke iframe ---
 function jalankanHTML() {
-  const kodeAsli = inputEl.value;
-  const projectKey = getProjectKey();
-
-  // Sisipkan script untuk override localStorage agar unik per proyek
-  const kodeTambahan = `
-  <script>
-  (() => {
-    const prefix = '${projectKey}_';
-    const asliSet = localStorage.setItem;
-    const asliGet = localStorage.getItem;
-    const asliRem = localStorage.removeItem;
-    const asliClear = localStorage.clear;
-
-    localStorage.setItem = (k,v) => asliSet(prefix + k, v);
-    localStorage.getItem = (k) => asliGet(prefix + k);
-    localStorage.removeItem = (k) => asliRem(prefix + k);
-    localStorage.clear = () => {
-      Object.keys(localStorage)
-        .filter(k => k.startsWith(prefix))
-        .forEach(k => asliRem(k));
-    };
-  })();
-  <\/script>`;
-
-  const finalHTML = kodeTambahan + "\n" + kodeAsli;
+  const kode = inputEl.value;
   const doc = iframe.contentDocument || iframe.contentWindow.document;
   doc.open();
-  doc.write(finalHTML);
+  doc.write(kode);
   doc.close();
+  setTimeout(() => {
+    const tinggi = Math.max(doc.body.scrollHeight, 600);
+    iframe.style.height = tinggi + 50 + 'px';
+  }, 150);
 }
 
-// Auto-save ke localStorage unik per proyek
+// --- 🔹 Auto save ke localStorage ---
 let saveTimeout;
 function simpanAuto() {
   clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
-    const key = getProjectKey();
-    localStorage.setItem(key, inputEl.value);
-    statusEl.textContent = '✅ Disimpan otomatis (' + new Date().toLocaleTimeString() + ')';
-  }, 600);
+    localStorage.setItem(STORAGE_KEY, inputEl.value);
+    statusEl.textContent = '✅ Disimpan otomatis (' + project + ') ' + new Date().toLocaleTimeString();
+  }, 800);
 }
 
-// Tombol manual
-document.getElementById('copyBtn').onclick = () => {
-  navigator.clipboard.writeText(inputEl.value);
-  statusEl.textContent = '📋 Kode disalin ke clipboard';
-};
-document.getElementById('pasteBtn').onclick = async () => {
-  inputEl.value = await navigator.clipboard.readText();
-  jalankanHTML();
-  simpanAuto();
-  statusEl.textContent = '📥 Kode ditempel dari clipboard';
-};
-document.getElementById('clearBtn').onclick = () => {
-  if (confirm('Hapus semua kode?')) {
-    inputEl.value = '';
-    jalankanHTML();
-    simpanAuto();
-  }
-};
-document.getElementById('saveBtn').onclick = () => {
-  simpanAuto();
-  alert('💾 Proyek disimpan lokal dengan nama: ' + getProjectKey());
-};
-document.getElementById('loadBtn').onclick = () => {
-  const key = getProjectKey();
-  const data = localStorage.getItem(key);
-  if (data) {
-    inputEl.value = data;
-    jalankanHTML();
-    statusEl.textContent = '📂 Dimuat proyek: ' + key;
-  } else {
-    alert('❌ Tidak ada data untuk proyek "' + key + '"');
-  }
-};
-
-// Jalankan & pulihkan otomatis
+// --- 🔹 Saat halaman dibuka ---
 window.addEventListener('load', () => {
-  const params = new URLSearchParams(location.search);
-  if (params.has('project')) {
-    projectNameInput.value = params.get('project');
-  }
-  const saved = localStorage.getItem(getProjectKey());
+  const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     inputEl.value = saved;
     jalankanHTML();
-    statusEl.textContent = '📂 Dimuat otomatis dari proyek lokal';
+    statusEl.textContent = '📂 Dimuat dari proyek "' + project + '"';
   } else {
-    statusEl.textContent = '💾 Belum ada data tersimpan';
+    statusEl.textContent = '💾 Proyek baru "' + project + '"';
   }
 });
 
+// --- 🔹 Jalankan otomatis saat mengetik ---
 inputEl.addEventListener('input', () => {
   jalankanHTML();
   simpanAuto();
 });
-projectNameInput.addEventListener('change', () => {
-  const data = localStorage.getItem(getProjectKey());
-  if (data) {
-    inputEl.value = data;
+
+// --- 🔹 Tombol dasar ---
+copyBtn.addEventListener('click', () => {
+  navigator.clipboard.writeText(inputEl.value).then(() => {
+    statusEl.textContent = '📋 Kode disalin ke clipboard';
+  });
+});
+pasteBtn.addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    inputEl.value += (inputEl.value ? '\n' : '') + text;
     jalankanHTML();
-    statusEl.textContent = '📂 Proyek berubah & dimuat';
-  } else {
-    inputEl.value = '';
-    jalankanHTML();
-    statusEl.textContent = '📄 Proyek baru siap digunakan';
+    simpanAuto();
+    statusEl.textContent = '📥 Ditempel dari clipboard';
+  } catch {
+    alert('❌ Gagal menempel — izin clipboard diblokir.');
   }
+});
+clearBtn.addEventListener('click', () => {
+  if (confirm('Yakin ingin hapus proyek "' + project + '"?')) {
+    inputEl.value = '';
+    localStorage.removeItem(STORAGE_KEY);
+    jalankanHTML();
+    statusEl.textContent = '🗑️ Proyek "' + project + '" dikosongkan';
+  }
+});
+
+// --- 🔹 Tombol tampilan hasil ---
+toggleViewBtn.addEventListener('click', () => {
+  const isHide = document.body.classList.toggle('hide-editor');
+  toggleViewBtn.textContent = isHide ? '✏️ Edit Kode Lagi' : '👁️ Lihat Hasil Saja';
+});
+
+// --- 🔹 Tombol proyek baru ---
+newProjectBtn.addEventListener('click', () => {
+  const idBaru = 'proj_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+  window.location.href = window.location.pathname + '?project=' + idBaru;
 });
 </script>
 
