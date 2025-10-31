@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Produk Live MadGazan</title>
+<title>Produk Live MadGazan - Multi Proyek</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
   h1,h2,h3 { color:#b36b00; text-align:center; }
   h1 { font-size:1.6rem; margin-bottom:5px; }
   h2 { font-size:1.2rem; margin-bottom:10px; }
-  textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  textarea, select, input { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
   textarea { height:150px; }
   #output { display:none; margin-top:10px; }
   #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
@@ -45,7 +45,10 @@
 <body>
 
 <h1>Produk Live MadGazan</h1>
-<h2 id="projectTitle">Manajemen Shopee Live</h2>
+<h2>Manajemen Shopee Live</h2>
+
+<label for="defaultFolder">Folder Default File TXT:</label>
+<input type="text" id="defaultFolder" placeholder="Contoh: oktober1/" value="oktober1/">
 
 <textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
 
@@ -96,12 +99,6 @@
 </footer>
 
 <script>
-/* === Multi Proyek Berdasarkan URL === */
-const params = new URLSearchParams(window.location.search);
-const project = params.get('v') || 'default';
-document.getElementById('projectTitle').innerText = `Manajemen Shopee Live — Proyek: ${project}`;
-
-/* === Variabel global === */
 const MAX_PER_PAGE = 100;
 const PAGE_OFFSET = 20;
 let allPages = [];
@@ -112,18 +109,22 @@ const statsEl = document.getElementById('stats');
 const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
+const defaultFolderEl = document.getElementById('defaultFolder');
+
+// --- Ambil proyek dari URL (optional per proyek) ---
+const urlParams = new URLSearchParams(window.location.search);
+const project = urlParams.get('project') || 'default';
+const STORAGE_PREFIX = 'appData_' + project + '_';
 
 /* === Penyimpanan & Pemulihan === */
-function getStorageKey() { 
-  return 'appData_' + project + '_' + (dropdownEl.value || 'default'); 
-}
-function saveAppData() {
-  const key = getStorageKey();
+function getStorageKey(file='default') { return STORAGE_PREFIX + file; }
+function saveAppData(file='default') {
+  const key = getStorageKey(file);
   const data = { inputList: inputLinksEl.value, currentPage };
   localStorage.setItem(key, JSON.stringify(data));
 }
-function loadAppData() {
-  const key = getStorageKey();
+function loadAppData(file='default') {
+  const key = getStorageKey(file);
   const data = JSON.parse(localStorage.getItem(key) || '{}');
   if (data.inputList) inputLinksEl.value = data.inputList;
   currentPage = data.currentPage || 1;
@@ -131,19 +132,22 @@ function loadAppData() {
 
 /* === Saat Halaman Dibuka === */
 window.addEventListener('load', () => {
-  const savedDropdown = localStorage.getItem('selectedFile_' + project);
+  const savedDropdown = localStorage.getItem(STORAGE_PREFIX + 'selectedFile');
   if (savedDropdown) dropdownEl.value = savedDropdown;
-  loadAppData(); processLinks(); showPage(currentPage);
+  loadAppData(savedDropdown || 'default');
+  processLinks(); showPage(currentPage);
 });
 dropdownEl.addEventListener('change', () => {
-  localStorage.setItem('selectedFile_' + project, dropdownEl.value);
-  loadAppData(); processLinks(); showPage(currentPage);
+  localStorage.setItem(STORAGE_PREFIX + 'selectedFile', dropdownEl.value);
+  loadAppData(dropdownEl.value || 'default'); 
+  processLinks(); 
+  showPage(currentPage);
 });
-inputLinksEl.addEventListener('input', () => { processLinks(); saveAppData(); });
+inputLinksEl.addEventListener('input', () => { processLinks(); saveAppData(dropdownEl.value || 'default'); });
 
 /* === Tombol Input === */
 document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
-  inputLinksEl.value = ''; saveAppData(); processLinks();
+  inputLinksEl.value = ''; saveAppData(dropdownEl.value || 'default'); processLinks();
 });
 document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
   const text = inputLinksEl.value.trim();
@@ -153,7 +157,7 @@ document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
 document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
   const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(lines)];
-  inputLinksEl.value = unique.join('\n'); processLinks(); saveAppData();
+  inputLinksEl.value = unique.join('\n'); processLinks(); saveAppData(dropdownEl.value || 'default');
   alert('Duplikat dihapus!');
 });
 
@@ -178,7 +182,7 @@ function showPage(page) {
   currentPage = page;
   outputEl.innerHTML = allPages[page - 1].map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
   outputEl.style.display = 'block';
-  highlightActivePage(); saveAppData();
+  highlightActivePage(); saveAppData(dropdownEl.value || 'default');
 }
 function renderPagination() {
   paginationEl.innerHTML = '';
@@ -207,14 +211,14 @@ function exportLocalStorage() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key.includes(project)) data[key] = localStorage.getItem(key);
+    if (key.startsWith(STORAGE_PREFIX)) data[key] = localStorage.getItem(key);
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = 'madgazan_backup_' + project + '.json'; a.click();
   URL.revokeObjectURL(url);
-  alert('✅ Data proyek "' + project + '" berhasil disimpan.');
+  alert('✅ Data berhasil disimpan ke file backup');
 }
 function importLocalStorage() {
   const fileInput = document.getElementById('importFile');
@@ -234,16 +238,17 @@ function importLocalStorage() {
   reader.readAsText(file);
 }
 function resetLocalStorage() {
-  if (confirm('Yakin ingin menghapus semua data localStorage proyek ini?')) {
-    Object.keys(localStorage)
-      .filter(k => k.includes(project))
-      .forEach(k => localStorage.removeItem(k));
+  if (confirm('Yakin ingin menghapus semua data proyek ini?')) {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith(STORAGE_PREFIX)) localStorage.removeItem(key);
+    });
     location.reload();
   }
 }
 
 /* === Sinkron Semua File === */
 async function syncAllFiles() {
+  const folder = defaultFolderEl.value.trim() || '';
   const options = Array.from(dropdownEl.options).filter(o => o.value);
   if (!options.length) return alert('Tidak ada file di dropdown.');
   if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
@@ -251,25 +256,30 @@ async function syncAllFiles() {
   let success = 0, fail = 0, lastText = '', lastFile = '';
   for (const opt of options) {
     try {
-      const res = await fetch(opt.value + '?t=' + Date.now());
+      let path = opt.value.includes('/') ? opt.value : folder + opt.value;
+      const res = await fetch(path + '?t=' + Date.now());
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const text = await res.text();
-      localStorage.setItem('appData_' + project + '_' + opt.value, JSON.stringify({ inputList: text.trim(), currentPage: 1 }));
+      localStorage.setItem(getStorageKey(opt.value), JSON.stringify({ inputList: text.trim(), currentPage: 1 }));
       success++; lastText = text.trim(); lastFile = opt.value;
-    } catch { fail++; }
+    } catch {
+      fail++;
+      console.warn('Gagal fetch file:', opt.value);
+    }
   }
 
   if (lastText) {
     inputLinksEl.value = lastText;
     dropdownEl.value = lastFile;
-    localStorage.setItem('selectedFile_' + project, lastFile);
+    localStorage.setItem(STORAGE_PREFIX + 'selectedFile', lastFile);
     processLinks(); showPage(1);
   }
 
-  alert(`Sinkronisasi proyek "${project}" selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir: ${lastFile}`);
+  alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
 }
 
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
+
 </script>
 </body>
 </html>
