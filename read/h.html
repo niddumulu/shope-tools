@@ -34,9 +34,8 @@
     color: #654321;
     transition: background 0.2s;
   }
-  .toolbar button:hover {
-    background-color: #f2c500;
-  }
+  .toolbar button:hover { background-color: #f2c500; }
+
   textarea {
     width: 100%;
     height: 300px;
@@ -83,6 +82,11 @@
     font-size: 0.95rem;
     color: #777;
   }
+  .new-btn {
+    background-color: #9be09b !important;
+    color: #004400;
+  }
+  .new-btn:hover { background-color: #7ed67e !important; }
 </style>
 </head>
 <body>
@@ -91,7 +95,10 @@
 
 <div class="top-toggle">
   <div class="project-name" id="projectName"></div>
-  <button id="toggleViewBtn" class="toggle-btn">👁️ Lihat Hasil Saja</button>
+  <div>
+    <button id="newProjectBtn" class="new-btn">🆕 Buat Proyek Baru</button>
+    <button id="toggleViewBtn" class="toggle-btn">👁️ Lihat Hasil Saja</button>
+  </div>
 </div>
 
 <div id="editor-area">
@@ -114,7 +121,7 @@ const params = new URLSearchParams(window.location.search);
 const project = params.get('project') || 'default';
 document.getElementById('projectName').textContent = '📁 Proyek: ' + project;
 
-// --- 🔹 Elemen DOM utama ---
+// --- 🔹 Elemen utama ---
 const inputEl = document.getElementById('htmlInput');
 const iframe = document.getElementById('htmlOutput');
 const statusEl = document.getElementById('status');
@@ -122,6 +129,7 @@ const copyBtn = document.getElementById('copyBtn');
 const pasteBtn = document.getElementById('pasteBtn');
 const clearBtn = document.getElementById('clearBtn');
 const toggleViewBtn = document.getElementById('toggleViewBtn');
+const newProjectBtn = document.getElementById('newProjectBtn');
 
 // --- 🔹 Storage unik per proyek ---
 const STORAGE_KEY = 'auto_html_sandbox_' + project;
@@ -133,7 +141,6 @@ function jalankanHTML() {
   doc.open();
   doc.write(kode);
   doc.close();
-
   setTimeout(() => {
     const tinggi = Math.max(doc.body.scrollHeight, 600);
     iframe.style.height = tinggi + 50 + 'px';
@@ -198,6 +205,12 @@ clearBtn.addEventListener('click', () => {
 toggleViewBtn.addEventListener('click', () => {
   const isHide = document.body.classList.toggle('hide-editor');
   toggleViewBtn.textContent = isHide ? '✏️ Edit Kode Lagi' : '👁️ Lihat Hasil Saja';
+});
+
+// --- 🔹 Tombol proyek baru ---
+newProjectBtn.addEventListener('click', () => {
+  const idBaru = 'proj_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+  window.location.href = window.location.pathname + '?project=' + idBaru;
 });
 </script>
 
