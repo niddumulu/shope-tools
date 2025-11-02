@@ -95,31 +95,47 @@ const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
 
-/* Restore localStorage */
+/* === Helper untuk ambil/simpan per file === */
+function getStorageKey() {
+  const f = dropdownEl.value || 'default';
+  return 'appData_' + f;
+}
+function saveAppData() {
+  const key = getStorageKey();
+  const data = {
+    inputList: inputLinksEl.value,
+    currentPage: currentPage
+  };
+  localStorage.setItem(key, JSON.stringify(data));
+}
+function loadAppData() {
+  const key = getStorageKey();
+  const data = JSON.parse(localStorage.getItem(key) || '{}');
+  if (data.inputList) inputLinksEl.value = data.inputList;
+  currentPage = data.currentPage || 1;
+}
+
+/* Restore localStorage sesuai file aktif */
 window.addEventListener('load', () => {
-  const savedInput = localStorage.getItem('inputList');
   const savedDropdown = localStorage.getItem('selectedFile');
-  const savedPage = parseInt(localStorage.getItem('currentPage') || '1');
-
-  if (savedInput) inputLinksEl.value = savedInput;
   if (savedDropdown) dropdownEl.value = savedDropdown;
+  loadAppData();
   processLinks();
+  showPage(currentPage);
+});
 
-  if (savedPage && savedPage <= allPages.length) {
-    currentPage = savedPage;
-    showPage(currentPage);
-  }
+/* Simpan dropdown */
+dropdownEl.addEventListener('change', () => {
+  localStorage.setItem('selectedFile', dropdownEl.value);
+  loadAppData();
+  processLinks();
+  showPage(currentPage);
 });
 
 /* Simpan input otomatis */
 inputLinksEl.addEventListener('input', () => {
-  localStorage.setItem('inputList', inputLinksEl.value);
   processLinks();
-});
-
-/* Simpan dropdown otomatis */
-dropdownEl.addEventListener('change', () => {
-  localStorage.setItem('selectedFile', dropdownEl.value);
+  saveAppData();
 });
 
 /* Tombol ambil file dropdown */
@@ -131,8 +147,8 @@ document.getElementById('ambilFileListLinksBtn').addEventListener('click', async
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const text = await res.text();
     inputLinksEl.value = text.trim();
-    localStorage.setItem('inputList', inputLinksEl.value);
     processLinks();
+    saveAppData();
     alert('Berhasil mengambil ' + selectedFile);
   } catch (e) {
     alert('Gagal mengambil ' + selectedFile + ': ' + e.message);
@@ -142,7 +158,7 @@ document.getElementById('ambilFileListLinksBtn').addEventListener('click', async
 /* Tombol lain */
 document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
   inputLinksEl.value = '';
-  localStorage.removeItem('inputList');
+  saveAppData();
   processLinks();
 });
 document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
@@ -154,8 +170,8 @@ document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
   const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(lines)];
   inputLinksEl.value = unique.join('\n');
-  localStorage.setItem('inputList', inputLinksEl.value);
   processLinks();
+  saveAppData();
   alert('Duplikat dihapus!');
 });
 
@@ -164,16 +180,13 @@ function processLinks() {
   const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(raw)];
   const dup = raw.length - unique.length;
-
   allPages = [];
   for (let i = 0; i < unique.length; i += MAX_PER_PAGE) {
     allPages.push(unique.slice(i, i + MAX_PER_PAGE));
   }
   if (currentPage > allPages.length) currentPage = 1;
-
   renderStats(raw.length, unique.length, dup);
   renderPagination();
-  showPage(currentPage);
 }
 
 function renderStats(total, uniq, dup) {
@@ -187,11 +200,11 @@ function renderStats(total, uniq, dup) {
 function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
-  localStorage.setItem('currentPage', page);
   outputEl.innerHTML = allPages[page - 1]
     .map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
   outputEl.style.display = 'block';
   highlightActivePage();
+  saveAppData(); // simpan posisi halaman untuk file aktif
 }
 
 function renderPagination() {
