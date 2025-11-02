@@ -65,7 +65,7 @@
   <option value="lima.txt">nurbad.txt</option>
 </select>
 <div class="input-buttons">
-  <button id="ambilFileListLinksBtn">🔄 Singkron Semua File TXT</button>
+  <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
 </div>
 
 <div class="sponsor">
@@ -89,6 +89,7 @@
     <button onclick="importLocalStorage()">Import Data</button>
   </div>
   <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
+  <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Singkron Semua File TXT</button>
 </div>
 
 <footer>
@@ -107,11 +108,13 @@ const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
 
-/* === Penyimpanan & Pemulihan === */
-function getStorageKey() { return 'appData_' + (dropdownEl.value || 'default'); }
+function getStorageKey() {
+  const f = dropdownEl.value || 'default';
+  return 'appData_' + f;
+}
 function saveAppData() {
   const key = getStorageKey();
-  const data = { inputList: inputLinksEl.value, currentPage };
+  const data = { inputList: inputLinksEl.value, currentPage: currentPage };
   localStorage.setItem(key, JSON.stringify(data));
 }
 function loadAppData() {
@@ -121,21 +124,30 @@ function loadAppData() {
   currentPage = data.currentPage || 1;
 }
 
-/* === Saat Halaman Dibuka === */
 window.addEventListener('load', () => {
   const savedDropdown = localStorage.getItem('selectedFile');
   if (savedDropdown) dropdownEl.value = savedDropdown;
-  loadAppData(); processLinks(); showPage(currentPage);
+  loadAppData();
+  processLinks();
+  showPage(currentPage);
 });
+
 dropdownEl.addEventListener('change', () => {
   localStorage.setItem('selectedFile', dropdownEl.value);
-  loadAppData(); processLinks(); showPage(currentPage);
+  loadAppData();
+  processLinks();
+  showPage(currentPage);
 });
-inputLinksEl.addEventListener('input', () => { processLinks(); saveAppData(); });
 
-/* === Tombol Input === */
+inputLinksEl.addEventListener('input', () => {
+  processLinks();
+  saveAppData();
+});
+
 document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
-  inputLinksEl.value = ''; saveAppData(); processLinks();
+  inputLinksEl.value = '';
+  saveAppData();
+  processLinks();
 });
 document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
   const text = inputLinksEl.value.trim();
@@ -145,32 +157,37 @@ document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
 document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
   const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(lines)];
-  inputLinksEl.value = unique.join('\n'); processLinks(); saveAppData();
+  inputLinksEl.value = unique.join('\n');
+  processLinks();
+  saveAppData();
   alert('Duplikat dihapus!');
 });
 
-/* === Proses Link === */
 function processLinks() {
   const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(raw)];
   const dup = raw.length - unique.length;
   allPages = [];
-  for (let i = 0; i < unique.length; i += MAX_PER_PAGE)
+  for (let i = 0; i < unique.length; i += MAX_PER_PAGE) {
     allPages.push(unique.slice(i, i + MAX_PER_PAGE));
+  }
   if (currentPage > allPages.length) currentPage = 1;
   renderStats(raw.length, unique.length, dup);
   renderPagination();
 }
+
 function renderStats(total, uniq, dup) {
   statsEl.textContent =
     `Total link diinput: ${total}\nLink unik: ${uniq}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
 }
+
 function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
   outputEl.innerHTML = allPages[page - 1].map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
   outputEl.style.display = 'block';
-  highlightActivePage(); saveAppData();
+  highlightActivePage();
+  saveAppData();
 }
 function renderPagination() {
   paginationEl.innerHTML = '';
@@ -204,7 +221,9 @@ function exportLocalStorage() {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'madgazan_backup.json'; a.click();
+  a.href = url;
+  a.download = 'madgazan_backup.json';
+  a.click();
   URL.revokeObjectURL(url);
   alert('✅ Data berhasil disimpan ke file madgazan_backup.json');
 }
@@ -216,7 +235,9 @@ function importLocalStorage() {
   reader.onload = function(e) {
     try {
       const data = JSON.parse(e.target.result);
-      Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+      Object.keys(data).forEach(key => {
+        localStorage.setItem(key, data[key]);
+      });
       alert('✅ Data berhasil diimport. Reload halaman untuk melihat hasil.');
       location.reload();
     } catch (err) {
@@ -227,38 +248,52 @@ function importLocalStorage() {
 }
 function resetLocalStorage() {
   if (confirm('Yakin ingin menghapus semua data localStorage?')) {
-    localStorage.clear(); location.reload();
+    localStorage.clear();
+    alert('Semua data localStorage telah dihapus.');
+    location.reload();
   }
 }
 
-/* === Sinkron Semua File === */
+/* === FUNGSI SINKRON SEMUA FILE === */
 async function syncAllFiles() {
   const options = Array.from(dropdownEl.options).filter(o => o.value);
   if (!options.length) return alert('Tidak ada file di dropdown.');
+
   if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
 
   let success = 0, fail = 0, lastText = '', lastFile = '';
+
   for (const opt of options) {
     try {
-      const res = await fetch(opt.value + '?t=' + Date.now());
+      const res = await fetch(opt.value + '?t=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const text = await res.text();
-      localStorage.setItem('appData_' + opt.value, JSON.stringify({ inputList: text.trim(), currentPage: 1 }));
-      success++; lastText = text.trim(); lastFile = opt.value;
-    } catch { fail++; }
+      const key = 'appData_' + opt.value;
+      const data = { inputList: text.trim(), currentPage: 1 };
+      localStorage.setItem(key, JSON.stringify(data));
+      success++;
+      lastText = text.trim();
+      lastFile = opt.value;
+      console.log(`✅ ${opt.value} berhasil disinkronkan.`);
+    } catch (e) {
+      console.warn(`❌ Gagal ambil ${opt.value}:`, e);
+      fail++;
+    }
   }
 
   if (lastText) {
     inputLinksEl.value = lastText;
     dropdownEl.value = lastFile;
     localStorage.setItem('selectedFile', lastFile);
-    processLinks(); showPage(1);
+    processLinks();
+    showPage(1);
   }
 
   alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
 }
 
-/* === Tombol === */
+/* === Hubungkan tombol === */
+document.getElementById('syncAllBtn').addEventListener('click', syncAllFiles);
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
 </script>
 </body>
