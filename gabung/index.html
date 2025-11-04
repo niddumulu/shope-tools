@@ -52,7 +52,8 @@
 <div class="input-buttons">
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
-  <button id="hapusDuplikatBtn">Hapus Duplikat Sekarang</button>
+  <button id="hapusDuplikatBtn">Hapus Duplikat</button>
+  <button id="sortirPerTokoBtn">Sortir Berdasarkan Toko</button>
 </div>
 
 <h3>Daftar File TXT Produk</h3>
@@ -161,6 +162,24 @@ document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
   processLinks();
   saveAppData();
   alert('Duplikat dihapus!');
+});
+
+/* === FUNGSI BARU: SORTIR BERDASARKAN ID TOKO === */
+document.getElementById('sortirPerTokoBtn').addEventListener('click', () => {
+  const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+  const tokoMap = new Map();
+  for (let link of lines) {
+    const match = link.match(/product\/(\d+)\/(\d+)/);
+    if (match) {
+      const shopId = match[1];
+      if (!tokoMap.has(shopId)) tokoMap.set(shopId, link);
+    }
+  }
+  const hasil = Array.from(tokoMap.values());
+  inputLinksEl.value = hasil.join('\n');
+  processLinks();
+  saveAppData();
+  alert(`Sortir selesai!\nTotal toko unik: ${hasil.length}`);
 });
 
 function processLinks() {
