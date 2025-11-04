@@ -1,63 +1,71 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kirim ke Channel Telegram (Server-side)</title>
-  <style>
-    body{font-family: Arial, sans-serif; max-width:640px;margin:30px auto;padding:16px}
-    label{display:block;margin:10px 0 6px}
-    input[type="text"], textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px}
-    button{margin-top:10px;padding:10px 14px;border-radius:8px;border:none;cursor:pointer}
-    .ok{color:green;margin-top:8px}
-    .err{color:red;margin-top:8px}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kirim Pesan ke Channel Telegram</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 40px auto;
+    max-width: 500px;
+    text-align: center;
+  }
+  input, button {
+    padding: 10px;
+    font-size: 16px;
+  }
+  input {
+    width: 90%;
+    margin-bottom: 10px;
+  }
+  button {
+    cursor: pointer;
+  }
+</style>
 </head>
 <body>
-  <h2>Kirim Pesan ke Channel Telegram (Server)</h2>
+  <h2>Kirim Pesan ke Channel Telegram</h2>
+  <input type="text" id="pesan" placeholder="Tulis pesan di sini..." />
+  <br>
+  <button onclick="kirimPesan()">Kirim</button>
+  <p id="status"></p>
 
-  <label for="message">Pesan</label>
-  <textarea id="message" rows="5" placeholder="Tulis pesan Anda..."></textarea>
+<script>
+async function kirimPesan() {
+  const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY";  // contoh: 123456789:ABCdefGHIjklMNOpqrSTUvwxYZ
+  const chat_id = "-1002080437836";    // contoh: @madgazan_channel
+  const pesan = document.getElementById("pesan").value.trim();
+  const status = document.getElementById("status");
 
-  <div style="margin-top:12px">
-    <button id="sendBtn">Kirim</button>
-  </div>
+  if (!pesan) {
+    status.textContent = "⚠️ Pesan tidak boleh kosong.";
+    return;
+  }
 
-  <div id="status"></div>
+  status.textContent = "Mengirim...";
 
-  <script>
-    document.getElementById('sendBtn').addEventListener('click', async () => {
-      const msg = document.getElementById('message').value.trim();
-      const status = document.getElementById('status');
-      status.textContent = '';
-      status.className = '';
-      if (!msg) { status.textContent = 'Isi pesan dulu.'; status.className='err'; return; }
-      document.getElementById('sendBtn').disabled = true;
-      document.getElementById('sendBtn').textContent = 'Mengirim...';
-      try {
-        const resp = await fetch('send.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: msg })
-        });
-        const data = await resp.json();
-        if (data && data.ok) {
-          status.textContent = 'Pesan berhasil dikirim ✅';
-          status.className = 'ok';
-          document.getElementById('message').value = '';
-        } else {
-          status.textContent = 'Gagal: ' + (data.description || JSON.stringify(data));
-          status.className = 'err';
-        }
-      } catch (e) {
-        status.textContent = 'Error jaringan. Lihat console.';
-        status.className = 'err';
-        console.error(e);
-      } finally {
-        document.getElementById('sendBtn').disabled = false;
-        document.getElementById('sendBtn').textContent = 'Kirim';
-      }
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chat_id, text: pesan })
     });
-  </script>
+
+    const data = await res.json();
+
+    if (data.ok) {
+      status.textContent = "✅ Pesan terkirim ke channel!";
+      document.getElementById("pesan").value = "";
+    } else {
+      status.textContent = "❌ Gagal: " + data.description;
+    }
+  } catch (err) {
+    status.textContent = "🚫 Error jaringan: " + err.message;
+  }
+}
+</script>
 </body>
 </html>
