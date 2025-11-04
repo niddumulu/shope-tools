@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sortir Toko - Produk Live MadGazan (v5)</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
+  h1,h2,h3 { color:#b36b00; text-align:center; }
+  h1 { font-size:1.6rem; margin-bottom:5px; }
+  h2 { font-size:1.2rem; margin-bottom:10px; }
+  #projectInfo { text-align:center; color:#444; font-size:14px; margin-top:-5px; margin-bottom:15px; }
+  textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  textarea { height:150px; }
+  #output { display:none; margin-top:10px; }
+  #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
+  #output a:hover { text-decoration:underline; }
+  .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .page-btn { padding:10px 14px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background-color:white; font-size:1rem; min-width:40px; }
+  .page-btn:hover { background-color:#ffd42a; color:#b36b00; }
+  .active { font-weight:bold; background-color:#ffd42a; color:#b36b00; border-color:#b36b00; }
+  #copyBtn { margin-top:12px; padding:12px; font-size:1rem; cursor:pointer; border:none; background-color:#ffd42a; color:#b36b00; border-radius:6px; width:100%; }
+  #copyBtn:hover { background-color:#e6c72b; }
+  .input-buttons { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .input-buttons button { flex:1; padding:10px; font-size:0.95rem; cursor:pointer; border:1px solid #ccc; border-radius:6px; background:#f5f5f5; }
+  .input-buttons button:hover { background:#eee; }
+  #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
+  .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
+  footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
+  .backup-area { margin-top:25px; padding:12px; background:#fffbe6; border-radius:8px; border:1px solid #ffd42a; text-align:center; }
+  .log-box { text-align:left; background:#f8f8f8; border:1px solid #ddd; padding:8px; margin-top:10px; border-radius:6px; font-size:0.9rem; height:120px; overflow-y:auto; white-space:pre-line; }
+</style>
+</head>
+<body>
+
+<h1>Produk Live MadGazan</h1>
+<h2>Manajemen Shopee Live v5.html</h2>
+<div id="projectInfo"></div>
+
+<textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
+<div class="input-buttons">
+  <button id="clearInputLinksBtn">Clear Input Links</button>
+  <button id="copyInputLinksBtn">Copy Input Links</button>
+  <button id="hapusDuplikatBtn">Hapus Duplikat</button>
+  <button id="sortirPerTokoBtn">Sortir Berdasarkan Toko</button>
+</div>
+
+<h3>Daftar File TXT Produk</h3>
+<select id="fileDropdown">
+  <option value="">-- Pilih File TXT --</option>
+  <option value="satu.txt">jalb.txt</option>
+  <option value="dua.txt">rano.txt</option>
+  <option value="tiga.txt">kakfitro.txt</option>
+  <option value="empat.txt">rini.txt</option>
+  <option value="lima.txt">nurbad.txt</option>
+</select>
+<div class="input-buttons">
+  <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
+</div>
+
+<div class="sponsor">
+  Disponsori oleh <strong>Kios Tembakau MadGazan</strong><br>Solusi hemat untuk perokok bijak 🚬💨
+</div>
+
+<div id="stats"></div>
+
+<h3>Output (Produk Siap Live)</h3>
+<div id="output"></div>
+<button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
+<div class="pagination" id="pagination"></div>
+
+<div class="backup-area">
+  <h3>🧭 Backup & Import Lintas Versi</h3>
+  <p><small>Mendukung impor dari v2–v5 secara otomatis</small></p>
+  <div class="input-buttons">
+    <button onclick="exportUniversalBackup()">📤 Backup Universal</button>
+    <input type="file" id="importFile" accept=".json">
+    <button onclick="importUniversalBackup()">📥 Import Universal</button>
+  </div>
+  <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
+  <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Sinkron Semua File TXT</button>
+
+  <div id="logBox" class="log-box" hidden></div>
+</div>
+
+<footer>© 2025 Kios Tembakau MadGazan — Semua Hak Dilindungi</footer>
+
+<script>
+const APP_VERSION = 4;
+const MAX_PER_PAGE = 100;
+let allPages = [], currentPage = 1;
+
+const fileName = location.pathname.split('/').pop().replace('.html', '');
+const PROJECT_ID_KEY = 'madgazan_project_id_' + fileName;
+let PROJECT_ID = localStorage.getItem(PROJECT_ID_KEY);
+if (!PROJECT_ID) {
+  PROJECT_ID = fileName + '_' + Date.now();
+  localStorage.setItem(PROJECT_ID_KEY, PROJECT_ID);
+}
+document.getElementById('projectInfo').textContent = `🆔 ID Proyek Aktif: ${PROJECT_ID} (v${APP_VERSION})`;
+
+function log(msg){ const box=document.getElementById('logBox'); box.hidden=false; box.textContent += msg + '\\n'; box.scrollTop=box.scrollHeight; }
+
+function getStorageKey(suffix){
+  const f=document.getElementById('fileDropdown').value || 'default';
+  return `madgazan_data_${f}_${suffix||''}`;
+}
+
+function saveAppData(){
+  const key=getStorageKey();
+  const data={version:APP_VERSION,project:PROJECT_ID,inputList:inputLinks.value,currentPage};
+  localStorage.setItem(key,JSON.stringify(data));
+}
+function loadAppData(){
+  const key=getStorageKey();
+  const data=JSON.parse(localStorage.getItem(key)||'{}');
+  if(data.inputList) inputLinks.value=data.inputList;
+  currentPage=data.currentPage||1;
+}
+const inputLinks=document.getElementById('inputLinks');
+inputLinks.addEventListener('input',()=>{processLinks();saveAppData();});
+
+function processLinks(){
+  const raw=inputLinks.value.split('\\n').map(l=>l.trim()).filter(Boolean);
+  const unique=[...new Set(raw)];
+  allPages=[];
+  for(let i=0;i<unique.length;i+=MAX_PER_PAGE) allPages.push(unique.slice(i,i+MAX_PER_PAGE));
+  document.getElementById('stats').textContent=`Total: ${raw.length}\\nUnik: ${unique.length}\\nHalaman: ${allPages.length}`;
+  renderPagination();showPage(currentPage);
+}
+function showPage(p){if(!allPages.length)return;currentPage=p;const o=document.getElementById('output');o.style.display='block';o.innerHTML=allPages[p-1].map(l=>`<a href="${l}" target="_blank">${l}</a>`).join('');highlight();}
+function renderPagination(){const pg=document.getElementById('pagination');pg.innerHTML='';for(let i=1;i<=allPages.length;i++){const b=document.createElement('button');b.textContent=i;b.className='page-btn';if(i===currentPage)b.classList.add('active');b.onclick=()=>showPage(i);pg.appendChild(b);}}
+function highlight(){document.querySelectorAll('.page-btn').forEach((b,i)=>b.classList.toggle('active',i+1===currentPage));}
+function copyToClipboard(){if(!allPages.length)return alert('Tidak ada link!');navigator.clipboard.writeText(allPages[currentPage-1].join('\\n')).then(()=>alert('Disalin!'));}
+
+function exportUniversalBackup(){
+  const data={app:'madgazan',version:APP_VERSION,timestamp:Date.now(),items:{}};
+  Object.keys(localStorage).forEach(k=>{
+    if(k.includes('madgazan_data')) data.items[k]=localStorage.getItem(k);
+  });
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`madgazan_backup_v${APP_VERSION}.json`;a.click();
+  alert('✅ Backup universal dibuat!');
+}
+
+function importUniversalBackup(){
+  const f=document.getElementById('importFile').files[0];
+  if(!f) return alert('Pilih file JSON dulu.');
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      let count=0;
+      if(data.app==='madgazan'&&data.items){
+        Object.entries(data.items).forEach(([k,v])=>{
+          localStorage.setItem(k,v);
+          count++;
+        });
+        log(`✅ Import sukses: ${count} item dimuat.`);
+      } else {
+        // Konversi versi lama (v2/v3)
+        Object.entries(data).forEach(([k,v])=>{
+          if(typeof v==='string'&&k.includes('project_id')) localStorage.setItem(k,v);
+          else if(typeof v==='string'&&k.includes('appData')) localStorage.setItem(k.replace('appData','data'),v);
+        });
+        log('⚙️ Import versi lama berhasil dikonversi otomatis.');
+      }
+      alert('✅ Data berhasil diimport.');
+      location.reload();
+    }catch(err){alert('❌ Gagal membaca file: '+err.message);}
+  };
+  r.readAsText(f);
+}
+
+function resetLocalStorage(){
+  if(!confirm('Hapus semua data MadGazan?'))return;
+  Object.keys(localStorage).forEach(k=>{if(k.includes('madgazan'))localStorage.removeItem(k);});
+  alert('✅ Semua data dihapus.');
+  location.reload();
+}
+
+/* Sinkron file TXT */
+async function syncAllFiles(){
+  const dd=document.getElementById('fileDropdown');
+  const opts=Array.from(dd.options).filter(o=>o.value);
+  if(!confirm(`Sinkron semua file (${opts.length})?`))return;
+  let ok=0,fail=0;
+  for(const o of opts){
+    try{
+      const r=await fetch(o.value+'?t='+Date.now());if(!r.ok)throw new Error(r.status);
+      const t=await r.text();
+      const k=`madgazan_data_${o.value}`;
+      localStorage.setItem(k,JSON.stringify({version:APP_VERSION,inputList:t.trim(),currentPage:1}));
+      ok++;
+    }catch(e){fail++;}
+  }
+  alert(`Selesai: ${ok} berhasil, ${fail} gagal`);
+}
+document.getElementById('syncAllBtn').addEventListener('click',syncAllFiles);
+document.getElementById('ambilFileListLinksBtn').addEventListener('click',syncAllFiles);
+</script>
+</body>
+</html>
