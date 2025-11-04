@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Produk Live MadGazan</title>
+<title>Sortir Toko - Produk Live MadGazan</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
   h1,h2,h3 { color:#b36b00; text-align:center; }
@@ -27,19 +27,6 @@
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
   .backup-area { margin-top:25px; padding:12px; background:#fffbe6; border-radius:8px; border:1px solid #ffd42a; text-align:center; }
-  @media (max-width:720px){
-    body { padding:12px; }
-    textarea{ height:120px; }
-  }
-  @media (max-width:480px){
-    h1,h2,h3{ font-size:1rem; }
-    textarea{ height:120px; font-size:0.9rem; }
-    #output{ font-size:0.85rem; }
-    .page-btn{ padding:8px 12px; font-size:0.9rem; }
-    #copyBtn{ font-size:0.95rem; }
-    .input-buttons{ flex-direction:column; }
-    .input-buttons button{ flex:unset; width:100%; }
-  }
 </style>
 </head>
 <body>
@@ -109,10 +96,23 @@ const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
 
-function getStorageKey() {
-  const f = dropdownEl.value || 'default';
-  return 'appData_' + f;
+/* === SISTEM ID UNIK PER PROYEK (PERSISTENT) === */
+const PROJECT_ID_KEY = 'madgazan_project_id';
+let PROJECT_ID = localStorage.getItem(PROJECT_ID_KEY);
+
+// Jika belum ada, buat Project ID baru berdasarkan nama file HTML + timestamp
+if (!PROJECT_ID) {
+  const fileName = location.pathname.split('/').pop().replace('.html', '');
+  PROJECT_ID = fileName + '_' + Date.now();
+  localStorage.setItem(PROJECT_ID_KEY, PROJECT_ID);
+  alert('🆕 ID proyek baru dibuat: ' + PROJECT_ID);
 }
+
+function getStorageKey(suffix) {
+  const f = dropdownEl.value || 'default';
+  return `${PROJECT_ID}_appData_${f}_${suffix || ''}`;
+}
+
 function saveAppData() {
   const key = getStorageKey();
   const data = { inputList: inputLinksEl.value, currentPage: currentPage };
@@ -126,7 +126,7 @@ function loadAppData() {
 }
 
 window.addEventListener('load', () => {
-  const savedDropdown = localStorage.getItem('selectedFile');
+  const savedDropdown = localStorage.getItem(`${PROJECT_ID}_selectedFile`);
   if (savedDropdown) dropdownEl.value = savedDropdown;
   loadAppData();
   processLinks();
@@ -134,7 +134,7 @@ window.addEventListener('load', () => {
 });
 
 dropdownEl.addEventListener('change', () => {
-  localStorage.setItem('selectedFile', dropdownEl.value);
+  localStorage.setItem(`${PROJECT_ID}_selectedFile`, dropdownEl.value);
   loadAppData();
   processLinks();
   showPage(currentPage);
@@ -145,6 +145,7 @@ inputLinksEl.addEventListener('input', () => {
   saveAppData();
 });
 
+/* Tombol-tombol utama */
 document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
   inputLinksEl.value = '';
   saveAppData();
@@ -163,8 +164,6 @@ document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
   saveAppData();
   alert('Duplikat dihapus!');
 });
-
-/* === FUNGSI BARU: SORTIR BERDASARKAN ID TOKO === */
 document.getElementById('sortirPerTokoBtn').addEventListener('click', () => {
   const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const tokoMap = new Map();
@@ -194,12 +193,9 @@ function processLinks() {
   renderStats(raw.length, unique.length, dup);
   renderPagination();
 }
-
 function renderStats(total, uniq, dup) {
-  statsEl.textContent =
-    `Total link diinput: ${total}\nLink unik: ${uniq}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
+  statsEl.textContent = `Total link diinput: ${total}\nLink unik: ${uniq}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
 }
-
 function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
@@ -230,34 +226,31 @@ function copyToClipboard() {
   navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
 }
 
-/* === Backup & Import === */
+/* Backup, Import, Reset */
 function exportLocalStorage() {
   const data = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    data[key] = localStorage.getItem(key);
-  }
+  Object.keys(localStorage).forEach(k => {
+    if (k.startsWith(PROJECT_ID)) data[k] = localStorage.getItem(k);
+  });
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'madgazan_backup.json';
+  a.download = `${PROJECT_ID}_backup.json`;
   a.click();
   URL.revokeObjectURL(url);
-  alert('✅ Data berhasil disimpan ke file madgazan_backup.json');
+  alert('✅ Backup berhasil disimpan!');
 }
 function importLocalStorage() {
   const fileInput = document.getElementById('importFile');
   const file = fileInput.files[0];
   if (!file) return alert('Pilih file JSON dulu.');
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      Object.keys(data).forEach(key => {
-        localStorage.setItem(key, data[key]);
-      });
-      alert('✅ Data berhasil diimport. Reload halaman untuk melihat hasil.');
+      Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
+      alert('✅ Data berhasil diimport!');
       location.reload();
     } catch (err) {
       alert('❌ File tidak valid: ' + err.message);
@@ -266,18 +259,18 @@ function importLocalStorage() {
   reader.readAsText(file);
 }
 function resetLocalStorage() {
-  if (confirm('Yakin ingin menghapus semua data localStorage?')) {
-    localStorage.clear();
-    alert('Semua data localStorage telah dihapus.');
-    location.reload();
-  }
+  if (!confirm('Hapus semua data untuk proyek ini?')) return;
+  Object.keys(localStorage).forEach(k => {
+    if (k.startsWith(PROJECT_ID)) localStorage.removeItem(k);
+  });
+  alert('✅ Semua data proyek ini telah dihapus!');
+  location.reload();
 }
 
-/* === FUNGSI SINKRON SEMUA FILE === */
+/* Sinkron semua file TXT */
 async function syncAllFiles() {
   const options = Array.from(dropdownEl.options).filter(o => o.value);
   if (!options.length) return alert('Tidak ada file di dropdown.');
-
   if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
 
   let success = 0, fail = 0, lastText = '', lastFile = '';
@@ -287,7 +280,7 @@ async function syncAllFiles() {
       const res = await fetch(opt.value + '?t=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const text = await res.text();
-      const key = 'appData_' + opt.value;
+      const key = `${PROJECT_ID}_appData_${opt.value}`;
       const data = { inputList: text.trim(), currentPage: 1 };
       localStorage.setItem(key, JSON.stringify(data));
       success++;
@@ -303,7 +296,7 @@ async function syncAllFiles() {
   if (lastText) {
     inputLinksEl.value = lastText;
     dropdownEl.value = lastFile;
-    localStorage.setItem('selectedFile', lastFile);
+    localStorage.setItem(`${PROJECT_ID}_selectedFile`, lastFile);
     processLinks();
     showPage(1);
   }
@@ -311,7 +304,6 @@ async function syncAllFiles() {
   alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
 }
 
-/* === Hubungkan tombol === */
 document.getElementById('syncAllBtn').addEventListener('click', syncAllFiles);
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
 </script>
