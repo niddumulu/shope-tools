@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sortir Toko v1.001- Produk Live MadGazan</title>
+<title>Sortir Toko - Produk Live MadGazan</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
   h1,h2,h3 { color:#b36b00; text-align:center; }
   h1 { font-size:1.6rem; margin-bottom:5px; }
   h2 { font-size:1.2rem; margin-bottom:10px; }
+  #projectInfo { text-align:center; color:#444; font-size:14px; margin-top:-5px; margin-bottom:15px; }
   textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
   textarea { height:150px; }
   #output { display:none; margin-top:10px; }
@@ -32,8 +33,9 @@
 <body>
 
 <h1>Produk Live MadGazan</h1>
-<h2>Manajemen Shopee Live</h2>
-<h3>v1.html - 001 version</h3>
+<h2>Manajemen Shopee Live v1.html</h2>
+
+<div id="projectInfo"></div>
 
 <textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
 
@@ -97,23 +99,27 @@ const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
 
-/* === SISTEM ID UNIK PER PROYEK (PERSISTENT) === */
-const PROJECT_ID_KEY = 'madgazan_project_id';
+/* === SISTEM ID UNIK PER FILE HTML === */
+const fileName = location.pathname.split('/').pop().replace('.html', '');
+const PROJECT_ID_KEY = 'madgazan_project_id_' + fileName;
 let PROJECT_ID = localStorage.getItem(PROJECT_ID_KEY);
 
-// Jika belum ada, buat Project ID baru berdasarkan nama file HTML + timestamp
 if (!PROJECT_ID) {
-  const fileName = location.pathname.split('/').pop().replace('.html', '');
   PROJECT_ID = fileName + '_' + Date.now();
   localStorage.setItem(PROJECT_ID_KEY, PROJECT_ID);
-  alert('🆕 ID proyek baru dibuat: ' + PROJECT_ID);
+  console.log('🆕 ID proyek baru dibuat:', PROJECT_ID);
 }
 
+/* === TAMPILKAN ID PROYEK DI HALAMAN === */
+document.getElementById('projectInfo').textContent = '🆔 ID Proyek Aktif: ' + PROJECT_ID;
+
+/* === KEY UNIK PER FILE TXT === */
 function getStorageKey(suffix) {
   const f = dropdownEl.value || 'default';
   return `${PROJECT_ID}_appData_${f}_${suffix || ''}`;
 }
 
+/* === SIMPAN & MUAT DATA === */
 function saveAppData() {
   const key = getStorageKey();
   const data = { inputList: inputLinksEl.value, currentPage: currentPage };
@@ -146,7 +152,7 @@ inputLinksEl.addEventListener('input', () => {
   saveAppData();
 });
 
-/* Tombol-tombol utama */
+/* === FUNGSI TOMBOL === */
 document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
   inputLinksEl.value = '';
   saveAppData();
@@ -182,6 +188,7 @@ document.getElementById('sortirPerTokoBtn').addEventListener('click', () => {
   alert(`Sortir selesai!\nTotal toko unik: ${hasil.length}`);
 });
 
+/* === PEMROSESAN LINK & PAGINASI === */
 function processLinks() {
   const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(raw)];
@@ -227,7 +234,7 @@ function copyToClipboard() {
   navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
 }
 
-/* Backup, Import, Reset */
+/* === BACKUP, IMPORT, RESET === */
 function exportLocalStorage() {
   const data = {};
   Object.keys(localStorage).forEach(k => {
@@ -268,7 +275,7 @@ function resetLocalStorage() {
   location.reload();
 }
 
-/* Sinkron semua file TXT */
+/* === SINKRONISASI SEMUA FILE TXT === */
 async function syncAllFiles() {
   const options = Array.from(dropdownEl.options).filter(o => o.value);
   if (!options.length) return alert('Tidak ada file di dropdown.');
