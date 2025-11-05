@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sortir Toko - Produk Live MadGazan</title>
+<title>Produk Live MadGazan</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
   h1,h2,h3 { color:#b36b00; text-align:center; }
@@ -12,7 +12,7 @@
   textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
   textarea { height:150px; }
   #output { display:none; margin-top:10px; }
-  #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
+  #output a { display:inline-block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
   #output a:hover { text-decoration:underline; }
   .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
   .page-btn { padding:10px 14px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background-color:white; font-size:1rem; min-width:40px; }
@@ -44,8 +44,8 @@
 </head>
 <body>
 
-<h1>Produk Live MadGazan</h1>
-<h2>Manajemen Shopee Live</h2>
+<h1>Produk Live MadGazan 5 Oktober</h1>
+<h2>Manajemen Shopee Live v1</h2>
 
 <textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
 
@@ -59,19 +59,18 @@
 <h3>Daftar File TXT Produk</h3>
 <select id="fileDropdown">
   <option value="">-- Pilih File TXT --</option>
-  <option value="satu.txt">jalb.txt</option>
-  <option value="dua.txt">rano.txt</option>
-  <option value="tiga.txt">kakfitro.txt</option>
-  <option value="empat.txt">rini.txt</option>
-  <option value="lima.txt">nurbad.txt</option>
+  <option value="jalb.txt">jalb.txt</option>
+  <option value="rano.txt">rano.txt</option>
+  <option value="indah.txt">kakfitro.txt</option>
+  <option value="rini.txt">rini.txt</option>
+  <option value="nurbad.txt">nurbad.txt</option>
 </select>
 <div class="input-buttons">
   <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
 </div>
 
 <div class="sponsor">
-  Disponsori oleh <strong>Kios Tembakau MadGazan</strong><br>
-  Solusi hemat untuk perokok bijak 🚬💨
+  Disponsori oleh <strong>MadGazan Studio</strong><br>
 </div>
 
 <div id="stats"></div>
@@ -94,7 +93,7 @@
 </div>
 
 <footer>
-  © 2025 Kios Tembakau MadGazan — Semua Hak Dilindungi
+  © 2025 MadGazan Studio — Semua Hak Dilindungi
 </footer>
 
 <script>
@@ -200,14 +199,22 @@ function renderStats(total, uniq, dup) {
     `Total link diinput: ${total}\nLink unik: ${uniq}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
 }
 
+/* === ✅ BAGIAN YANG DITAMBAHKAN: tombol Lapor di setiap link === */
 function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
-  outputEl.innerHTML = allPages[page - 1].map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
+  const fileNow = dropdownEl.value || 'default.txt';
+  outputEl.innerHTML = allPages[page - 1].map(l => {
+    const reportUrl = `https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;
+    return `<div><a href="${l}" target="_blank">${l}</a> 
+            <a href="${reportUrl}" target="_blank" style="color:red; margin-left:6px;">| Laporkan</a></div>`;
+  }).join('');
   outputEl.style.display = 'block';
   highlightActivePage();
   saveAppData();
 }
+/* === ✅ END TAMBAHAN === */
+
 function renderPagination() {
   paginationEl.innerHTML = '';
   for (let i = 1; i <= allPages.length; i++) {
