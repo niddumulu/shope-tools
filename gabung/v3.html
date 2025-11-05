@@ -306,6 +306,48 @@ function resetLocalStorage() {
   }
 }
 
+  /* === FUNGSI SINKRON SEMUA FILE === */
+async function syncAllFiles() {
+  const options = Array.from(dropdownEl.options).filter(o => o.value);
+  if (!options.length) return alert('Tidak ada file di dropdown.');
+
+  if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
+
+  let success = 0, fail = 0, lastText = '', lastFile = '';
+
+  for (const opt of options) {
+    try {
+      const res = await fetch(opt.value + '?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const key = 'appData_' + opt.value;
+      const data = { inputList: text.trim(), currentPage: 1 };
+      localStorage.setItem(key, JSON.stringify(data));
+      success++;
+      lastText = text.trim();
+      lastFile = opt.value;
+      console.log(`✅ ${opt.value} berhasil disinkronkan.`);
+    } catch (e) {
+      console.warn(`❌ Gagal ambil ${opt.value}:`, e);
+      fail++;
+    }
+  }
+
+  if (lastText) {
+    inputLinksEl.value = lastText;
+    dropdownEl.value = lastFile;
+    localStorage.setItem('selectedFile', lastFile);
+    processLinks();
+    showPage(1);
+  }
+
+  alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
+}
+
+/* === Hubungkan tombol === */
+document.getElementById('syncAllBtn').addEventListener('click', syncAllFiles);
+document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
+
 </script>
 </body>
 </html>
