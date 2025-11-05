@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sortir Link Shopee Berdasarkan ID Toko</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; max-width: 700px; margin-inline:auto; }
+  h2 { text-align:center; color:#b36b00; }
+  textarea { width:100%; height:150px; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; }
+  button { padding:10px 16px; border:none; border-radius:6px; cursor:pointer; font-size:1rem; margin-top:8px; background-color:#ffd42a; color:#b36b00; font-weight:bold; width:100%; }
+  button:hover { background-color:#f0c000; }
+  #hasil, #catatan { margin-top:15px; white-space:pre-line; font-size:0.95rem; }
+  a { display:block; margin:4px 0; text-decoration:none; color:#0066cc; word-break:break-all; }
+  a:hover { text-decoration:underline; }
+  .stat { margin-top:10px; background:#fff9da; border:1px solid #ffd42a; padding:10px; border-radius:6px; }
+</style>
+</head>
+<body>
+
+<h2>Sortir Link Shopee Berdasarkan ID Toko</h2>
+
+<h3>Masukkan Semua Link Shopee:</h3>
+<textarea id="inputLinks" placeholder="Tempel semua link Shopee di sini, satu per baris..."></textarea>
+
+<h3>Masukkan ID Toko (pisahkan dengan baris baru):</h3>
+<textarea id="inputToko" placeholder="Contoh: 417403240&#10;123456789"></textarea>
+
+<button id="btnSortir">🔍 Sortir Berdasarkan ID Toko</button>
+
+<div id="catatan" class="stat"></div>
+<div id="hasil"></div>
+
+<script>
+document.getElementById("btnSortir").addEventListener("click", function() {
+  const linkLines = document.getElementById("inputLinks").value.split("\n").map(x => x.trim()).filter(Boolean);
+  const tokoLines = document.getElementById("inputToko").value.split("\n").map(x => x.trim()).filter(Boolean);
+
+  if (linkLines.length === 0) {
+    alert("Masukkan dulu link Shopee!");
+    return;
+  }
+
+  let hasil = [];
+  let semuaToko = new Set();
+
+  linkLines.forEach(link => {
+    const match = link.match(/\/product\/(\d+)\/(\d+)/);
+    if (match) {
+      const idToko = match[1];
+      semuaToko.add(idToko);
+      if (tokoLines.includes(idToko)) hasil.push(link);
+    }
+  });
+
+  const hasilDiv = document.getElementById("hasil");
+  hasilDiv.innerHTML = hasil.length
+    ? hasil.map(l => `<a href="${l}" target="_blank">${l}</a>`).join("")
+    : "<p><em>Tidak ada link yang cocok dengan ID toko yang dimasukkan.</em></p>";
+
+  document.getElementById("catatan").innerText =
+    `Total link diinput: ${linkLines.length}\n` +
+    `Total produk disortir: ${hasil.length}\n` +
+    `Total ID toko unik terdeteksi: ${semuaToko.size}`;
+});
+</script>
+
+</body>
+</html>
