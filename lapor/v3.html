@@ -68,6 +68,18 @@
     box-shadow: 0 0 5px rgba(0,180,219,0.4);
   }
 
+  .checkbox-group {
+    text-align: left;
+    margin-top: 12px;
+  }
+
+  .checkbox-group label {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 5px;
+    cursor: pointer;
+  }
+
   button {
     background-color: #00b4db;
     color: white;
@@ -105,7 +117,16 @@
     <p class="subtitle">Laporkan kendala produk atau link Shopee ditambah keterangan juga boleh.</p>
 
     <textarea id="pesan" placeholder="Tulis pesanmu di sini..."></textarea>
-    <br>
+
+    <!-- Tambahan Checkbox -->
+    <div class="checkbox-group">
+      <label><input type="checkbox" class="tag" value="#kalah"> #kalah</label>
+      <label><input type="checkbox" class="tag" value="#tokolive"> #tokolive</label>
+      <label><input type="checkbox" class="tag" value="#kalahnggamblik"> #kalahnggamblik</label>
+      <label><input type="checkbox" class="tag" value="#kalahvideo"> #kalahvideo</label>
+      <label><input type="checkbox" class="tag" value="#nopopup"> #nopopup</label>
+    </div>
+
     <button onclick="kirimPesan()">Kirim Sekarang</button>
     <p id="status"></p>
 
@@ -116,10 +137,18 @@
 async function kirimPesan() {
   const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY"; // ganti saat lokal
   const chat_id = "-1003099805948";
-  const pesan = document.getElementById("pesan").value.trim();
+  const pesanInput = document.getElementById("pesan").value.trim();
   const status = document.getElementById("status");
 
-  if (!pesan) {
+  // Ambil semua tag yang dicentang
+  const selectedTags = Array.from(document.querySelectorAll(".tag:checked"))
+    .map(cb => cb.value)
+    .join(" ");
+
+  // Gabungkan pesan dengan tag di akhir
+  const pesan = selectedTags ? `${pesanInput}\n\n${selectedTags}` : pesanInput;
+
+  if (!pesanInput) {
     status.textContent = "⚠️ Pesan tidak boleh kosong.";
     status.style.color = "#cc0000";
     return;
@@ -141,6 +170,7 @@ async function kirimPesan() {
       status.textContent = "✅ Pesan laporan terkirim!";
       status.style.color = "#009f3c";
       document.getElementById("pesan").value = "";
+      document.querySelectorAll(".tag").forEach(cb => cb.checked = false);
     } else {
       status.textContent = "❌ Gagal: " + data.description;
       status.style.color = "#cc0000";
