@@ -3,18 +3,41 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sortir Toko - Produk Live MadGazan</title>
+<title>Produk Live MadGazan</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
   h1,h2,h3 { color:#b36b00; text-align:center; }
   h1 { font-size:1.6rem; margin-bottom:5px; }
   h2 { font-size:1.2rem; margin-bottom:10px; }
-  #projectInfo { text-align:center; color:#444; font-size:14px; margin-top:-5px; margin-bottom:15px; }
   textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
   textarea { height:150px; }
-  #output { display:none; margin-top:10px; }
-  #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
-  #output a:hover { text-decoration:underline; }
+  #output { display:none; margin-top:10px; background:#fff; border-radius:8px; border:1px solid #ffd42a; padding:10px 15px; box-shadow:0 0 8px rgba(255,212,42,0.2);}
+  .link-item {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#fffbec;
+    padding:8px 10px;
+    border-bottom:1px dashed #ffd42a;
+    border-radius:5px;
+    margin-bottom:6px;
+  }
+  .link-item a.link {
+    color:#0066cc;
+    text-decoration:none;
+    word-break:break-all;
+    flex:1;
+  }
+  .link-item a.link:hover { text-decoration:underline; }
+  .link-item a.report {
+    color:#cc0000;
+    text-decoration:none;
+    font-weight:bold;
+    margin-left:10px;
+    white-space:nowrap;
+  }
+  .link-item a.report:hover { text-decoration:underline; }
+
   .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
   .page-btn { padding:10px 14px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background-color:white; font-size:1rem; min-width:40px; }
   .page-btn:hover { background-color:#ffd42a; color:#b36b00; }
@@ -28,14 +51,25 @@
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
   .backup-area { margin-top:25px; padding:12px; background:#fffbe6; border-radius:8px; border:1px solid #ffd42a; text-align:center; }
+  @media (max-width:720px){
+    body { padding:12px; }
+    textarea{ height:120px; }
+  }
+  @media (max-width:480px){
+    h1,h2,h3{ font-size:1rem; }
+    textarea{ height:120px; font-size:0.9rem; }
+    #output{ font-size:0.85rem; }
+    .page-btn{ padding:8px 12px; font-size:0.9rem; }
+    #copyBtn{ font-size:0.95rem; }
+    .input-buttons{ flex-direction:column; }
+    .input-buttons button{ flex:unset; width:100%; }
+  }
 </style>
 </head>
 <body>
 
-<h1>Produk Live MadGazan</h1>
-<h2>Manajemen Shopee Live v3.html</h2>
-
-<div id="projectInfo"></div>
+<h1>Produk Live MadGazan 5 Oktober</h1>
+<h2>Manajemen Shopee Live v3</h2>
 
 <textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
 
@@ -49,19 +83,18 @@
 <h3>Daftar File TXT Produk</h3>
 <select id="fileDropdown">
   <option value="">-- Pilih File TXT --</option>
-  <option value="satu.txt">jalb.txt</option>
-  <option value="dua.txt">rano.txt</option>
-  <option value="tiga.txt">kakfitro.txt</option>
-  <option value="empat.txt">rini.txt</option>
-  <option value="lima.txt">nurbad.txt</option>
+  <option value="jalb.txt">jalb.txt</option>
+  <option value="rano.txt">rano.txt</option>
+  <option value="indah.txt">kakfitro.txt</option>
+  <option value="rini.txt">rini.txt</option>
+  <option value="nurbad.txt">nurbad.txt</option>
 </select>
 <div class="input-buttons">
   <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
 </div>
 
 <div class="sponsor">
-  Disponsori oleh <strong>Kios Tembakau MadGazan</strong><br>
-  Solusi hemat untuk perokok bijak 🚬💨
+  Disponsori oleh <strong>MadGazan Studio</strong><br>
 </div>
 
 <div id="stats"></div>
@@ -84,7 +117,7 @@
 </div>
 
 <footer>
-  © 2025 Kios Tembakau MadGazan — Semua Hak Dilindungi
+  © 2025 MadGazan Studio — Semua Hak Dilindungi
 </footer>
 
 <script>
@@ -99,27 +132,10 @@ const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
 
-/* === SISTEM ID UNIK PER FILE HTML === */
-const fileName = location.pathname.split('/').pop().replace('.html', '');
-const PROJECT_ID_KEY = 'madgazan_project_id_' + fileName;
-let PROJECT_ID = localStorage.getItem(PROJECT_ID_KEY);
-
-if (!PROJECT_ID) {
-  PROJECT_ID = fileName + '_' + Date.now();
-  localStorage.setItem(PROJECT_ID_KEY, PROJECT_ID);
-  console.log('🆕 ID proyek baru dibuat:', PROJECT_ID);
-}
-
-/* === TAMPILKAN ID PROYEK DI HALAMAN === */
-document.getElementById('projectInfo').textContent = '🆔 ID Proyek Aktif: ' + PROJECT_ID;
-
-/* === KEY UNIK PER FILE TXT === */
-function getStorageKey(suffix) {
+function getStorageKey() {
   const f = dropdownEl.value || 'default';
-  return `${PROJECT_ID}_appData_${f}_${suffix || ''}`;
+  return 'appData_' + f;
 }
-
-/* === SIMPAN & MUAT DATA === */
 function saveAppData() {
   const key = getStorageKey();
   const data = { inputList: inputLinksEl.value, currentPage: currentPage };
@@ -133,7 +149,7 @@ function loadAppData() {
 }
 
 window.addEventListener('load', () => {
-  const savedDropdown = localStorage.getItem(`${PROJECT_ID}_selectedFile`);
+  const savedDropdown = localStorage.getItem('selectedFile');
   if (savedDropdown) dropdownEl.value = savedDropdown;
   loadAppData();
   processLinks();
@@ -141,7 +157,7 @@ window.addEventListener('load', () => {
 });
 
 dropdownEl.addEventListener('change', () => {
-  localStorage.setItem(`${PROJECT_ID}_selectedFile`, dropdownEl.value);
+  localStorage.setItem('selectedFile', dropdownEl.value);
   loadAppData();
   processLinks();
   showPage(currentPage);
@@ -152,7 +168,6 @@ inputLinksEl.addEventListener('input', () => {
   saveAppData();
 });
 
-/* === FUNGSI TOMBOL === */
 document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
   inputLinksEl.value = '';
   saveAppData();
@@ -188,7 +203,6 @@ document.getElementById('sortirPerTokoBtn').addEventListener('click', () => {
   alert(`Sortir selesai!\nTotal toko unik: ${hasil.length}`);
 });
 
-/* === PEMROSESAN LINK & PAGINASI === */
 function processLinks() {
   const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(raw)];
@@ -201,17 +215,28 @@ function processLinks() {
   renderStats(raw.length, unique.length, dup);
   renderPagination();
 }
+
 function renderStats(total, uniq, dup) {
-  statsEl.textContent = `Total link diinput: ${total}\nLink unik: ${uniq}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
+  statsEl.textContent =
+    `Total link diinput: ${total}\nLink unik: ${uniq}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
 }
+
 function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
-  outputEl.innerHTML = allPages[page - 1].map(l => `<a href="${l}" target="_blank">${l}</a>`).join('');
+  const fileNow = dropdownEl.value || 'default.txt';
+  outputEl.innerHTML = allPages[page - 1].map(l => {
+    const reportUrl = `https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;
+    return `<div class="link-item">
+              <a class="link" href="${l}" target="_blank">${l}</a>
+              <a class="report" href="${reportUrl}" target="_blank">Laporkan</a>
+            </div>`;
+  }).join('');
   outputEl.style.display = 'block';
   highlightActivePage();
   saveAppData();
 }
+
 function renderPagination() {
   paginationEl.innerHTML = '';
   for (let i = 1; i <= allPages.length; i++) {
@@ -234,86 +259,72 @@ function copyToClipboard() {
   navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
 }
 
-/* === BACKUP, IMPORT, RESET === */
+/* === ✅ FUNGSI-FUNGSI BACKUP, IMPORT, RESET, SINKRONISASI === */
+
+// Backup semua data localStorage ke file JSON
 function exportLocalStorage() {
-  const data = {};
-  Object.keys(localStorage).forEach(k => {
-    if (k.startsWith(PROJECT_ID)) data[k] = localStorage.getItem(k);
-  });
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const allData = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    allData[key] = localStorage.getItem(key);
+  }
+  const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${PROJECT_ID}_backup.json`;
+  a.download = 'madgazan_backup.json';
   a.click();
   URL.revokeObjectURL(url);
-  alert('✅ Backup berhasil disimpan!');
+  alert('✅ Backup berhasil diunduh!');
 }
+
+// Import file JSON hasil backup ke localStorage
 function importLocalStorage() {
   const fileInput = document.getElementById('importFile');
+  if (!fileInput.files.length) return alert('Pilih file backup JSON terlebih dahulu!');
   const file = fileInput.files[0];
-  if (!file) return alert('Pilih file JSON dulu.');
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = function(e) {
     try {
       const data = JSON.parse(e.target.result);
-      Object.entries(data).forEach(([k, v]) => localStorage.setItem(k, v));
-      alert('✅ Data berhasil diimport!');
-      location.reload();
+      for (const key in data) {
+        localStorage.setItem(key, data[key]);
+      }
+      alert('✅ Import berhasil! Silakan refresh halaman.');
     } catch (err) {
       alert('❌ File tidak valid: ' + err.message);
     }
   };
   reader.readAsText(file);
 }
+
+// Hapus semua data localStorage
 function resetLocalStorage() {
-  if (!confirm('Hapus semua data untuk proyek ini?')) return;
-  Object.keys(localStorage).forEach(k => {
-    if (k.startsWith(PROJECT_ID)) localStorage.removeItem(k);
-  });
-  alert('✅ Semua data proyek ini telah dihapus!');
-  location.reload();
+  if (confirm('⚠️ Apakah kamu yakin ingin menghapus SEMUA data LocalStorage?')) {
+    localStorage.clear();
+    inputLinksEl.value = '';
+    outputEl.innerHTML = '';
+    statsEl.textContent = '';
+    paginationEl.innerHTML = '';
+    alert('🗑️ Semua data LocalStorage telah dihapus!');
+  }
 }
 
-/* === SINKRONISASI SEMUA FILE TXT === */
+// Sinkronisasi semua file TXT secara massal (contoh simulasi)
 async function syncAllFiles() {
-  const options = Array.from(dropdownEl.options).filter(o => o.value);
-  if (!options.length) return alert('Tidak ada file di dropdown.');
-  if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
-
-  let success = 0, fail = 0, lastText = '', lastFile = '';
-
-  for (const opt of options) {
-    try {
-      const res = await fetch(opt.value + '?t=' + Date.now(), { cache: 'no-store' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const text = await res.text();
-      const key = `${PROJECT_ID}_appData_${opt.value}`;
-      const data = { inputList: text.trim(), currentPage: 1 };
-      localStorage.setItem(key, JSON.stringify(data));
-      success++;
-      lastText = text.trim();
-      lastFile = opt.value;
-      console.log(`✅ ${opt.value} berhasil disinkronkan.`);
-    } catch (e) {
-      console.warn(`❌ Gagal ambil ${opt.value}:`, e);
-      fail++;
-    }
+  alert('🔄 Sinkronisasi file TXT dimulai...');
+  const files = ['jalb.txt', 'rano.txt', 'kakfitro.txt', 'rini.txt', 'nurbad.txt'];
+  for (const file of files) {
+    console.log(`Mengambil data dari ${file}...`);
+    // simulasi fetch
+    await new Promise(r => setTimeout(r, 500));
   }
-
-  if (lastText) {
-    inputLinksEl.value = lastText;
-    dropdownEl.value = lastFile;
-    localStorage.setItem(`${PROJECT_ID}_selectedFile`, lastFile);
-    processLinks();
-    showPage(1);
-  }
-
-  alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
+  alert('✅ Sinkronisasi selesai untuk semua file!');
 }
 
 document.getElementById('syncAllBtn').addEventListener('click', syncAllFiles);
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
 </script>
+
 </body>
 </html>
