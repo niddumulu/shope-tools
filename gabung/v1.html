@@ -205,7 +205,7 @@ function showPage(page) {
   currentPage = page;
   const fileNow = dropdownEl.value || 'default.txt';
   outputEl.innerHTML = allPages[page - 1].map(l => {
-    const reportUrl = `https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;
+    const reportUrl = `https://niddumulu.github.io/shope-tools/lapor/v1.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;
     return `<div><a href="${l}" target="_blank">${l}</a> 
             <a href="${reportUrl}" target="_blank" style="color:red; margin-left:6px;">| Laporkan</a></div>`;
   }).join('');
