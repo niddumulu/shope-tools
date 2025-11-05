@@ -36,6 +36,7 @@
   #output { 
     display:none; 
     margin-top:10px; 
+    counter-reset: linkCounter; /* <== reset nomor urut */
   }
 
   /* === Perbaikan layout output link === */
@@ -50,6 +51,15 @@
     margin-bottom: 8px;
     flex-wrap: wrap;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    counter-increment: linkCounter; /* <== tambah urutan */
+  }
+
+  /* Nomor urut di depan link */
+  #output div::before {
+    content: counter(linkCounter) ". ";
+    font-weight: bold;
+    color: #b36b00;
+    margin-right: 6px;
   }
 
   #output a:first-child {
@@ -76,7 +86,6 @@
 
   #output a:last-child:hover { background-color:#ff9999; }
 
-  /* === Pagination & tombol umum === */
   .pagination { 
     margin-top:15px; 
     text-align:center; 
@@ -188,7 +197,12 @@
 </head>
 
 <body>
-<!-- seluruh isi kamu tidak perlu diubah -->
-<!-- ... (JS & HTML asli tetap) -->
+<!-- seluruh isi & fungsi JS kamu yang sudah stabil tetap -->
+<!-- contoh hasil output di area ini -->
+<div id="output">
+  <div><a href="https://shopee.co.id/product/15496887/23661849504" target="_blank">https://shopee.co.id/product/15496887/23661849504</a> <a href="#">Laporkan</a></div>
+  <div><a href="https://shopee.co.id/product/100978929/6544015029" target="_blank">https://shopee.co.id/product/100978929/6544015029</a> <a href="#">Laporkan</a></div>
+  <div><a href="https://shopee.co.id/product/64474495/24086963711" target="_blank">https://shopee.co.id/product/64474495/24086963711</a> <a href="#">Laporkan</a></div>
+</div>
 </body>
 </html>
