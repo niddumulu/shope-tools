@@ -232,7 +232,7 @@ function copyToClipboard() {
   navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
 }
 
-/* === BACKUP & IMPORT === */
+/* === Backup & Import === */
 function exportLocalStorage() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
@@ -274,6 +274,7 @@ function resetLocalStorage() {
     location.reload();
   }
 }
+
 
 /* === FUNGSI BARU: DOWNLOAD MASAL === */
 async function downloadTerbaruMasal() {
