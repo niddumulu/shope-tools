@@ -68,6 +68,18 @@
     box-shadow: 0 0 5px rgba(0,180,219,0.4);
   }
 
+  .checkbox-group {
+    text-align: left;
+    margin-top: 12px;
+  }
+
+  .checkbox-group label {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 5px;
+    cursor: pointer;
+  }
+
   button {
     background-color: #00b4db;
     color: white;
@@ -96,30 +108,106 @@
     font-size: 12px;
     color: #777;
   }
+
+  /* === Modal Riwayat === */
+  #riwayatModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 480px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  }
+
+  .modal-content h3 {
+    margin-top: 0;
+    color: #0083b0;
+  }
+
+  .close-btn {
+    background: #ccc;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 14px;
+    cursor: pointer;
+    float: right;
+  }
+
+  .log-item {
+    text-align: left;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .log-time {
+    color: #666;
+    font-size: 12px;
+  }
 </style>
 </head>
 <body>
   <div class="card">
     <div class="header-icon">📢</div>
-    <h2>Laporan Kendala MadGazan Studio</h2>
-    <p class="subtitle">Laporkan kendala produk atau link Shopee langsung ke channel Telegram.</p>
+    <h2>Laporan Kendala</h2>
+    <p class="subtitle">Laporkan kendala produk atau link Shopee ditambah keterangan juga boleh.</p>
 
     <textarea id="pesan" placeholder="Tulis pesanmu di sini..."></textarea>
-    <br>
-    <button onclick="kirimPesan()">Kirim Sekarang</button>
-    <p id="status"></p>
 
+    <!-- Tambahan Checkbox -->
+    <div class="checkbox-group">
+      <label><input type="checkbox" class="tag" value="#kalah"> #kalah</label>
+      <label><input type="checkbox" class="tag" value="#tokolive"> #tokolive</label>
+      <label><input type="checkbox" class="tag" value="#kalahnggamblik"> #kalahnggamblik</label>
+      <label><input type="checkbox" class="tag" value="#kalahvideo"> #kalahvideo</label>
+      <label><input type="checkbox" class="tag" value="#nopopup"> #nopopup</label>
+    </div>
+
+    <button onclick="kirimPesan()">Kirim Sekarang</button>
+    <button onclick="tampilkanRiwayat()">📜 Riwayat Laporan</button>
+
+    <p id="status"></p>
     <footer>© 2025 MadGazan Studio</footer>
+  </div>
+
+  <!-- Modal Riwayat -->
+  <div id="riwayatModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="tutupRiwayat()">Tutup</button>
+      <h3>📋 Riwayat Laporan</h3>
+      <div id="logContainer"></div>
+    </div>
   </div>
 
 <script>
 async function kirimPesan() {
-  const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY"; // ganti saat lokal
-  const chat_id = "-1002080437836";
-  const pesan = document.getElementById("pesan").value.trim();
+  const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY";
+  const chat_id = "-1003099805948";
+  const pesanInput = document.getElementById("pesan").value.trim();
   const status = document.getElementById("status");
 
-  if (!pesan) {
+  const selectedTags = Array.from(document.querySelectorAll(".tag:checked"))
+    .map(cb => cb.value)
+    .join(" ");
+
+  const pesan = selectedTags ? `${pesanInput}\n\n${selectedTags}` : pesanInput;
+
+  if (!pesanInput) {
     status.textContent = "⚠️ Pesan tidak boleh kosong.";
     status.style.color = "#cc0000";
     return;
@@ -134,13 +222,19 @@ async function kirimPesan() {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chat_id, text: pesan })
+      body: JSON.stringify({ chat_id, text: pesan })
     });
     const data = await res.json();
+
     if (data.ok) {
-      status.textContent = "✅ Pesan terkirim ke channel!";
+      status.textContent = "✅ Pesan laporan terkirim!";
       status.style.color = "#009f3c";
+
+      // === Simpan ke localStorage ===
+      simpanLog(pesanInput, selectedTags);
+
       document.getElementById("pesan").value = "";
+      document.querySelectorAll(".tag").forEach(cb => cb.checked = false);
     } else {
       status.textContent = "❌ Gagal: " + data.description;
       status.style.color = "#cc0000";
@@ -149,6 +243,41 @@ async function kirimPesan() {
     status.textContent = "🚫 Error jaringan: " + err.message;
     status.style.color = "#cc0000";
   }
+}
+
+/* === Simpan log ke localStorage === */
+function simpanLog(pesan, tags) {
+  const waktu = new Date().toLocaleString("id-ID");
+  const log = { pesan, tags, waktu };
+  const logs = JSON.parse(localStorage.getItem("laporanLogs") || "[]");
+  logs.unshift(log); // tambahkan ke awal
+  localStorage.setItem("laporanLogs", JSON.stringify(logs));
+}
+
+/* === Tampilkan Riwayat === */
+function tampilkanRiwayat() {
+  const modal = document.getElementById("riwayatModal");
+  const container = document.getElementById("logContainer");
+  const logs = JSON.parse(localStorage.getItem("laporanLogs") || "[]");
+
+  if (logs.length === 0) {
+    container.innerHTML = "<p>Tidak ada riwayat laporan.</p>";
+  } else {
+    container.innerHTML = logs.map(log => `
+      <div class="log-item">
+        <div>${log.pesan.replace(/\n/g, "<br>")}</div>
+        ${log.tags ? `<div><b>Tag:</b> ${log.tags}</div>` : ""}
+        <div class="log-time">🕒 ${log.waktu}</div>
+      </div>
+    `).join("");
+  }
+
+  modal.style.display = "flex";
+}
+
+/* === Tutup Riwayat === */
+function tutupRiwayat() {
+  document.getElementById("riwayatModal").style.display = "none";
 }
 
 /* === Auto-isi dari URL === */
