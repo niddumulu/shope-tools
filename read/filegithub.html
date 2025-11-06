@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit File GitHub (Aman)</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f8f8f8;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-top: 30px;
+      color: #2c3e50;
+    }
+    .container {
+      width: 90%;
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #2980b9;
+      font-size: 1.4rem;
+    }
+    select, textarea, input {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #fafafa;
+    }
+    textarea {
+      min-height: 200px;
+      resize: vertical;
+    }
+    button {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover { background-color: #45a049; }
+    button:active { background-color: #388e3c; }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 0.9rem;
+      color: #7f8c8d;
+    }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .row > * { flex: 1; min-width: 120px; }
+  </style>
+</head>
+<body>
+  <h1>Menampilkan dan Mengedit File GitHub</h1>
+
+  <div class="container">
+    <div>
+      <h2>Masukkan Token GitHub</h2>
+      <input type="password" id="token" placeholder="Masukkan token GitHub kamu">
+      <button onclick="saveToken()">💾 Simpan Token</button>
+      <button onclick="clearToken()">❌ Hapus Token</button>
+    </div>
+
+    <div class="file-select">
+      <h2>Pilih File untuk Diedit</h2>
+      <div class="row">
+        <input type="text" id="owner" value="niddumulu" placeholder="Username">
+        <input type="text" id="repo" value="shope-tools" placeholder="Nama Repo">
+        <input type="text" id="branch" value="main" placeholder="Branch">
+        <button onclick="loadFileList()">🔄 Muat File</button>
+      </div>
+      <select id="fileList" onchange="loadFile()">
+        <option value="">-- pilih file --</option>
+      </select>
+    </div>
+
+    <div>
+      <h2>Isi File</h2>
+      <textarea id="fileContent" placeholder="Konten file akan muncul di sini..."></textarea>
+      <button onclick="updateFile()">💾 Simpan ke GitHub</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Powered by <strong>GitHub API</strong> • Aman via Local Token</p>
+  </div>
+
+  <script>
+    function getToken() {
+      return localStorage.getItem("github_token") || document.getElementById("token").value;
+    }
+
+    function saveToken() {
+      const token = document.getElementById("token").value;
+      if (token) {
+        localStorage.setItem("github_token", token);
+        alert("✅ Token disimpan di localStorage!");
+      }
+    }
+
+    function clearToken() {
+      localStorage.removeItem("github_token");
+      document.getElementById("token").value = "";
+      alert("❌ Token dihapus dari localStorage!");
+    }
+
+    async function loadFileList() {
+      const owner = document.getElementById("owner").value;
+      const repo = document.getElementById("repo").value;
+      const branch = document.getElementById("branch").value;
+      const token = getToken();
+
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents?ref=${branch}`, {
+        headers: { Authorization: `token ${token}` }
+      });
+      const data = await res.json();
+
+      const fileList = document.getElementById("fileList");
+      fileList.innerHTML = '<option value="">-- pilih file --</option>';
+
+      if (Array.isArray(data)) {
+        data.forEach(item => {
+          if (item.type === "file") {
+            const opt = document.createElement("option");
+            opt.value = item.path;
+            opt.textContent = item.name;
+            fileList.appendChild(opt);
+          }
+        });
+      } else {
+        alert("Gagal memuat daftar file. Pastikan token dan repo benar.");
+      }
+    }
+
+    async function loadFile() {
+      const owner = document.getElementById("owner").value;
+      const repo = document.getElementById("repo").value;
+      const branch = document.getElementById("branch").value;
+      const filePath = document.getElementById("fileList").value;
+      const token = getToken();
+      if (!filePath) return;
+
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}?ref=${branch}`, {
+        headers: { Authorization: `token ${token}` }
+      });
+      const data = await res.json();
+      if (data.content) {
+        document.getElementById("fileContent").value = atob(data.content);
+        localStorage.setItem("last_sha", data.sha);
+      } else {
+        alert("Gagal memuat isi file.");
+      }
+    }
+
+    async function updateFile() {
+      const owner = document.getElementById("owner").value;
+      const repo = document.getElementById("repo").value;
+      const branch = document.getElementById("branch").value;
+      const filePath = document.getElementById("fileList").value;
+      const token = getToken();
+      const content = btoa(document.getElementById("fileContent").value);
+      const sha = localStorage.getItem("last_sha");
+
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `token ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: `Update ${filePath} via web editor`,
+          content: content,
+          sha: sha,
+          branch: branch
+        })
+      });
+      const data = await res.json();
+      if (data.commit) {
+        alert("✅ File berhasil diperbarui di GitHub!");
+      } else {
+        alert("❌ Gagal memperbarui file: " + JSON.stringify(data));
+      }
+    }
+  </script>
+</body>
+</html>
