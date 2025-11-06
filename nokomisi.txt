@@ -1,1 +1,1 @@
-Cek coba v2 editor
+Cek coba v2 editor hapus token juga bisa
