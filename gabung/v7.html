@@ -51,6 +51,10 @@
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
   footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
   .backup-area { margin-top:25px; padding:12px; background:#fffbe6; border-radius:8px; border:1px solid #ffd42a; text-align:center; }
+  #syncStatus { margin-top:10px; font-weight:bold; text-align:center; }
+  #syncProgress { height:14px; background:#eee; border-radius:8px; overflow:hidden; display:none; }
+  #syncBar { height:100%; width:0%; background:#ffd42a; transition:width 0.3s; }
+
   @media (max-width:720px){
     body { padding:12px; }
     textarea{ height:120px; }
@@ -90,9 +94,12 @@
   <option value="nurbad.txt">nurbad.txt</option>
 </select>
 <div id="updateNotice" style="margin:10px 0; font-weight:bold;"></div>
+
 <div class="input-buttons">
   <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
 </div>
+<div id="syncStatus"></div>
+<div id="syncProgress"><div id="syncBar"></div></div>
 
 <div class="sponsor">
   Disponsori oleh <strong>MadGazan Studio</strong><br>
@@ -114,7 +121,7 @@
     <button onclick="importLocalStorage()">Import Data</button>
   </div>
   <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
-  <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Singkron Semua File TXT</button>
+  <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Sinkron Semua File TXT</button>
 </div>
 
 <footer>
@@ -149,63 +156,6 @@ function loadAppData() {
   currentPage = data.currentPage || 1;
 }
 
-window.addEventListener('load', () => {
-  const savedDropdown = localStorage.getItem('selectedFile');
-  if (savedDropdown) dropdownEl.value = savedDropdown;
-  loadAppData();
-  processLinks();
-  showPage(currentPage);
-});
-
-dropdownEl.addEventListener('change', () => {
-  localStorage.setItem('selectedFile', dropdownEl.value);
-  loadAppData();
-  processLinks();
-  showPage(currentPage);
-});
-
-inputLinksEl.addEventListener('input', () => {
-  processLinks();
-  saveAppData();
-});
-
-document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
-  inputLinksEl.value = '';
-  saveAppData();
-  processLinks();
-});
-document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
-  const text = inputLinksEl.value.trim();
-  if (!text) return alert('Input kosong!');
-  navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
-});
-document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
-  const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
-  const unique = [...new Set(lines)];
-  inputLinksEl.value = unique.join('\n');
-  processLinks();
-  saveAppData();
-  alert('Duplikat dihapus!');
-});
-
-/* === FUNGSI BARU: SORTIR BERDASARKAN ID TOKO === */
-document.getElementById('sortirPerTokoBtn').addEventListener('click', () => {
-  const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
-  const tokoMap = new Map();
-  for (let link of lines) {
-    const match = link.match(/product\/(\d+)\/(\d+)/);
-    if (match) {
-      const shopId = match[1];
-      if (!tokoMap.has(shopId)) tokoMap.set(shopId, link);
-    }
-  }
-  const hasil = Array.from(tokoMap.values());
-  inputLinksEl.value = hasil.join('\n');
-  processLinks();
-  saveAppData();
-  alert(`Sortir selesai!\nTotal toko unik: ${hasil.length}`);
-});
-
 function processLinks() {
   const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(raw)];
@@ -224,7 +174,6 @@ function renderStats(total, uniq, dup) {
     `Total link diinput: ${total}\nLink unik: ${uniq}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
 }
 
-/* === ✅ TAMPILAN DIBUAT CANTIK DENGAN LAYOUT BARU === */
 function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
@@ -240,7 +189,6 @@ function showPage(page) {
   highlightActivePage();
   saveAppData();
 }
-/* === ✅ END TAMPILAN BARU === */
 
 function renderPagination() {
   paginationEl.innerHTML = '';
@@ -307,16 +255,33 @@ function resetLocalStorage() {
   }
 }
 
-  /* === FUNGSI SINKRON SEMUA FILE === */
-async function syncAllFiles() {
+/* === FUNGSI SINKRON & DOWNLOAD TERBARU === */
+async function syncAllFiles(trigger = 'syncAll') {
   const options = Array.from(dropdownEl.options).filter(o => o.value);
-  if (!options.length) return alert('Tidak ada file di dropdown.');
+  const statusEl = document.getElementById('syncStatus');
+  const barWrap = document.getElementById('syncProgress');
+  const bar = document.getElementById('syncBar');
 
-  if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
+  if (!options.length) {
+    statusEl.textContent = '❌ Tidak ada file di dropdown.';
+    statusEl.style.color = '#b30000';
+    return;
+  }
+
+  if (trigger === 'syncAll' && !confirm(`Sinkron semua file (${options.length} file)?`)) return;
 
   let success = 0, fail = 0, lastText = '', lastFile = '';
+  statusEl.textContent = '⏳ Memulai sinkronisasi...';
+  statusEl.style.color = '#666';
+  barWrap.style.display = 'block';
+  bar.style.width = '0%';
 
-  for (const opt of options) {
+  for (let i = 0; i < options.length; i++) {
+    const opt = options[i];
+    const progress = Math.round(((i) / options.length) * 100);
+    bar.style.width = progress + '%';
+    statusEl.textContent = `📥 Mengambil ${opt.value} (${progress}%)...`;
+
     try {
       const res = await fetch(opt.value + '?t=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -327,12 +292,14 @@ async function syncAllFiles() {
       success++;
       lastText = text.trim();
       lastFile = opt.value;
-      console.log(`✅ ${opt.value} berhasil disinkronkan.`);
     } catch (e) {
-      console.warn(`❌ Gagal ambil ${opt.value}:`, e);
       fail++;
     }
   }
+
+  bar.style.width = '100%';
+  statusEl.innerHTML = `✅ Sinkronisasi selesai.<br>Berhasil: ${success}, Gagal: ${fail}`;
+  statusEl.style.color = '#008000';
 
   if (lastText) {
     inputLinksEl.value = lastText;
@@ -342,19 +309,22 @@ async function syncAllFiles() {
     showPage(1);
   }
 
-  alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
+  setTimeout(() => {
+    statusEl.textContent = '';
+    barWrap.style.display = 'none';
+  }, 5000);
 }
 
-/* === Hubungkan tombol === */
-document.getElementById('syncAllBtn').addEventListener('click', syncAllFiles);
-document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
+document.getElementById('syncAllBtn').addEventListener('click', () => syncAllFiles('syncAll'));
+document.getElementById('ambilFileListLinksBtn').addEventListener('click', () => syncAllFiles('downloadTerbaru'));
 
+/* === CEK PERBEDAAN DATA === */
 async function checkForUpdates() {
   const selectedFile = dropdownEl.value;
   const noticeEl = document.getElementById('updateNotice');
   if (!selectedFile) { noticeEl.textContent = ''; return; }
 
-  const fileName = selectedFile.split('/').pop(); // ambil nama file dari URL
+  const fileName = selectedFile.split('/').pop();
   noticeEl.textContent = `⏳ Memeriksa versi server untuk "${fileName}"...`;
   noticeEl.style.color = '#666';
 
@@ -376,12 +346,10 @@ async function checkForUpdates() {
       setTimeout(() => { noticeEl.textContent = ''; }, 5000);
     }
   } catch (err) {
-    console.warn('Gagal memeriksa versi server:', err);
     noticeEl.textContent = `❌ Tidak dapat menghubungi server untuk "${fileName}".`;
     noticeEl.style.color = '#b30000';
   }
 }
-
 
 window.addEventListener('load', () => {
   const savedDropdown = localStorage.getItem('selectedFile');
@@ -399,8 +367,6 @@ dropdownEl.addEventListener('change', () => {
   showPage(currentPage);
   checkForUpdates();
 });
-
-
 </script>
 </body>
 </html>
