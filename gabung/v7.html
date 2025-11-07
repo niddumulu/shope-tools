@@ -145,8 +145,8 @@
 <div id="toast"></div>
 
 <script>
-const MAX_PER_PAGE = 100;
-const PAGE_OFFSET = 20;
+const MAX_PER_PAGE = 99;
+const PAGE_OFFSET = 0;
 let allPages = [];
 let currentPage = 1;
 
@@ -351,7 +351,7 @@ function resetLocalStorage() {
 async function syncAllFiles() {
   const options = Array.from(dropdownEl.options).filter(o => o.value);
   if (!options.length) return showToast('Tidak ada file di dropdown.', '#cc0000');
-  if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
+  //if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
 
   let success = 0, fail = 0, lastText = '', lastFile = '';
 
