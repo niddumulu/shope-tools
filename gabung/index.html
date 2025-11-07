@@ -64,12 +64,32 @@
     .input-buttons{ flex-direction:column; }
     .input-buttons button{ flex:unset; width:100%; }
   }
+
+  /* ✅ Toast Notification Style */
+  #toast {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: #333;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s, transform 0.4s;
+    z-index: 9999;
+    max-width: 320px;
+    white-space: pre-line;
+    line-height:1.3;
+    font-size:0.95rem;
+  }
 </style>
 </head>
 <body>
 
-<h1>Produk Live MadGazan 6 November 2025</h1>
-<h2>Manajemen Shopee Live</h2>
+<h1>Produk Live MadGazan 8 November 2025</h1>
+<h2>Manajemen Shopee Live v7</h2>
 
 <textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
 
@@ -89,6 +109,7 @@
   <option value="rini.txt">rini.txt</option>
   <option value="nurbad.txt">nurbad.txt</option>
 </select>
+<div id="updateNotice" style="margin:10px 0; font-weight:bold;"></div>
 <div class="input-buttons">
   <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
 </div>
@@ -120,6 +141,9 @@
   © 2025 MadGazan Studio — Semua Hak Dilindungi
 </footer>
 
+<!-- ✅ Elemen Toast -->
+<div id="toast"></div>
+
 <script>
 const MAX_PER_PAGE = 99;
 const PAGE_OFFSET = 0;
@@ -132,6 +156,20 @@ const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
 
+/* ✅ FUNGSI TOAST */
+function showToast(message, color = '#333') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.style.background = color;
+  toast.style.opacity = '1';
+  toast.style.transform = 'translateY(0)';
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(20px)';
+  }, 4000);
+}
+
+/* ===== Penyimpanan Data ===== */
 function getStorageKey() {
   const f = dropdownEl.value || 'default';
   return 'appData_' + f;
@@ -148,12 +186,14 @@ function loadAppData() {
   currentPage = data.currentPage || 1;
 }
 
+/* ===== Saat Halaman Dimuat ===== */
 window.addEventListener('load', () => {
   const savedDropdown = localStorage.getItem('selectedFile');
   if (savedDropdown) dropdownEl.value = savedDropdown;
   loadAppData();
   processLinks();
   showPage(currentPage);
+  setTimeout(checkForUpdates, 2000);
 });
 
 dropdownEl.addEventListener('change', () => {
@@ -161,8 +201,10 @@ dropdownEl.addEventListener('change', () => {
   loadAppData();
   processLinks();
   showPage(currentPage);
+  checkForUpdates();
 });
 
+/* ===== Tombol Input ===== */
 inputLinksEl.addEventListener('input', () => {
   processLinks();
   saveAppData();
@@ -172,11 +214,12 @@ document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
   inputLinksEl.value = '';
   saveAppData();
   processLinks();
+  showToast('Input berhasil dikosongkan.', '#b36b00');
 });
 document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
   const text = inputLinksEl.value.trim();
-  if (!text) return alert('Input kosong!');
-  navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
+  if (!text) return showToast('Input kosong!', '#cc0000');
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Input disalin ke clipboard!', '#008000'));
 });
 document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
   const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
@@ -184,10 +227,10 @@ document.getElementById('hapusDuplikatBtn').addEventListener('click', () => {
   inputLinksEl.value = unique.join('\n');
   processLinks();
   saveAppData();
-  alert('Duplikat dihapus!');
+  showToast('✅ Duplikat dihapus!', '#008000');
 });
 
-/* === FUNGSI BARU: SORTIR BERDASARKAN ID TOKO === */
+/* === Sortir Berdasarkan ID Toko === */
 document.getElementById('sortirPerTokoBtn').addEventListener('click', () => {
   const lines = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const tokoMap = new Map();
@@ -202,9 +245,10 @@ document.getElementById('sortirPerTokoBtn').addEventListener('click', () => {
   inputLinksEl.value = hasil.join('\n');
   processLinks();
   saveAppData();
-  alert(`Sortir selesai!\nTotal toko unik: ${hasil.length}`);
+  showToast(`✅ Sortir selesai!\nTotal toko unik: ${hasil.length}`, '#008000');
 });
 
+/* ===== Proses Link ===== */
 function processLinks() {
   const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
   const unique = [...new Set(raw)];
@@ -217,13 +261,12 @@ function processLinks() {
   renderStats(raw.length, unique.length, dup);
   renderPagination();
 }
-
 function renderStats(total, uniq, dup) {
   statsEl.textContent =
     `Total link diinput: ${total}\nLink unik: ${uniq}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
 }
 
-/* === ✅ TAMPILAN DIBUAT CANTIK DENGAN LAYOUT BARU === */
+/* ===== Tampilkan Halaman ===== */
 function showPage(page) {
   if (!allPages.length) { outputEl.style.display = 'none'; return; }
   currentPage = page;
@@ -239,8 +282,6 @@ function showPage(page) {
   highlightActivePage();
   saveAppData();
 }
-/* === ✅ END TAMPILAN BARU === */
-
 function renderPagination() {
   paginationEl.innerHTML = '';
   for (let i = 1; i <= allPages.length; i++) {
@@ -258,12 +299,12 @@ function highlightActivePage() {
   });
 }
 function copyToClipboard() {
-  if (!allPages.length) return alert('Tidak ada link!');
+  if (!allPages.length) return showToast('Tidak ada link!', '#cc0000');
   const text = allPages[currentPage - 1].join('\n');
-  navigator.clipboard.writeText(text).then(() => alert('Disalin!'));
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Link halaman ini disalin!', '#008000'));
 }
 
-/* === Backup & Import === */
+/* ===== Backup & Import ===== */
 function exportLocalStorage() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
@@ -277,12 +318,12 @@ function exportLocalStorage() {
   a.download = 'madgazan_backup.json';
   a.click();
   URL.revokeObjectURL(url);
-  alert('✅ Data berhasil disimpan ke file madgazan_backup.json');
+  showToast('✅ Data berhasil disimpan ke madgazan_backup.json', '#008000');
 }
 function importLocalStorage() {
   const fileInput = document.getElementById('importFile');
   const file = fileInput.files[0];
-  if (!file) return alert('Pilih file JSON dulu.');
+  if (!file) return showToast('Pilih file JSON dulu.', '#cc0000');
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
@@ -290,10 +331,10 @@ function importLocalStorage() {
       Object.keys(data).forEach(key => {
         localStorage.setItem(key, data[key]);
       });
-      alert('✅ Data berhasil diimport. Reload halaman untuk melihat hasil.');
-      location.reload();
+      showToast('✅ Data berhasil diimport. Reload halaman untuk melihat hasil.', '#008000');
+      setTimeout(() => location.reload(), 1500);
     } catch (err) {
-      alert('❌ File tidak valid: ' + err.message);
+      showToast('❌ File tidak valid: ' + err.message, '#cc0000');
     }
   };
   reader.readAsText(file);
@@ -301,17 +342,16 @@ function importLocalStorage() {
 function resetLocalStorage() {
   if (confirm('Yakin ingin menghapus semua data localStorage?')) {
     localStorage.clear();
-    alert('Semua data localStorage telah dihapus.');
-    location.reload();
+    showToast('Semua data localStorage telah dihapus.', '#b36b00');
+    setTimeout(() => location.reload(), 1000);
   }
 }
 
-  /* === FUNGSI SINKRON SEMUA FILE === */
+/* ===== Sinkron Semua File ===== */
 async function syncAllFiles() {
   const options = Array.from(dropdownEl.options).filter(o => o.value);
-  if (!options.length) return alert('Tidak ada file di dropdown.');
-
-  if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
+  if (!options.length) return showToast('Tidak ada file di dropdown.', '#cc0000');
+  //if (!confirm(`Sinkron semua file (${options.length} file)?`)) return;
 
   let success = 0, fail = 0, lastText = '', lastFile = '';
 
@@ -326,7 +366,6 @@ async function syncAllFiles() {
       success++;
       lastText = text.trim();
       lastFile = opt.value;
-      console.log(`✅ ${opt.value} berhasil disinkronkan.`);
     } catch (e) {
       console.warn(`❌ Gagal ambil ${opt.value}:`, e);
       fail++;
@@ -341,13 +380,45 @@ async function syncAllFiles() {
     showPage(1);
   }
 
-  alert(`Sinkronisasi selesai.\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir ditampilkan: ${lastFile}`);
+  showToast(`✅ Sinkronisasi selesai\nBerhasil: ${success}\nGagal: ${fail}\nTerakhir: ${lastFile}`, fail>0?'#b36b00':'#008000');
 }
 
-/* === Hubungkan tombol === */
+/* Hubungkan Tombol Sinkron */
 document.getElementById('syncAllBtn').addEventListener('click', syncAllFiles);
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
 
+/* ===== Cek Update File Server ===== */
+async function checkForUpdates() {
+  const selectedFile = dropdownEl.value;
+  const noticeEl = document.getElementById('updateNotice');
+  if (!selectedFile) { noticeEl.textContent = ''; return; }
+
+  const fileName = selectedFile.split('/').pop();
+  noticeEl.textContent = `⏳ Memeriksa versi server untuk "${fileName}"...`;
+  noticeEl.style.color = '#666';
+
+  try {
+    const res = await fetch(selectedFile + '?check=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const serverText = (await res.text()).trim();
+
+    const localKey = 'appData_' + selectedFile;
+    const localData = JSON.parse(localStorage.getItem(localKey) || '{}');
+    const localText = (localData.inputList || '').trim();
+
+    if (serverText !== localText) {
+      noticeEl.textContent = `⚠️ Data lokal "${fileName}" berbeda dengan versi server.`;
+      noticeEl.style.color = '#b30000';
+    } else {
+      noticeEl.textContent = `✅ Data lokal "${fileName}" sudah versi terbaru.`;
+      noticeEl.style.color = '#008000';
+      setTimeout(() => { noticeEl.textContent = ''; }, 5000);
+    }
+  } catch (err) {
+    noticeEl.textContent = `❌ Tidak dapat menghubungi server untuk "${fileName}".`;
+    noticeEl.style.color = '#b30000';
+  }
+}
 </script>
 </body>
 </html>
