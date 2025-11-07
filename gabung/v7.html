@@ -36,10 +36,6 @@
     margin-left:10px;
     white-space:nowrap;
   }
-  #updateNotice {
-  transition: all 0.4s ease;
-}
-
   .link-item a.report:hover { text-decoration:underline; }
 
   .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
@@ -72,8 +68,8 @@
 </head>
 <body>
 
-<h1>Produk Live MadGazan 6 November 2025</h1>
-<h2>Manajemen Shopee Live</h2>
+<h1>Produk Live MadGazan 5 Oktober</h1>
+<h2>Manajemen Shopee Live v1</h2>
 
 <textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
 
@@ -93,10 +89,10 @@
   <option value="rini.txt">rini.txt</option>
   <option value="nurbad.txt">nurbad.txt</option>
 </select>
+<div id="updateNotice" style="margin:10px 0; font-weight:bold;"></div>
 <div class="input-buttons">
   <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
 </div>
-<div id="updateNotice" style="margin-top:8px; font-weight:bold;"></div>
 
 <div class="sponsor">
   Disponsori oleh <strong>MadGazan Studio</strong><br>
@@ -126,8 +122,8 @@
 </footer>
 
 <script>
-const MAX_PER_PAGE = 99;
-const PAGE_OFFSET = 0;
+const MAX_PER_PAGE = 100;
+const PAGE_OFFSET = 20;
 let allPages = [];
 let currentPage = 1;
 
@@ -156,13 +152,16 @@ function loadAppData() {
 window.addEventListener('load', () => {
   const savedDropdown = localStorage.getItem('selectedFile');
   if (savedDropdown) dropdownEl.value = savedDropdown;
-
   loadAppData();
   processLinks();
   showPage(currentPage);
+});
 
-  // Jalankan pengecekan update setelah 2 detik
-  setTimeout(checkForUpdates, 2000);
+dropdownEl.addEventListener('change', () => {
+  localStorage.setItem('selectedFile', dropdownEl.value);
+  loadAppData();
+  processLinks();
+  showPage(currentPage);
 });
 
 inputLinksEl.addEventListener('input', () => {
@@ -350,22 +349,13 @@ async function syncAllFiles() {
 document.getElementById('syncAllBtn').addEventListener('click', syncAllFiles);
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
 
-/* === AUTO CHECK SERVER UPDATE === */
-/* === AUTO CHECK SERVER UPDATE TANPA POPUP === */
 async function checkForUpdates() {
   const selectedFile = dropdownEl.value;
   const noticeEl = document.getElementById('updateNotice');
-  if (!selectedFile) {
-    noticeEl.textContent = '';
-    return;
-  }
+  if (!selectedFile) { noticeEl.textContent = ''; return; }
 
-  // tampilkan status sementara
   noticeEl.textContent = '⏳ Memeriksa versi server...';
   noticeEl.style.color = '#666';
-  noticeEl.style.background = '#f9f9f9';
-  noticeEl.style.padding = '8px';
-  noticeEl.style.borderRadius = '6px';
 
   try {
     const res = await fetch(selectedFile + '?check=' + Date.now(), { cache: 'no-store' });
@@ -377,20 +367,37 @@ async function checkForUpdates() {
     const localText = (localData.inputList || '').trim();
 
     if (serverText !== localText) {
-      noticeEl.textContent = '⚠️ Data di server telah diperbarui. Klik tombol "Download Terbaru Masal" jika ingin menyegarkan data.';
-      noticeEl.style.color = '#cc0000';
-      noticeEl.style.background = '#ffe6e6';
+      noticeEl.textContent = '⚠️ Data lokal berbeda dengan server. Klik "Download Terbaru Masal" untuk memperbarui.';
+      noticeEl.style.color = '#b30000';
     } else {
       noticeEl.textContent = '✅ Data sudah versi terbaru.';
-      noticeEl.style.color = '#008800';
-      noticeEl.style.background = '#e6ffe6';
+      noticeEl.style.color = '#008000';
       setTimeout(() => { noticeEl.textContent = ''; }, 5000);
     }
   } catch (err) {
-    console.warn(`❌ Gagal memeriksa update ${selectedFile}:`, err);
-    noticeEl.textContent = '';
+    console.warn('Gagal memeriksa versi server:', err);
+    noticeEl.textContent = '❌ Tidak dapat menghubungi server.';
+    noticeEl.style.color = '#b30000';
   }
 }
+
+window.addEventListener('load', () => {
+  const savedDropdown = localStorage.getItem('selectedFile');
+  if (savedDropdown) dropdownEl.value = savedDropdown;
+  loadAppData();
+  processLinks();
+  showPage(currentPage);
+  setTimeout(checkForUpdates, 2000);
+});
+
+dropdownEl.addEventListener('change', () => {
+  localStorage.setItem('selectedFile', dropdownEl.value);
+  loadAppData();
+  processLinks();
+  showPage(currentPage);
+  checkForUpdates();
+});
+
 
 </script>
 </body>
