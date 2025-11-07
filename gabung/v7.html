@@ -255,7 +255,7 @@ function resetLocalStorage() {
   }
 }
 
-/* === FUNGSI SINKRON & DOWNLOAD TERBARU === */
+/* === FUNGSI SINKRON & DOWNLOAD TERBARU (TANPA POP-UP) === */
 async function syncAllFiles(trigger = 'syncAll') {
   const options = Array.from(dropdownEl.options).filter(o => o.value);
   const statusEl = document.getElementById('syncStatus');
@@ -268,8 +268,7 @@ async function syncAllFiles(trigger = 'syncAll') {
     return;
   }
 
-  if (trigger === 'syncAll' && !confirm(`Sinkron semua file (${options.length} file)?`)) return;
-
+  // 🔇 Hilangkan konfirmasi, langsung lanjut sinkronisasi
   let success = 0, fail = 0, lastText = '', lastFile = '';
   statusEl.textContent = '⏳ Memulai sinkronisasi...';
   statusEl.style.color = '#666';
@@ -315,8 +314,10 @@ async function syncAllFiles(trigger = 'syncAll') {
   }, 5000);
 }
 
+// 🔄 Hubungkan tombol
 document.getElementById('syncAllBtn').addEventListener('click', () => syncAllFiles('syncAll'));
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', () => syncAllFiles('downloadTerbaru'));
+
 
 /* === CEK PERBEDAAN DATA === */
 async function checkForUpdates() {
