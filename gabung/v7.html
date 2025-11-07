@@ -357,7 +357,8 @@ window.addEventListener('load', () => {
   loadAppData();
   processLinks();
   showPage(currentPage);
-  setTimeout(checkForUpdates, 2000);
+  // hanya cek versi server, tidak download otomatis
+  checkForUpdates();
 });
 
 dropdownEl.addEventListener('change', () => {
@@ -365,8 +366,10 @@ dropdownEl.addEventListener('change', () => {
   loadAppData();
   processLinks();
   showPage(currentPage);
+  // hanya tampilkan peringatan versi, jangan fetch atau update otomatis
   checkForUpdates();
 });
+
 </script>
 </body>
 </html>
