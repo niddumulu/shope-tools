@@ -354,7 +354,8 @@ async function checkForUpdates() {
   const noticeEl = document.getElementById('updateNotice');
   if (!selectedFile) { noticeEl.textContent = ''; return; }
 
-  noticeEl.textContent = '⏳ Memeriksa versi server...';
+  const fileName = selectedFile.split('/').pop(); // ambil nama file dari URL
+  noticeEl.textContent = `⏳ Memeriksa versi server untuk "${fileName}"...`;
   noticeEl.style.color = '#666';
 
   try {
@@ -367,19 +368,20 @@ async function checkForUpdates() {
     const localText = (localData.inputList || '').trim();
 
     if (serverText !== localText) {
-      noticeEl.textContent = '⚠️ Data lokal berbeda dengan server. Klik "Download Terbaru Masal" untuk memperbarui.';
+      noticeEl.textContent = `⚠️ Data lokal "${fileName}" berbeda dengan versi server. Klik "Download Terbaru Masal" untuk memperbarui.`;
       noticeEl.style.color = '#b30000';
     } else {
-      noticeEl.textContent = '✅ Data sudah versi terbaru.';
+      noticeEl.textContent = `✅ Data lokal "${fileName}" sudah versi terbaru.`;
       noticeEl.style.color = '#008000';
       setTimeout(() => { noticeEl.textContent = ''; }, 5000);
     }
   } catch (err) {
     console.warn('Gagal memeriksa versi server:', err);
-    noticeEl.textContent = '❌ Tidak dapat menghubungi server.';
+    noticeEl.textContent = `❌ Tidak dapat menghubungi server untuk "${fileName}".`;
     noticeEl.style.color = '#b30000';
   }
 }
+
 
 window.addEventListener('load', () => {
   const savedDropdown = localStorage.getItem('selectedFile');
