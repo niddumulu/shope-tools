@@ -363,10 +363,7 @@ window.addEventListener('load', () => {
 
 dropdownEl.addEventListener('change', () => {
   localStorage.setItem('selectedFile', dropdownEl.value);
-  loadAppData();
-  processLinks();
-  showPage(currentPage);
-  // hanya tampilkan peringatan versi, jangan fetch atau update otomatis
+  // hanya tampilkan status perbandingan versi server vs lokal
   checkForUpdates();
 });
 
