@@ -368,7 +368,7 @@ async function checkForUpdates() {
     const localText = (localData.inputList || '').trim();
 
     if (serverText !== localText) {
-      noticeEl.textContent = `⚠️ Data lokal "${fileName}" berbeda dengan versi server. Klik "Download Terbaru Masal" untuk memperbarui.`;
+      noticeEl.textContent = `⚠️ Data lokal "${fileName}" berbeda dengan versi server.`;
       noticeEl.style.color = '#b30000';
     } else {
       noticeEl.textContent = `✅ Data lokal "${fileName}" sudah versi terbaru.`;
