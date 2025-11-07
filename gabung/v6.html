@@ -152,16 +152,13 @@ function loadAppData() {
 window.addEventListener('load', () => {
   const savedDropdown = localStorage.getItem('selectedFile');
   if (savedDropdown) dropdownEl.value = savedDropdown;
-  loadAppData();
-  processLinks();
-  showPage(currentPage);
-});
 
-dropdownEl.addEventListener('change', () => {
-  localStorage.setItem('selectedFile', dropdownEl.value);
   loadAppData();
   processLinks();
   showPage(currentPage);
+
+  // Jalankan pengecekan update setelah 2 detik
+  setTimeout(checkForUpdates, 2000);
 });
 
 inputLinksEl.addEventListener('input', () => {
