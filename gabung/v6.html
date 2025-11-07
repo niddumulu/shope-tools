@@ -92,6 +92,7 @@
 <div class="input-buttons">
   <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
 </div>
+<div id="updateNotice" style="margin-top:8px; font-weight:bold;"></div>
 
 <div class="sponsor">
   Disponsori oleh <strong>MadGazan Studio</strong><br>
@@ -349,9 +350,14 @@ document.getElementById('syncAllBtn').addEventListener('click', syncAllFiles);
 document.getElementById('ambilFileListLinksBtn').addEventListener('click', syncAllFiles);
 
 /* === AUTO CHECK SERVER UPDATE === */
+/* === AUTO CHECK SERVER UPDATE TANPA POPUP === */
 async function checkForUpdates() {
   const selectedFile = dropdownEl.value;
-  if (!selectedFile) return;
+  const noticeEl = document.getElementById('updateNotice');
+  if (!selectedFile) {
+    noticeEl.textContent = '';
+    return;
+  }
 
   try {
     const res = await fetch(selectedFile + '?check=' + Date.now(), { cache: 'no-store' });
@@ -362,30 +368,34 @@ async function checkForUpdates() {
     const localData = JSON.parse(localStorage.getItem(localKey) || '{}');
     const localText = (localData.inputList || '').trim();
 
-    // Bandingkan versi: bisa pakai panjang teks, hash, atau isi langsung
+    // Cek apakah data berbeda
     if (serverText !== localText) {
-      if (confirm(`🔄 Data "${selectedFile}" di server telah diperbarui.\nMau sinkronisasi sekarang?`)) {
-        const data = { inputList: serverText, currentPage: 1 };
-        localStorage.setItem(localKey, JSON.stringify(data));
-        inputLinksEl.value = serverText;
-        processLinks();
-        showPage(1);
-        alert(`✅ Data dari ${selectedFile} berhasil diperbarui.`);
-      }
+      noticeEl.textContent = '⚠️ Data di server telah diperbarui. Klik tombol "Download Terbaru Masal" jika ingin menyegarkan data.';
+      noticeEl.style.color = '#cc0000';
+      noticeEl.style.background = '#ffe6e6';
+      noticeEl.style.padding = '8px';
+      noticeEl.style.borderRadius = '6px';
     } else {
-      console.log(`✅ ${selectedFile} sudah versi terbaru.`);
+      noticeEl.textContent = '✅ Data sudah versi terbaru.';
+      noticeEl.style.color = '#008800';
+      noticeEl.style.background = '#e6ffe6';
+      noticeEl.style.padding = '8px';
+      noticeEl.style.borderRadius = '6px';
+      // Hilangkan notice setelah beberapa detik biar tidak ganggu
+      setTimeout(() => { noticeEl.textContent = ''; }, 5000);
     }
   } catch (err) {
     console.warn(`❌ Gagal memeriksa update ${selectedFile}:`, err);
+    noticeEl.textContent = '';
   }
 }
 
-/* Jalankan saat halaman dibuka */
+/* Jalankan otomatis saat halaman dibuka */
 window.addEventListener('load', () => {
-  setTimeout(checkForUpdates, 2000); // Cek otomatis setelah 2 detik
+  setTimeout(checkForUpdates, 2000);
 });
 
-/* Jalankan lagi tiap 10 menit (600000 ms) */
+/* Jalankan ulang tiap 10 menit */
 setInterval(checkForUpdates, 600000);
 
 
