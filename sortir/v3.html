@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sortir Link Shopee Berdasarkan ID Produk</title>
+<title>Sortir Link Shopee Berdasarkan ID Produk (Fleksibel)</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; max-width: 700px; margin-inline:auto; }
   h2 { text-align:center; color:#b36b00; }
@@ -24,8 +24,8 @@
 <h3>Masukkan Semua Link Shopee:</h3>
 <textarea id="inputLinks" placeholder="Tempel semua link Shopee di sini, satu per baris..."></textarea>
 
-<h3>Masukkan ID Produk (pisahkan dengan baris baru):</h3>
-<textarea id="inputProduk" placeholder="Contoh: 27589654321&#10;1234567890"></textarea>
+<h3>Masukkan ID Produk / Link Produk (pisahkan dengan baris baru):</h3>
+<textarea id="inputProduk" placeholder="Contoh:\n44304954897\nhttps://shopee.co.id/product/1389870574/44304954897"></textarea>
 
 <div id="catatan" class="stat"></div>
 
@@ -48,9 +48,18 @@ const hasilSorted = document.getElementById("hasilSorted");
 const hasilUnsorted = document.getElementById("hasilUnsorted");
 const catatan = document.getElementById("catatan");
 
+function ekstrakIdProduk(teks) {
+  // Coba cari pola dari link Shopee
+  const match = teks.match(/\/product\/\d+\/(\d+)/);
+  if (match) return match[1];
+  // Jika hanya angka, langsung kembalikan
+  const id = teks.match(/^\d+$/);
+  return id ? id[0] : null;
+}
+
 function prosesSortir() {
   const linkLines = inputLinks.value.split("\n").map(x => x.trim()).filter(Boolean);
-  const produkLines = inputProduk.value.split("\n").map(x => x.trim()).filter(Boolean);
+  const produkLinesRaw = inputProduk.value.split("\n").map(x => x.trim()).filter(Boolean);
 
   if (linkLines.length === 0) {
     hasilSorted.innerHTML = "";
@@ -59,8 +68,13 @@ function prosesSortir() {
     return;
   }
 
-  if (produkLines.length === 0) {
-    hasilSorted.innerHTML = "<em>Masukkan ID produk untuk mulai sortir.</em>";
+  // Ekstrak semua ID produk dari kolom input produk (bisa link atau angka)
+  const produkIDs = produkLinesRaw
+    .map(ekstrakIdProduk)
+    .filter(Boolean);
+
+  if (produkIDs.length === 0) {
+    hasilSorted.innerHTML = "<em>Masukkan ID produk atau link produk untuk mulai sortir.</em>";
     hasilUnsorted.innerHTML = "";
     catatan.innerText = `Total link diinput: ${linkLines.length}`;
     return;
@@ -69,12 +83,11 @@ function prosesSortir() {
   let cocok = [], tidakCocok = [], semuaProduk = new Set();
 
   linkLines.forEach(link => {
-    // regex menangkap pola /product/{id_toko}/{id_produk}
     const match = link.match(/\/product\/(\d+)\/(\d+)/);
     if (match) {
       const idProduk = match[2];
       semuaProduk.add(idProduk);
-      if (produkLines.includes(idProduk)) cocok.push(link);
+      if (produkIDs.includes(idProduk)) cocok.push(link);
       else tidakCocok.push(link);
     } else {
       tidakCocok.push(link);
