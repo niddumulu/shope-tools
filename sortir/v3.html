@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sortir Link Shopee Berdasarkan ID Produk</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; max-width: 700px; margin-inline:auto; }
+  h2 { text-align:center; color:#b36b00; }
+  textarea { width:100%; height:150px; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; }
+  .hasil-box { margin-top:15px; padding:10px; border-radius:6px; background:#fffef5; border:1px solid #ffd42a; }
+  button { padding:8px 12px; margin-top:8px; border:none; border-radius:6px; cursor:pointer; background:#ffd42a; color:#b36b00; font-weight:bold; }
+  button:hover { background:#f0c000; }
+  a { display:block; margin:4px 0; text-decoration:none; color:#0066cc; word-break:break-all; }
+  a:hover { text-decoration:underline; }
+  .stat { margin-top:10px; background:#fff9da; border:1px solid #ffd42a; padding:10px; border-radius:6px; white-space:pre-line; }
+  h3 { margin-bottom:6px; }
+</style>
+</head>
+<body>
+
+<h2>Sortir Link Shopee Berdasarkan ID Produk</h2>
+
+<h3>Masukkan Semua Link Shopee:</h3>
+<textarea id="inputLinks" placeholder="Tempel semua link Shopee di sini, satu per baris..."></textarea>
+
+<h3>Masukkan ID Produk (pisahkan dengan baris baru):</h3>
+<textarea id="inputProduk" placeholder="Contoh: 27589654321&#10;1234567890"></textarea>
+
+<div id="catatan" class="stat"></div>
+
+<div class="hasil-box">
+  <h3>✅ Hasil Tersortir (Cocok dengan ID Produk)</h3>
+  <button id="copySorted">Copy Hasil Tersortir</button>
+  <div id="hasilSorted"></div>
+</div>
+
+<div class="hasil-box">
+  <h3>🚫 Hasil Tidak Tersortir (Tidak Cocok)</h3>
+  <button id="copyUnsorted">Copy Hasil Tidak Tersortir</button>
+  <div id="hasilUnsorted"></div>
+</div>
+
+<script>
+const inputLinks = document.getElementById("inputLinks");
+const inputProduk = document.getElementById("inputProduk");
+const hasilSorted = document.getElementById("hasilSorted");
+const hasilUnsorted = document.getElementById("hasilUnsorted");
+const catatan = document.getElementById("catatan");
+
+function prosesSortir() {
+  const linkLines = inputLinks.value.split("\n").map(x => x.trim()).filter(Boolean);
+  const produkLines = inputProduk.value.split("\n").map(x => x.trim()).filter(Boolean);
+
+  if (linkLines.length === 0) {
+    hasilSorted.innerHTML = "";
+    hasilUnsorted.innerHTML = "";
+    catatan.innerText = "Masukkan link Shopee terlebih dahulu.";
+    return;
+  }
+
+  if (produkLines.length === 0) {
+    hasilSorted.innerHTML = "<em>Masukkan ID produk untuk mulai sortir.</em>";
+    hasilUnsorted.innerHTML = "";
+    catatan.innerText = `Total link diinput: ${linkLines.length}`;
+    return;
+  }
+
+  let cocok = [], tidakCocok = [], semuaProduk = new Set();
+
+  linkLines.forEach(link => {
+    // regex menangkap pola /product/{id_toko}/{id_produk}
+    const match = link.match(/\/product\/(\d+)\/(\d+)/);
+    if (match) {
+      const idProduk = match[2];
+      semuaProduk.add(idProduk);
+      if (produkLines.includes(idProduk)) cocok.push(link);
+      else tidakCocok.push(link);
+    } else {
+      tidakCocok.push(link);
+    }
+  });
+
+  hasilSorted.innerHTML = cocok.length
+    ? cocok.map(l => `<a href="${l}" target="_blank">${l}</a>`).join("")
+    : "<em>Tidak ada link yang cocok.</em>";
+
+  hasilUnsorted.innerHTML = tidakCocok.length
+    ? tidakCocok.map(l => `<a href="${l}" target="_blank">${l}</a>`).join("")
+    : "<em>Semua link cocok dengan ID produk.</em>";
+
+  catatan.innerText =
+    `Total link diinput: ${linkLines.length}\n` +
+    `Total produk cocok: ${cocok.length}\n` +
+    `Total produk tidak cocok: ${tidakCocok.length}\n` +
+    `Total ID produk unik terdeteksi: ${semuaProduk.size}`;
+}
+
+function copyTextFrom(divId) {
+  const links = Array.from(document.querySelectorAll(`#${divId} a`)).map(a => a.href);
+  if (links.length === 0) return alert("Tidak ada link untuk disalin.");
+  navigator.clipboard.writeText(links.join("\n"))
+    .then(() => alert(`Berhasil menyalin ${links.length} link dari ${divId}!`));
+}
+
+document.getElementById("copySorted").addEventListener("click", () => copyTextFrom("hasilSorted"));
+document.getElementById("copyUnsorted").addEventListener("click", () => copyTextFrom("hasilUnsorted"));
+
+inputLinks.addEventListener("input", prosesSortir);
+inputProduk.addEventListener("input", prosesSortir);
+</script>
+
+</body>
+</html>
