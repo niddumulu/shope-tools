@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Produk Live MadGazan</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Produk Live MadGazan 8 November 2025</h1>
+<h2>Manajemen Shopee Live V7</h2>
+
+<textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
+
+<div class="input-buttons">
+  <button id="clearInputLinksBtn">Clear Input Links</button>
+  <button id="copyInputLinksBtn">Copy Input Links</button>
+  <button id="hapusDuplikatBtn">Hapus Duplikat</button>
+  <button id="sortirPerTokoBtn">Sortir Berdasarkan Toko</button>
+</div>
+
+<h3>Daftar File TXT Produk</h3>
+<select id="fileDropdown">
+  <option value="">-- Pilih File TXT --</option>
+  <option value="jalb.txt">jalb.txt</option>
+  <option value="rano.txt">rano.txt</option>
+  <option value="indah.txt">kakfitro.txt</option>
+  <option value="rini.txt">rini.txt</option>
+  <option value="nurbad.txt">nurbad.txt</option>
+</select>
+<div id="updateNotice"></div>
+<div class="input-buttons">
+  <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
+</div>
+
+<div class="sponsor">
+  Disponsori oleh <strong>MadGazan Studio</strong><br>
+</div>
+
+<div id="stats"></div>
+
+<h3>Output (Produk Siap Live)</h3>
+<div id="output"></div>
+<button id="copyBtn">Copy Link di Halaman Ini</button>
+
+<div class="pagination" id="pagination"></div>
+
+<div class="backup-area">
+  <h3>🔒 Backup & Import Data</h3>
+  <div class="input-buttons">
+    <button id="backupBtn">Backup Data ke File</button>
+    <input type="file" id="importFile" accept=".json">
+    <button id="importBtn">Import Data</button>
+  </div>
+  <button id="resetBtn" class="danger-btn">❌ Hapus Semua Data LocalStorage</button>
+  <button id="syncAllBtn" class="success-btn">🔄 Singkron Semua File TXT</button>
+</div>
+
+<footer>
+  © 2025 MadGazan Studio — Semua Hak Dilindungi
+</footer>
+
+<div id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
