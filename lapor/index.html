@@ -192,7 +192,11 @@ window.addEventListener('load', () => {
   const link = params.get('link');
   const file = params.get('file');
   if (link) {
-    document.getElementById('pesan').value = file ? `${link} - ${file}` : link;
+    // Jika file ada, tambahkan tanda #
+    const fileDisplay = file ? `#${file}` : "";
+    document.getElementById('pesan').value = fileDisplay
+      ? `${link} - ${fileDisplay}`
+      : link;
   }
 });
 </script>
