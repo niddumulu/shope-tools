@@ -12,11 +12,7 @@
   textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
   textarea { height:150px; }
   #output { display:none; margin-top:10px; background:#fff; border-radius:8px; border:1px solid #ffd42a; padding:10px 15px; box-shadow:0 0 8px rgba(255,212,42,0.2); }
-  .link-item {
-    display:flex; justify-content:space-between; align-items:center;
-    background:#fffbec; padding:8px 10px; border-bottom:1px dashed #ffd42a;
-    border-radius:5px; margin-bottom:6px;
-  }
+  .link-item { display:flex; justify-content:space-between; align-items:center; background:#fffbec; padding:8px 10px; border-bottom:1px dashed #ffd42a; border-radius:5px; margin-bottom:6px; }
   .link-item a.link { color:#0066cc; text-decoration:none; word-break:break-all; flex:1; }
   .link-item a.link:hover { text-decoration:underline; }
   .link-item a.report { color:#cc0000; text-decoration:none; font-weight:bold; margin-left:10px; white-space:nowrap; }
@@ -99,69 +95,110 @@
 <div id="toast"></div>
 
 <script>
-const MAX_PER_PAGE = 99, PAGE_OFFSET = 0;
-let allPages = [], habisPages = [], currentPage = 1, currentPageType = 'normal';
+const MAX_PER_PAGE = 99;
+let allPages=[], habisPages=[], currentPage=1, currentPageType='normal';
 
-const inputLinksEl = document.getElementById('inputLinks');
-const inputHabisEl = document.getElementById('inputHabis');
-const statsEl = document.getElementById('stats');
-const outputEl = document.getElementById('output');
-const paginationEl = document.getElementById('pagination');
-const dropdownEl = document.getElementById('fileDropdown');
+const inputLinksEl=document.getElementById('inputLinks');
+const inputHabisEl=document.getElementById('inputHabis');
+const outputEl=document.getElementById('output');
+const paginationEl=document.getElementById('pagination');
+const dropdownEl=document.getElementById('fileDropdown');
+const statsEl=document.getElementById('stats');
 
-function showToast(msg, color='#333'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color;t.style.opacity='1';t.style.transform='translateY(0)';setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(20px)'},4000);}
+function showToast(msg,color='#333'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color;t.style.opacity='1';t.style.transform='translateY(0)';setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(20px)'},3500);}
 
-/* ===== Storage ===== */
-function getStorageKey(){return 'appData_'+(dropdownEl.value||'default');}
-function saveAppData(){localStorage.setItem(getStorageKey(),JSON.stringify({inputList:inputLinksEl.value,currentPage:currentPage}));}
-function loadAppData(){const d=JSON.parse(localStorage.getItem(getStorageKey())||'{}');if(d.inputList)inputLinksEl.value=d.inputList;currentPage=d.currentPage||1;}
-
-/* ===== Initial Load ===== */
-window.addEventListener('load',()=>{const s=localStorage.getItem('selectedFile');if(s)dropdownEl.value=s;loadAppData();processLinks();showPage(currentPage);setTimeout(checkForUpdates,2000);});
-dropdownEl.addEventListener('change',()=>{localStorage.setItem('selectedFile',dropdownEl.value);loadAppData();processLinks();showPage(currentPage);checkForUpdates();});
-
-/* ===== Proses Link ===== */
 function processLinks(){
-  const raw=inputLinksEl.value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const raw=inputLinksEl.value.split('\n').map(x=>x.trim()).filter(Boolean);
   const unique=[...new Set(raw)], dup=raw.length-unique.length;
   allPages=[];for(let i=0;i<unique.length;i+=MAX_PER_PAGE)allPages.push(unique.slice(i,i+MAX_PER_PAGE));
-  renderStats(raw.length,unique.length,dup);renderPagination();
+  statsEl.textContent=`Total link diinput: ${raw.length}\nLink unik: ${unique.length}\nDuplikat dihapus: ${dup}\nTotal halaman: ${allPages.length}`;
+  renderPagination();
 }
-function renderStats(t,u,d){statsEl.textContent=`Total link diinput: ${t}\nLink unik: ${u}\nDuplikat dihapus: ${d}\nTotal halaman: ${allPages.length}`;}
 
-/* ===== Filter Produk Habis ===== */
-function filterProdukHabis(){
-  const allLinks=inputLinksEl.value.split('\n').map(l=>l.trim()).filter(Boolean);
-  const habisList=inputHabisEl.value.split('\n').map(l=>l.trim()).filter(Boolean);
-  if(!habisList.length)return showToast('❌ Daftar produk habis kosong.','#cc0000');
-  const habisIds=new Set(habisList.map(h=>{const m=h.match(/product\/\\d+\\/(\\d+)/);return m?m[1]:h;}));
-  const habisLinks=allLinks.filter(l=>{const m=l.match(/product\/\\d+\\/(\\d+)/);return m&&habisIds.has(m[1]);});
-  if(!habisLinks.length)return showToast('✅ Tidak ada produk yang cocok.','#008000');
-  habisPages=[];for(let i=0;i<habisLinks.length;i+=MAX_PER_PAGE)habisPages.push(habisLinks.slice(i,i+MAX_PER_PAGE));
-  renderPagination();showToast(`✅ Ditemukan ${habisLinks.length} produk habis (${habisPages.length} halaman).`,'#b36b00');
-}
-document.getElementById('filterProdukHabisBtn').addEventListener('click',filterProdukHabis);
-
-/* ===== Tampilkan Halaman ===== */
-function showPage(page,type='normal'){
-  currentPage=page;currentPageType=type;
-  const fileNow=dropdownEl.value||'default.txt';
-  let list=(type==='habis'?habisPages:allPages)[page-1];if(!list)return;
-  outputEl.innerHTML=list.map(l=>{const rep=`https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;return `<div class='link-item'><a class='link' href='${l}' target='_blank'>${l}</a><a class='report' href='${rep}' target='_blank'>Laporkan</a></div>`}).join('');
-  outputEl.style.display='block';highlightActivePage();saveAppData();
-}
 function renderPagination(){
   paginationEl.innerHTML='';
-  for(let i=1;i<=allPages.length;i++){const b=document.createElement('button');b.textContent=i;b.className='page-btn';if(i===currentPage&&currentPageType==='normal')b.classList.add('active');b.onclick=()=>showPage(i,'normal');paginationEl.appendChild(b);}
-  for(let i=1;i<=habisPages.length;i++){const b=document.createElement('button');b.textContent='Habis'+i;b.className='page-btn';b.style.background='#ffeaea';b.style.borderColor='#cc0000';if(i===currentPage&&currentPageType==='habis')b.classList.add('active');b.onclick=()=>showPage(i,'habis');paginationEl.appendChild(b);}
+  for(let i=1;i<=allPages.length;i++){
+    const b=document.createElement('button');
+    b.className='page-btn'; b.textContent=i;
+    if(i===currentPage&&currentPageType==='normal')b.classList.add('active');
+    b.onclick=()=>showPage(i,'normal');
+    paginationEl.appendChild(b);
+  }
+  for(let i=1;i<=habisPages.length;i++){
+    const b=document.createElement('button');
+    b.className='page-btn'; b.textContent='Habis'+i;
+    b.style.background='#ffeaea'; b.style.borderColor='#cc0000';
+    if(i===currentPage&&currentPageType==='habis')b.classList.add('active');
+    b.onclick=()=>showPage(i,'habis');
+    paginationEl.appendChild(b);
+  }
 }
-function highlightActivePage(){document.querySelectorAll('.page-btn').forEach(btn=>btn.classList.remove('active'));if(currentPageType==='normal')paginationEl.children[currentPage-1]?.classList.add('active');}
 
-/* ===== Copy & Util ===== */
-function copyToClipboard(){let arr=(currentPageType==='habis'?habisPages:allPages)[currentPage-1];if(!arr)return showToast('Tidak ada link!','#cc0000');navigator.clipboard.writeText(arr.join('\n')).then(()=>showToast('✅ Link disalin!','#008000'));}
+function showPage(page,type='normal'){
+  currentPage=page; currentPageType=type;
+  let list=(type==='habis'?habisPages:allPages)[page-1];
+  if(!list)return;
+  const fileNow=dropdownEl.value||'default.txt';
+  outputEl.innerHTML=list.map(l=>{
+    const rep=`https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;
+    return `<div class='link-item'><a class='link' href='${l}' target='_blank'>${l}</a><a class='report' href='${rep}' target='_blank'>Laporkan</a></div>`;
+  }).join('');
+  outputEl.style.display='block';
+  renderPagination();
+}
 
-/* ===== Tombol Lain Tetap Sama (hapus duplikat, backup, sync, dsb) ===== */
-/* (Kode fungsi lain dari versi kamu tetap bisa dibiarkan sama persis di bawah ini) */
+function filterProdukHabis(){
+  const allLinks=inputLinksEl.value.split('\n').map(x=>x.trim()).filter(Boolean);
+  const habisList=inputHabisEl.value.split('\n').map(x=>x.trim()).filter(Boolean);
+  if(!habisList.length)return showToast('❌ Daftar produk habis kosong.','#cc0000');
+  const habisIds=new Set(habisList.map(x=>{const m=x.match(/product\/\d+\/(\d+)/);return m?m[1]:x;}));
+  const hasil=allLinks.filter(l=>{const m=l.match(/product\/\d+\/(\d+)/);return m&&habisIds.has(m[1]);});
+  if(!hasil.length)return showToast('✅ Tidak ada produk yang cocok.','#008000');
+  habisPages=[];for(let i=0;i<hasil.length;i+=MAX_PER_PAGE)habisPages.push(hasil.slice(i,i+MAX_PER_PAGE));
+  renderPagination();showToast(`✅ Ditemukan ${hasil.length} produk habis. (${habisPages.length} halaman)`,'#b36b00');
+}
+
+function copyToClipboard(){
+  let arr=(currentPageType==='habis'?habisPages:allPages)[currentPage-1];
+  if(!arr)return showToast('Tidak ada link!','#cc0000');
+  navigator.clipboard.writeText(arr.join('\n')).then(()=>showToast('✅ Link disalin!','#008000'));
+}
+
+/* Tombol Fungsi Tambahan */
+document.getElementById('hapusDuplikatBtn').onclick=()=>{const s=[...new Set(inputLinksEl.value.split('\n').map(x=>x.trim()).filter(Boolean))];inputLinksEl.value=s.join('\n');processLinks();showToast('✅ Duplikat dihapus','#008000');};
+document.getElementById('sortirPerTokoBtn').onclick=()=>{const a=inputLinksEl.value.split('\n').filter(Boolean).sort();inputLinksEl.value=a.join('\n');processLinks();showToast('✅ Disortir berdasarkan toko','#008000');};
+document.getElementById('clearInputLinksBtn').onclick=()=>{inputLinksEl.value='';showToast('🧹 Input dibersihkan','#333');processLinks();};
+document.getElementById('copyInputLinksBtn').onclick=()=>{navigator.clipboard.writeText(inputLinksEl.value).then(()=>showToast('📋 Input disalin','#008000'));};
+document.getElementById('filterProdukHabisBtn').onclick=filterProdukHabis;
+
+/* Backup dan Import */
+function exportLocalStorage(){
+  const data=JSON.stringify(localStorage);
+  const blob=new Blob([data],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="backup_madgazan.json";
+  a.click();showToast('💾 Data dibackup','#008000');
+}
+function importLocalStorage(){
+  const f=document.getElementById('importFile').files[0];
+  if(!f)return showToast('Pilih file JSON dulu','#cc0000');
+  const r=new FileReader();
+  r.onload=e=>{
+    const data=JSON.parse(e.target.result);
+    for(let k in data)localStorage.setItem(k,data[k]);
+    showToast('✅ Data diimport','#008000');
+    location.reload();
+  };
+  r.readAsText(f);
+}
+function resetLocalStorage(){
+  if(confirm('Yakin hapus semua data?')){localStorage.clear();showToast('🗑️ Semua data dihapus','#cc0000');location.reload();}
+}
+document.getElementById('syncAllBtn').onclick=()=>showToast('🔄 Simulasi sinkronisasi... (fitur dummy)','#b36b00');
+
+/* Load */
+window.addEventListener('load',()=>{processLinks();showPage(1,'normal');});
 </script>
 </body>
 </html>
