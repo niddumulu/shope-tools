@@ -5,7 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Produk Live MadGazan</title>
 <style>
-/* ... (SEMUA CSS ASLI TETAP SAMA) ... */
+  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
+  h1,h2,h3 { color:#b36b00; text-align:center; }
+  h1 { font-size:1.6rem; margin-bottom:5px; }
+  h2 { font-size:1.2rem; margin-bottom:10px; }
+  textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  textarea { height:150px; }
+  #output { display:none; margin-top:10px; background:#fff; border-radius:8px; border:1px solid #ffd42a; padding:10px 15px; box-shadow:0 0 8px rgba(255,212,42,0.2); }
+  .link-item {
+    display:flex; justify-content:space-between; align-items:center;
+    background:#fffbec; padding:8px 10px; border-bottom:1px dashed #ffd42a;
+    border-radius:5px; margin-bottom:6px;
+  }
+  .link-item a.link { color:#0066cc; text-decoration:none; word-break:break-all; flex:1; }
+  .link-item a.link:hover { text-decoration:underline; }
+  .link-item a.report { color:#cc0000; text-decoration:none; font-weight:bold; margin-left:10px; white-space:nowrap; }
+  .link-item a.report:hover { text-decoration:underline; }
+  .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .page-btn { padding:10px 14px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background-color:white; font-size:1rem; min-width:40px; }
+  .page-btn:hover { background-color:#ffd42a; color:#b36b00; }
+  .active { font-weight:bold; background-color:#ffd42a; color:#b36b00; border-color:#b36b00; }
+  #copyBtn { margin-top:12px; padding:12px; font-size:1rem; cursor:pointer; border:none; background-color:#ffd42a; color:#b36b00; border-radius:6px; width:100%; }
+  #copyBtn:hover { background-color:#e6c72b; }
+  .input-buttons { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .input-buttons button { flex:1; padding:10px; font-size:0.95rem; cursor:pointer; border:1px solid #ccc; border-radius:6px; background:#f5f5f5; }
+  .input-buttons button:hover { background:#eee; }
+  #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
+  .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
+  footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
+  .backup-area { margin-top:25px; padding:12px; background:#fffbe6; border-radius:8px; border:1px solid #ffd42a; text-align:center; }
+  @media (max-width:720px){ body { padding:12px; } textarea{ height:120px; } }
+  @media (max-width:480px){ h1,h2,h3{ font-size:1rem; } textarea{ height:120px; font-size:0.9rem; } #output{ font-size:0.85rem; } .page-btn{ padding:8px 12px; font-size:0.9rem; } #copyBtn{ font-size:0.95rem; } .input-buttons{ flex-direction:column; } .input-buttons button{ flex:unset; width:100%; } }
+
+  #toast { position: fixed; bottom: 25px; right: 25px; background: #333; color: #fff; padding: 12px 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); opacity: 0; transform: translateY(20px); transition: opacity 0.4s, transform 0.4s; z-index: 9999; max-width: 320px; white-space: pre-line; line-height:1.3; font-size:0.95rem; }
 </style>
 </head>
 <body>
@@ -22,14 +54,11 @@
   <button id="sortirPerTokoBtn">Sortir Berdasarkan Toko</button>
 </div>
 
-<!-- ✅ Tambahan: Input Produk Habis -->
-<h3>Daftar Produk Habis (Masukkan ID produk, satu per baris)</h3>
-<textarea id="inputHabis" placeholder="Contoh:\n26821351065\n123456789..."></textarea>
+<h3>🧱 Produk Habis</h3>
+<textarea id="inputHabis" placeholder="Masukkan ID atau link produk habis, satu per baris..."></textarea>
 <div class="input-buttons">
-  <button id="updateHabisBtn">Update Produk Habis</button>
-  <button id="clearHabisBtn">Clear Daftar Habis</button>
+  <button id="filterProdukHabisBtn" style="background:#ffeaea; border-color:#cc0000;">Filter Produk Habis</button>
 </div>
-<!-- ✅ Selesai tambahan -->
 
 <h3>Daftar File TXT Produk</h3>
 <select id="fileDropdown">
@@ -45,9 +74,7 @@
   <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
 </div>
 
-<div class="sponsor">
-  Disponsori oleh <strong>MadGazan Studio</strong><br>
-</div>
+<div class="sponsor">Disponsori oleh <strong>MadGazan Studio</strong></div>
 
 <div id="stats"></div>
 
@@ -58,214 +85,83 @@
 <div class="pagination" id="pagination"></div>
 
 <div class="backup-area">
-  <!-- ... (bagian backup tetap sama) ... -->
+  <h3>🔒 Backup & Import Data</h3>
+  <div class="input-buttons">
+    <button onclick="exportLocalStorage()">Backup Data ke File</button>
+    <input type="file" id="importFile" accept=".json">
+    <button onclick="importLocalStorage()">Import Data</button>
+  </div>
+  <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
+  <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Singkron Semua File TXT</button>
 </div>
 
-<footer>
-  © 2025 MadGazan Studio — Semua Hak Dilindungi
-</footer>
-
+<footer>© 2025 MadGazan Studio — Semua Hak Dilindungi</footer>
 <div id="toast"></div>
 
 <script>
-const MAX_PER_PAGE = 99;
-const PAGE_OFFSET = 0;
-let allPages = [];
-let currentPage = 1;
-
-// ✅ Tambahan untuk produk habis
-let habisList = [];
-let habisPages = [];
-// ================================
+const MAX_PER_PAGE = 99, PAGE_OFFSET = 0;
+let allPages = [], habisPages = [], currentPage = 1, currentPageType = 'normal';
 
 const inputLinksEl = document.getElementById('inputLinks');
+const inputHabisEl = document.getElementById('inputHabis');
 const statsEl = document.getElementById('stats');
 const outputEl = document.getElementById('output');
 const paginationEl = document.getElementById('pagination');
 const dropdownEl = document.getElementById('fileDropdown');
-const inputHabisEl = document.getElementById('inputHabis'); // ✅
 
-/* === Toast === */
-function showToast(message, color = '#333') {
-  const toast = document.getElementById('toast');
-  toast.textContent = message;
-  toast.style.background = color;
-  toast.style.opacity = '1';
-  toast.style.transform = 'translateY(0)';
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(20px)';
-  }, 4000);
-}
+function showToast(msg, color='#333'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color;t.style.opacity='1';t.style.transform='translateY(0)';setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(20px)'},4000);}
 
-/* ===== Penyimpanan Data ===== */
-function getStorageKey() {
-  const f = dropdownEl.value || 'default';
-  return 'appData_' + f;
-}
-function saveAppData() {
-  const key = getStorageKey();
-  const data = { 
-    inputList: inputLinksEl.value, 
-    habisList: inputHabisEl.value, // ✅ simpan habis
-    currentPage: currentPage 
-  };
-  localStorage.setItem(key, JSON.stringify(data));
-}
-function loadAppData() {
-  const key = getStorageKey();
-  const data = JSON.parse(localStorage.getItem(key) || '{}');
-  if (data.inputList) inputLinksEl.value = data.inputList;
-  if (data.habisList) inputHabisEl.value = data.habisList; // ✅ load habis
-  currentPage = data.currentPage || 1;
-}
+/* ===== Storage ===== */
+function getStorageKey(){return 'appData_'+(dropdownEl.value||'default');}
+function saveAppData(){localStorage.setItem(getStorageKey(),JSON.stringify({inputList:inputLinksEl.value,currentPage:currentPage}));}
+function loadAppData(){const d=JSON.parse(localStorage.getItem(getStorageKey())||'{}');if(d.inputList)inputLinksEl.value=d.inputList;currentPage=d.currentPage||1;}
 
-/* ===== Input Produk Habis ===== */
-document.getElementById('updateHabisBtn').addEventListener('click', () => {
-  habisList = inputHabisEl.value.split('\n').map(x => x.trim()).filter(Boolean);
-  processLinks();
-  showToast(`✅ Daftar habis diperbarui (${habisList.length} item)`, '#008000');
-  saveAppData();
-});
-document.getElementById('clearHabisBtn').addEventListener('click', () => {
-  inputHabisEl.value = '';
-  habisList = [];
-  processLinks();
-  saveAppData();
-  showToast('Daftar produk habis dikosongkan.', '#b36b00');
-});
+/* ===== Initial Load ===== */
+window.addEventListener('load',()=>{const s=localStorage.getItem('selectedFile');if(s)dropdownEl.value=s;loadAppData();processLinks();showPage(currentPage);setTimeout(checkForUpdates,2000);});
+dropdownEl.addEventListener('change',()=>{localStorage.setItem('selectedFile',dropdownEl.value);loadAppData();processLinks();showPage(currentPage);checkForUpdates();});
 
 /* ===== Proses Link ===== */
-function processLinks() {
-  const raw = inputLinksEl.value.split('\n').map(l => l.trim()).filter(Boolean);
-  const unique = [...new Set(raw)];
-  const dup = raw.length - unique.length;
-
-  // ✅ Pisahkan produk habis
-  const normalLinks = [];
-  const soldOutLinks = [];
-  for (let link of unique) {
-    const match = link.match(/product\/(\d+)\/(\d+)/);
-    if (match) {
-      const productId = match[2];
-      if (habisList.includes(productId)) soldOutLinks.push(link);
-      else normalLinks.push(link);
-    } else {
-      normalLinks.push(link);
-    }
-  }
-
-  allPages = [];
-  habisPages = [];
-
-  // Bagi halaman normal
-  for (let i = 0; i < normalLinks.length; i += MAX_PER_PAGE) {
-    allPages.push(normalLinks.slice(i, i + MAX_PER_PAGE));
-  }
-
-  // Bagi halaman habis (setelah halaman biasa)
-  for (let i = 0; i < soldOutLinks.length; i += MAX_PER_PAGE) {
-    habisPages.push(soldOutLinks.slice(i, i + MAX_PER_PAGE));
-  }
-
-  renderStats(raw.length, unique.length, dup, soldOutLinks.length);
-  renderPagination();
-  if (currentPage > allPages.length + habisPages.length) currentPage = 1;
-  showPage(currentPage);
+function processLinks(){
+  const raw=inputLinksEl.value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const unique=[...new Set(raw)], dup=raw.length-unique.length;
+  allPages=[];for(let i=0;i<unique.length;i+=MAX_PER_PAGE)allPages.push(unique.slice(i,i+MAX_PER_PAGE));
+  renderStats(raw.length,unique.length,dup);renderPagination();
 }
+function renderStats(t,u,d){statsEl.textContent=`Total link diinput: ${t}\nLink unik: ${u}\nDuplikat dihapus: ${d}\nTotal halaman: ${allPages.length}`;}
 
-function renderStats(total, uniq, dup, habisCount = 0) {
-  statsEl.textContent =
-    `Total link diinput: ${total}
-Link unik: ${uniq}
-Duplikat dihapus: ${dup}
-Produk habis: ${habisCount}
-Total halaman: ${allPages.length + habisPages.length}`;
+/* ===== Filter Produk Habis ===== */
+function filterProdukHabis(){
+  const allLinks=inputLinksEl.value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const habisList=inputHabisEl.value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!habisList.length)return showToast('❌ Daftar produk habis kosong.','#cc0000');
+  const habisIds=new Set(habisList.map(h=>{const m=h.match(/product\/\\d+\\/(\\d+)/);return m?m[1]:h;}));
+  const habisLinks=allLinks.filter(l=>{const m=l.match(/product\/\\d+\\/(\\d+)/);return m&&habisIds.has(m[1]);});
+  if(!habisLinks.length)return showToast('✅ Tidak ada produk yang cocok.','#008000');
+  habisPages=[];for(let i=0;i<habisLinks.length;i+=MAX_PER_PAGE)habisPages.push(habisLinks.slice(i,i+MAX_PER_PAGE));
+  renderPagination();showToast(`✅ Ditemukan ${habisLinks.length} produk habis (${habisPages.length} halaman).`,'#b36b00');
 }
+document.getElementById('filterProdukHabisBtn').addEventListener('click',filterProdukHabis);
 
-/* ===== Pagination + Tampilan ===== */
-function showPage(page) {
-  let isHabisPage = false;
-  let data;
-  if (page <= allPages.length) {
-    data = allPages[page - 1];
-  } else {
-    isHabisPage = true;
-    data = habisPages[page - allPages.length - 1];
-  }
-
-  if (!data || !data.length) { outputEl.style.display = 'none'; return; }
-
-  const fileNow = dropdownEl.value || 'default.txt';
-  outputEl.innerHTML = data.map(l => {
-    const reportUrl = `https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;
-    return `<div class="link-item" style="${isHabisPage ? 'background:#ffe5e5;' : ''}">
-              <a class="link" href="${l}" target="_blank">${l}</a>
-              ${isHabisPage ? '<span style="color:#cc0000;font-weight:bold;">(Habis)</span>' : ''}
-              <a class="report" href="${reportUrl}" target="_blank">Laporkan</a>
-            </div>`;
-  }).join('');
-  outputEl.style.display = 'block';
-  currentPage = page;
-  highlightActivePage();
-  saveAppData();
+/* ===== Tampilkan Halaman ===== */
+function showPage(page,type='normal'){
+  currentPage=page;currentPageType=type;
+  const fileNow=dropdownEl.value||'default.txt';
+  let list=(type==='habis'?habisPages:allPages)[page-1];if(!list)return;
+  outputEl.innerHTML=list.map(l=>{const rep=`https://niddumulu.github.io/shope-tools/lapor/index.html?link=${encodeURIComponent(l)}&file=${encodeURIComponent(fileNow)}`;return `<div class='link-item'><a class='link' href='${l}' target='_blank'>${l}</a><a class='report' href='${rep}' target='_blank'>Laporkan</a></div>`}).join('');
+  outputEl.style.display='block';highlightActivePage();saveAppData();
 }
-
-function renderPagination() {
-  paginationEl.innerHTML = '';
-  const totalNormal = allPages.length;
-  const totalHabis = habisPages.length;
-
-  for (let i = 1; i <= totalNormal; i++) {
-    const btn = document.createElement('button');
-    btn.textContent = i + PAGE_OFFSET;
-    btn.className = 'page-btn';
-    if (i === currentPage) btn.classList.add('active');
-    btn.onclick = () => showPage(i);
-    paginationEl.appendChild(btn);
-  }
-
-  // ✅ Tambahkan halaman "Habis"
-  for (let i = 1; i <= totalHabis; i++) {
-    const btn = document.createElement('button');
-    btn.textContent = `Habis ${i}`;
-    btn.className = 'page-btn';
-    if (totalNormal + i === currentPage) btn.classList.add('active');
-    btn.onclick = () => showPage(totalNormal + i);
-    paginationEl.appendChild(btn);
-  }
+function renderPagination(){
+  paginationEl.innerHTML='';
+  for(let i=1;i<=allPages.length;i++){const b=document.createElement('button');b.textContent=i;b.className='page-btn';if(i===currentPage&&currentPageType==='normal')b.classList.add('active');b.onclick=()=>showPage(i,'normal');paginationEl.appendChild(b);}
+  for(let i=1;i<=habisPages.length;i++){const b=document.createElement('button');b.textContent='Habis'+i;b.className='page-btn';b.style.background='#ffeaea';b.style.borderColor='#cc0000';if(i===currentPage&&currentPageType==='habis')b.classList.add('active');b.onclick=()=>showPage(i,'habis');paginationEl.appendChild(b);}
 }
+function highlightActivePage(){document.querySelectorAll('.page-btn').forEach(btn=>btn.classList.remove('active'));if(currentPageType==='normal')paginationEl.children[currentPage-1]?.classList.add('active');}
 
-function highlightActivePage() {
-  document.querySelectorAll('.page-btn').forEach((btn, index) => {
-    btn.classList.toggle('active', index + 1 === currentPage);
-  });
-}
+/* ===== Copy & Util ===== */
+function copyToClipboard(){let arr=(currentPageType==='habis'?habisPages:allPages)[currentPage-1];if(!arr)return showToast('Tidak ada link!','#cc0000');navigator.clipboard.writeText(arr.join('\n')).then(()=>showToast('✅ Link disalin!','#008000'));}
 
-/* ===== Copy ===== */
-function copyToClipboard() {
-  let data;
-  if (currentPage <= allPages.length) {
-    data = allPages[currentPage - 1];
-  } else {
-    data = habisPages[currentPage - allPages.length - 1];
-  }
-  if (!data) return showToast('Tidak ada link!', '#cc0000');
-  navigator.clipboard.writeText(data.join('\n')).then(() => showToast('✅ Link halaman ini disalin!', '#008000'));
-}
-
-/* ===== Load Awal ===== */
-window.addEventListener('load', () => {
-  const savedDropdown = localStorage.getItem('selectedFile');
-  if (savedDropdown) dropdownEl.value = savedDropdown;
-  loadAppData();
-  habisList = inputHabisEl.value.split('\n').map(x => x.trim()).filter(Boolean);
-  processLinks();
-  setTimeout(checkForUpdates, 2000);
-});
-
-/* ===== Tombol & Sinkronisasi tetap sama ===== */
-// ... (kode lain tetap tidak diubah)
+/* ===== Tombol Lain Tetap Sama (hapus duplikat, backup, sync, dsb) ===== */
+/* (Kode fungsi lain dari versi kamu tetap bisa dibiarkan sama persis di bawah ini) */
 </script>
 </body>
 </html>
