@@ -97,7 +97,7 @@
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
   <button id="hapusDuplikatBtn">Hapus Duplikat</button>
-  <button id="sortirPerTokoBtn">Sortir Berdasarkan Toko</button>
+  
 </div>
 
 <h3>Daftar File TXT Produk</h3>
@@ -111,7 +111,7 @@
 </select>
 <div id="updateNotice" style="margin:10px 0; font-weight:bold;"></div>
 <div class="input-buttons">
-  <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
+  <button id="ambilFileListLinksBtn">Download Terupdate</button>
 </div>
 
 <div class="sponsor">
@@ -407,7 +407,7 @@ async function checkForUpdates() {
     const localText = (localData.inputList || '').trim();
 
     if (serverText !== localText) {
-      noticeEl.textContent = `⚠️ Data lokal "${fileName}" berbeda dengan versi server.`;
+      noticeEl.textContent = `⚠️ Data lokal "${fileName}" berbeda dengan versi server. Klik download untuk update terbaru`;
       noticeEl.style.color = '#b30000';
     } else {
       noticeEl.textContent = `✅ Data lokal "${fileName}" sudah versi terbaru.`;
