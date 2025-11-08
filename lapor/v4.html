@@ -1,245 +1,229 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Laporan Kendala MadGazan Studio</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pembaca Channel - Bot B</title>
 <style>
-  body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: linear-gradient(135deg, #00b4db, #0083b0);
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .card {
-    background: #ffffff;
-    padding: 35px 40px;
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    width: 90%;
-    max-width: 500px;
-    text-align: center;
-    animation: fadeIn 0.6s ease-in-out;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .header-icon {
-    font-size: 40px;
-    color: #00b4db;
-    margin-bottom: 10px;
-  }
-
-  h2 {
-    color: #0083b0;
-    margin-bottom: 10px;
-  }
-
-  p.subtitle {
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 20px;
-  }
-
-  textarea {
-    width: 100%;
-    height: 130px;
-    padding: 14px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    resize: none;
-    outline: none;
-    transition: all 0.2s ease-in-out;
-    font-family: inherit;
-    box-sizing: border-box;
-  }
-
-  textarea:focus {
-    border-color: #00b4db;
-    box-shadow: 0 0 5px rgba(0,180,219,0.4);
-  }
-
-  .checkbox-group {
-    text-align: left;
-    margin-top: 12px;
-  }
-
-  .checkbox-group label {
-    display: block;
-    font-size: 15px;
-    margin-bottom: 5px;
-    cursor: pointer;
-  }
-
-  button {
-    background-color: #00b4db;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 12px 28px;
-    font-size: 16px;
-    margin-top: 18px;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-  }
-
-  button:hover {
-    background-color: #0092b3;
-    transform: translateY(-1px);
-  }
-
-  #status {
-    margin-top: 15px;
-    font-weight: 500;
-    font-size: 15px;
-  }
-
-  footer {
-    margin-top: 25px;
-    font-size: 12px;
-    color: #777;
-  }
+  :root{--bg:linear-gradient(135deg,#00b4db,#0083b0);--card:#fff;--muted:#666}
+  body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Arial;min-height:100vh;margin:0;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+  .wrap{width:95%;max-width:900px;margin:28px}
+  .card{background:var(--card);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+  h1{margin:0 0 8px;font-size:20px;color:#024d5b}
+  p.lead{margin:0 0 14px;color:var(--muted);font-size:13px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .btn{background:#00b4db;color:#fff;border:0;padding:8px 12px;border-radius:10px;cursor:pointer}
+  .btn.ghost{background:#f2f6f8;color:#024d5b;border:1px solid #e6eef2}
+  .info{font-size:12px;color:#666;margin-bottom:10px}
+  #pesanList{max-height:56vh;overflow:auto;border-radius:10px;padding:10px;border:1px solid #e6eef2;background:#fbfeff}
+  .item{padding:10px;border-radius:8px;margin-bottom:8px;background:#fff;box-shadow:0 1px 4px rgba(2,77,91,0.04);white-space:pre-wrap}
+  .meta{font-size:12px;color:#666;margin-bottom:6px}
+  .warning{background:#fff3cd;border:1px solid #ffeeba;color:#856404;padding:10px;border-radius:8px;margin-bottom:12px}
+  footer{font-size:12px;color:#777;margin-top:12px;text-align:center}
+  .small{font-size:12px;color:#555}
+  input.token{width:100%;padding:8px;border-radius:8px;border:1px solid #ddd}
+  @media (min-width:700px){.controls{flex-wrap:nowrap}}
 </style>
 </head>
 <body>
-  <div class="card">
-    <div class="header-icon">📢</div>
-    <h2>Laporan Kendala</h2>
-    <p class="subtitle">Laporkan kendala produk atau link Shopee ditambah keterangan juga boleh.</p>
+  <div class="wrap">
+    <div class="card">
+      <h1>📡 Pembaca Channel — Bot B</h1>
+      <p class="lead">Bot kedua ini memanggil <code>getUpdates</code> untuk membaca <strong>channel_post</strong> dari channel tempat bot jadi admin.</p>
 
-    <textarea id="pesan" placeholder="Tulis pesanmu di sini..."></textarea>
+      <div class="warning">
+        <strong>Perhatian keamanan:</strong>
+        Menaruh <em>bot token</em> langsung di file HTML berisiko — siapa pun yang buka halaman dapat melihat token. <br>
+        Rekomendasi: gunakan server/proxy untuk menyimpan token, atau batasi akses halaman ini (intranet). 
+      </div>
 
-    <!-- Tambahan Checkbox -->
-    <div class="checkbox-group">
-      <label><input type="checkbox" class="tag" value="#kalah"> #kalah</label>
-      <label><input type="checkbox" class="tag" value="#tokolive"> #tokolive</label>
-      <label><input type="checkbox" class="tag" value="#kalahnggamblik"> #kalahnggamblik</label>
-      <label><input type="checkbox" class="tag" value="#kalahvideo"> #kalahvideo</label>
-      <label><input type="checkbox" class="tag" value="#nopopup"> #nopopup</label>
-      <label><input type="checkbox" class="tag" value="#habis"> #habis</label>
+      <div style="margin-bottom:10px">
+        <label class="small">Token Bot B (ganti dengan token bot pembaca):</label>
+        <input id="tokenInput" class="token" placeholder="Masukkan token bot pembaca (contoh: 123:ABC...)" />
+      </div>
+
+      <div class="controls">
+        <button id="btnStart" class="btn">▶ Mulai</button>
+        <button id="btnStop" class="btn ghost">⏸ Berhenti</button>
+        <button id="btnClear" class="btn ghost">🧹 Reset offset</button>
+        <button id="btnFetchNow" class="btn">🔄 Ambil sekarang</button>
+      </div>
+
+      <div class="info">
+        <span id="status">Status: <em>offline</em></span> · 
+        <span id="lastInfo">Last update id: <em>—</em></span> · 
+        <span id="intervalInfo">Interval: <em>5000ms</em></span>
+      </div>
+
+      <div id="pesanList">Tekan "Mulai" untuk mulai mengambil pesan dari channel.</div>
+
+      <footer>© 2025 MadGazan Studio</footer>
     </div>
-
-    <button onclick="kirimPesan()">Kirim Sekarang</button>
-    <p id="status"></p>
-
-    <footer>© 2025 MadGazan Studio</footer>
   </div>
 
 <script>
-async function kirimPesan() {
-  const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY"; // ganti saat lokal
-  const chat_id = "-1003099805948";
-  const pesanInput = document.getElementById("pesan").value.trim();
-  const status = document.getElementById("status");
+/*
+  Cara kerja:
+  - Memanggil getUpdates?offset=<last_update_id+1> untuk mengambil update baru dan sekaligus menandai update lama sudah "diterima".
+  - Menyimpan last_update_id di localStorage agar tidak terduplikasi saat reload.
+  - Tampilkan channel_post.text dan info tanggal + message_id.
+  - WARNING: menaruh token di browser berisiko. Lebih baik simpan token di server.
+*/
 
-  // Ambil semua tag yang dicentang
-  const selectedTags = Array.from(document.querySelectorAll(".tag:checked"))
-    .map(cb => cb.value)
-    .join(" ");
+const LS_KEY = "botb_last_update_id_v1";
+let polling = null;
+let POLL_INTERVAL = 5000;
 
-  // Gabungkan pesan dengan tag di akhir
-  const pesan = selectedTags ? `${pesanInput}\n\n${selectedTags}` : pesanInput;
+const tokenInput = document.getElementById("tokenInput");
+const btnStart = document.getElementById("btnStart");
+const btnStop = document.getElementById("btnStop");
+const btnClear = document.getElementById("btnClear");
+const btnFetchNow = document.getElementById("btnFetchNow");
+const statusEl = document.getElementById("status");
+const lastInfoEl = document.getElementById("lastInfo");
+const pesanList = document.getElementById("pesanList");
+const intervalInfo = document.getElementById("intervalInfo");
 
-  if (!pesanInput) {
-    status.textContent = "⚠️ Pesan tidak boleh kosong.";
-    status.style.color = "#cc0000";
-    return;
+function setStatus(text, color) {
+  statusEl.innerHTML = `Status: <strong style="color:${color||'#007d9c'}">${text}</strong>`;
+}
+
+function getStoredOffset() {
+  const v = localStorage.getItem(LS_KEY);
+  return v ? parseInt(v,10) : null;
+}
+function setStoredOffset(id) {
+  if (id === null || id === undefined) { localStorage.removeItem(LS_KEY); return; }
+  localStorage.setItem(LS_KEY, String(id));
+  lastInfoEl.innerHTML = `Last update id: <em>${id}</em>`;
+}
+
+function appendItem(html) {
+  const div = document.createElement("div");
+  div.className = "item";
+  div.innerHTML = html;
+  pesanList.prepend(div);
+}
+
+// format unix timestamp -> readable
+function fmtDate(ts) {
+  try {
+    const d = new Date(ts * 1000);
+    return d.toLocaleString();
+  } catch(e) { return String(ts); }
+}
+
+async function fetchUpdatesOnce(token) {
+  const base = `https://api.telegram.org/bot${encodeURIComponent(token)}/getUpdates`;
+  let offset = getStoredOffset();
+  let url = base;
+  if (offset) url += `?offset=${offset + 1}`; // ambil update setelah last stored
+  // tambahkan timeout manual? fetch browser tidak punya built-in timeout; kept simple
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.description || "Unknown error");
+
+  if (!Array.isArray(data.result) || data.result.length === 0) {
+    return { updates: [], raw: data };
   }
 
-  status.textContent = "⏳ Mengirim...";
-  status.style.color = "#555";
+  // urut berdasarkan update_id naik
+  data.result.sort((a,b) => a.update_id - b.update_id);
+  return { updates: data.result, raw: data };
+}
 
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
-
+async function processUpdates(token) {
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chat_id, text: pesan })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      status.textContent = "✅ Pesan laporan terkirim!";
-      status.style.color = "#009f3c";
-      document.getElementById("pesan").value = "";
-      document.querySelectorAll(".tag").forEach(cb => cb.checked = false);
-    } else {
-      status.textContent = "❌ Gagal: " + data.description;
-      status.style.color = "#cc0000";
+    setStatus("mengambil...", "#007d9c");
+    const { updates } = await fetchUpdatesOnce(token);
+
+    if (!updates || updates.length === 0) {
+      setStatus("aktif — tidak ada update baru", "#007d9c");
+      return;
     }
+
+    // proses setiap update
+    for (const upd of updates) {
+      // prefer channel_post, fallback message
+      const msgObj = upd.channel_post || upd.message || upd.edited_channel_post || upd.edited_message;
+      if (!msgObj) continue;
+
+      const chat = msgObj.chat || msgObj.sender_chat || { id: "?" };
+      const text = msgObj.text || msgObj.caption || "(non-text media)";
+      const mid = msgObj.message_id || msgObj.post_id || "(id?)";
+      const date = fmtDate(msgObj.date || upd.date || Math.floor(Date.now()/1000));
+
+      const html =
+        `<div class="meta"><strong>Chat:</strong> ${escapeHtml(chat.title || chat.username || chat.id)} · <strong>msg_id:</strong> ${mid} · <strong>date:</strong> ${date}</div>` +
+        `<div>${escapeHtml(text)}</div>`;
+
+      appendItem(html);
+      // update stored offset to this update id (so next call will skip it)
+      setStoredOffset(upd.update_id);
+    }
+
+    setStatus(`sukses; ${updates.length} update diproses`, "#0a7a44");
   } catch (err) {
-    status.textContent = "🚫 Error jaringan: " + err.message;
-    status.style.color = "#cc0000";
+    setStatus(`error: ${escapeHtml(err.message || err)}`, "#c0392b");
+    console.error("fetch/process error:", err);
   }
 }
 
-/* === Auto-isi dari URL === */
-window.addEventListener('load', () => {
-  const params = new URLSearchParams(window.location.search);
-  const link = params.get('link');
-  const file = params.get('file');
-  if (link) {
-    document.getElementById('pesan').value = file ? `${link} - ${file}` : link;
+// helper safe text -> html
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+
+// kontrol UI
+btnStart.addEventListener("click", () => {
+  const token = tokenInput.value.trim();
+  if (!token) return alert("Masukkan token Bot B terlebih dahulu.");
+  if (polling) { alert("Sudah berjalan."); return; }
+  // tampilkan token (trimming) terakhir disimpan
+  setStatus("memulai polling...", "#007d9c");
+  // langsung fetch sekali dulu
+  processUpdates(token);
+  polling = setInterval(() => processUpdates(token), POLL_INTERVAL);
+  intervalInfo.innerHTML = `Interval: <em>${POLL_INTERVAL}ms</em>`;
+});
+
+btnStop.addEventListener("click", () => {
+  if (polling) {
+    clearInterval(polling);
+    polling = null;
+    setStatus("berhenti", "#666");
+  } else {
+    setStatus("sudah berhenti", "#666");
   }
 });
-  <hr>
-<h3>Pesan Terbaru:</h3>
-<div id="pesanList" style="text-align:left;font-size:14px;max-height:250px;overflow:auto;border:1px solid #ddd;padding:10px;border-radius:10px;background:#f9f9f9;"></div>
 
-<script>
-async function ambilPesanTerbaru() {
-  const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY"; // token bot
-  const url = `https://api.telegram.org/bot${token}/getUpdates`;
-
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if (!data.ok) {
-      document.getElementById('pesanList').textContent = "Gagal ambil pesan.";
-      return;
-    }
-
-    const pesanContainer = document.getElementById('pesanList');
-    pesanContainer.innerHTML = "";
-
-    // Ambil hanya pesan text dari hasil update
-    const pesanText = data.result
-      .filter(update => update.message && update.message.text)
-      .slice(-10) // ambil 10 terakhir
-      .reverse();
-
-    if (pesanText.length === 0) {
-      pesanContainer.textContent = "Belum ada pesan.";
-      return;
-    }
-
-    pesanText.forEach(p => {
-      const el = document.createElement('div');
-      el.style.marginBottom = "8px";
-      el.textContent = `🗨️ ${p.message.text}`;
-      pesanContainer.appendChild(el);
-    });
-
-  } catch (err) {
-    document.getElementById('pesanList').textContent = "Error jaringan: " + err.message;
+btnClear.addEventListener("click", () => {
+  if (confirm("Reset last update id (akan menyebabkan pembacaan ulang update lama)?")) {
+    localStorage.removeItem(LS_KEY);
+    lastInfoEl.innerHTML = `Last update id: <em>—</em>`;
+    pesanList.innerHTML = "Offset di-reset. Tekan Ambil sekarang untuk memuat ulang.";
   }
-}
+});
 
-// Ambil setiap 10 detik otomatis
-setInterval(ambilPesanTerbaru, 10000);
-ambilPesanTerbaru();
-</script>
+btnFetchNow.addEventListener("click", () => {
+  const token = tokenInput.value.trim();
+  if (!token) return alert("Masukkan token Bot B terlebih dahulu.");
+  processUpdates(token);
+});
 
+// saat load: set info last offset bila ada
+(function init() {
+  const last = getStoredOffset();
+  if (last) lastInfoEl.innerHTML = `Last update id: <em>${last}</em>`;
+  else lastInfoEl.innerHTML = `Last update id: <em>—</em>`;
+  setStatus("idle", "#666");
+})();
 </script>
 </body>
 </html>
