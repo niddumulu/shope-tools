@@ -118,7 +118,7 @@
 
     <textarea id="pesan" placeholder="Tulis pesanmu di sini..."></textarea>
 
-    <!-- Tambahan Checkbox -->
+    <!-- Checkbox Tag -->
     <div class="checkbox-group">
       <label><input type="checkbox" class="tag" value="#kalah"> #kalah</label>
       <label><input type="checkbox" class="tag" value="#tokolive"> #tokolive</label>
@@ -164,7 +164,11 @@ async function kirimPesan() {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chat_id, text: pesan })
+      body: JSON.stringify({
+        chat_id: chat_id,
+        text: pesan,
+        disable_web_page_preview: true // ✅ Mencegah preview link
+      })
     });
     const data = await res.json();
     if (data.ok) {
