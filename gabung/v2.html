@@ -128,11 +128,12 @@
 
 <div class="backup-area">
   <h3>🔒 Backup & Import Data</h3>
-  <div class="input-buttons">
-    <button onclick="exportLocalStorage()">Backup Data ke File</button>
-    <input type="file" id="importFile" accept=".json">
-    <button onclick="importLocalStorage()">Import Data</button>
-  </div>
+ <div class="input-buttons">
+  <button onclick="exportLocalStorage()">Backup Data ke File</button>
+  <button onclick="exportLocalStorageClean()">Backup Data (Tanpa Duplikat)</button>
+  <input type="file" id="importFile" accept=".json">
+  <button onclick="importLocalStorage()">Import Data</button>
+</div>
   <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
   <button id="syncAllBtn" style="margin-top:15px; background:#d0ffd0; border-color:#00aa00;">🔄 Singkron Semua File TXT</button>
 </div>
@@ -419,6 +420,48 @@ async function checkForUpdates() {
     noticeEl.style.color = '#b30000';
   }
 }
+function exportLocalStorageClean() {
+  const cleanedData = {};
+  let totalRemoved = 0;
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    const value = localStorage.getItem(key);
+
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && parsed.inputList) {
+        // Pisahkan link
+        const lines = parsed.inputList.split('\n').map(l => l.trim()).filter(Boolean);
+        const unique = [...new Set(lines)];
+        const removed = lines.length - unique.length;
+        totalRemoved += removed;
+
+        // Simpan hasil bersih
+        cleanedData[key] = JSON.stringify({
+          ...parsed,
+          inputList: unique.join('\n')
+        });
+      } else {
+        cleanedData[key] = value;
+      }
+    } catch (e) {
+      // Jika bukan JSON valid, simpan apa adanya
+      cleanedData[key] = value;
+    }
+  }
+
+  const blob = new Blob([JSON.stringify(cleanedData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'madgazan_backup_clean.json';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  showToast(`✅ Backup bersih selesai!\nDuplikat dihapus: ${totalRemoved}`, '#008000');
+}
+
 </script>
 </body>
 </html>
