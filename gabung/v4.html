@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Filter / Hapus Berdasarkan ID Toko Shopee</title>
+<title>Filter Otomatis Berdasarkan ID Toko Shopee</title>
 <style>
   body {
     font-family: 'Segoe UI', Arial, sans-serif;
@@ -35,19 +35,6 @@
     border-radius: 6px;
     resize: vertical;
     box-sizing: border-box;
-  }
-  button {
-    background: #b36b00;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 18px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    margin-top: 10px;
-  }
-  button:hover {
-    background: #d48c1f;
   }
   .result-area {
     max-width: 700px;
@@ -86,60 +73,24 @@
     white-space: pre-wrap;
     line-height: 1.4;
   }
-  #toast {
-    position: fixed;
-    bottom: 20px; right: 25px;
-    background: #2196F3; color: #fff;
-    padding: 10px 16px; border-radius: 6px;
-    opacity: 0; transform: translateY(20px);
-    transition: opacity 0.3s, transform 0.3s;
-    z-index: 9999;
-  }
 </style>
 </head>
 <body>
 
-<h1>Filter / Hapus Berdasarkan ID Toko Shopee</h1>
+<h1>Filter Otomatis Berdasarkan ID Toko Shopee</h1>
 
 <div class="filter-box">
-  <p><b>Masukkan satu atau beberapa ID toko</b> (pisah koma atau baris baru).  
-  Bisa juga link lengkap Shopee. Contoh:<br>
-  <code>968553125</code> atau <code>https://shopee.co.id/product/30467025/28733961936</code></p>
+  <p><b>Masukkan ID toko</b> (pisah koma, baris baru, atau link Shopee).  
+  Contoh:<br><code>968553125</code> atau <code>https://shopee.co.id/product/30467025/28733961936</code></p>
   <textarea id="idsInput" placeholder="Contoh: 968553125, 30467025"></textarea>
-  <button onclick="filterShopee()">Filter & Hapus Link Toko</button>
 </div>
 
 <div class="result-area">
   <div class="pagination" id="pagination"></div>
-  <pre id="output">Belum ada hasil yang ditampilkan.</pre>
+  <pre id="output">Memuat data dari localStorage...</pre>
 </div>
 
-<div id="toast"></div>
-
 <script>
-function showToast(msg, type='info'){
-  const toast=document.getElementById('toast');
-  toast.textContent=msg;
-  toast.style.background=type==='success'?'#4CAF50':type==='error'?'#f44336':type==='warning'?'#b36b00':'#2196F3';
-  toast.style.opacity='1'; toast.style.transform='translateY(0)';
-  setTimeout(()=>{toast.style.opacity='0'; toast.style.transform='translateY(20px)';},3000);
-}
-
-/* Parse ID toko dari input (bisa link, angka, atau campuran) */
-function parseIds(){
-  const raw=document.getElementById('idsInput').value.trim();
-  if(!raw) return [];
-  const parts=raw.split(/[\n,; ]+/).map(s=>s.trim()).filter(Boolean);
-  const ids=[];
-  for(const p of parts){
-    const match=p.match(/product\/(\d+)\//);
-    if(match){ ids.push(match[1]); continue; }
-    const digits=p.replace(/\D/g,'');
-    if(digits.length>=5) ids.push(digits);
-  }
-  return Array.from(new Set(ids));
-}
-
 /* Ambil semua link dari localStorage */
 function getAllLinks(){
   const all=[];
@@ -157,7 +108,22 @@ function getAllLinks(){
   return all;
 }
 
-let filteredLinks=[], currentPage=1;
+/* Parse ID toko dari input */
+function parseIds(){
+  const raw=document.getElementById('idsInput').value.trim();
+  if(!raw) return [];
+  const parts=raw.split(/[\n,; ]+/).map(s=>s.trim()).filter(Boolean);
+  const ids=[];
+  for(const p of parts){
+    const match=p.match(/product\/(\d+)\//);
+    if(match){ ids.push(match[1]); continue; }
+    const digits=p.replace(/\D/g,'');
+    if(digits.length>=5) ids.push(digits);
+  }
+  return Array.from(new Set(ids));
+}
+
+let allLinks=[], filteredLinks=[], currentPage=1;
 const perPage=99;
 
 function renderPage(){
@@ -167,7 +133,7 @@ function renderPage(){
   const totalPages=Math.ceil(filteredLinks.length/perPage)||1;
 
   document.getElementById('output').textContent=
-    slice.length ? slice.join('\n') : 'Tidak ada link untuk ditampilkan.';
+    slice.length ? slice.join('\n') : 'Tidak ada link ditemukan.';
 
   const pagDiv=document.getElementById('pagination');
   pagDiv.innerHTML='';
@@ -188,37 +154,28 @@ function renderPage(){
   pagDiv.appendChild(nextBtn);
 }
 
-/* Fitur utama: filter dan hapus link toko */
-function filterShopee(){
+/* Filter otomatis */
+function autoFilter(){
   const ids=parseIds();
-  if(!ids.length){ showToast('Masukkan minimal 1 ID toko.', 'warning'); return; }
-
-  const all=getAllLinks();
-  const regex=new RegExp(`product\\/(${ids.join('|')})\\/`);
-  const newLinks=all.filter(link=>!regex.test(link));
-
-  const removed=all.length-newLinks.length;
-  filteredLinks=newLinks;
-  currentPage=1;
-
-  // Hapus data toko dari localStorage
-  for(let i=0;i<localStorage.length;i++){
-    const key=localStorage.key(i);
-    let val=localStorage.getItem(key);
-    try{
-      const obj=JSON.parse(val);
-      if(obj && obj.inputList){
-        const lines=obj.inputList.split('\n').map(v=>v.trim()).filter(Boolean);
-        const filtered=lines.filter(l=>!regex.test(l));
-        obj.inputList=filtered.join('\n');
-        localStorage.setItem(key, JSON.stringify(obj));
-      }
-    }catch(e){}
+  if(ids.length){
+    const regex=new RegExp(`product\\/(${ids.join('|')})\\/`);
+    filteredLinks=allLinks.filter(link=>!regex.test(link));
+  } else {
+    filteredLinks=[...allLinks];
   }
-
-  showToast(`Selesai! Dihapus: ${removed} link`, 'success');
+  currentPage=1;
   renderPage();
 }
+
+/* Inisialisasi */
+window.addEventListener('DOMContentLoaded', ()=>{
+  allLinks=getAllLinks();
+  filteredLinks=[...allLinks];
+  renderPage();
+  document.getElementById('idsInput').addEventListener('input', ()=>{
+    autoFilter();
+  });
+});
 </script>
 
 </body>
