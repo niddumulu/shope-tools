@@ -187,7 +187,9 @@ function urutkanPesan(dataString) {
 
 async function kirimPesan() {
   const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY";
-  const chat_id = "-1003099805948";
+  const channelUmum = "-1003099805948";
+  const channelKhusus = "-1003309662867";
+
   const input = document.getElementById("pesan");
   const status = document.getElementById("status");
   const pesanBaru = input.value.trim();
@@ -202,11 +204,11 @@ async function kirimPesan() {
     return;
   }
 
-  const dataLama = localStorage.getItem("laporanKendala") || "";
   const pesanGabung = selectedTags ? `${pesanBaru} ${selectedTags}` : pesanBaru;
 
-  // 🚫 Cegah duplikat persis
+  const dataLama = localStorage.getItem("laporanKendala") || "";
   const baris = dataLama.split("\n").map(s => s.trim()).filter(Boolean);
+
   if (baris.includes(pesanGabung)) {
     status.textContent = "⚠️ Pesan identik sudah tersimpan, tidak disimpan ulang.";
     status.style.color = "#cc0000";
@@ -216,34 +218,47 @@ async function kirimPesan() {
   const semuaPesanGabung = dataLama ? `${dataLama}\n${pesanGabung}` : pesanGabung;
   const semuaPesanUrut = urutkanPesan(semuaPesanGabung);
   localStorage.setItem("laporanKendala", semuaPesanUrut);
+  localStorage.setItem("laporanTanggal", new Date().toISOString().slice(0, 10));
 
-  const today = new Date().toISOString().slice(0, 10);
-  localStorage.setItem("laporanTanggal", today);
-
-  status.textContent = "⏳ Mengirim semua laporan (urut)...";
+  status.textContent = "⏳ Mengirim laporan ke Telegram...";
   status.style.color = "#555";
 
+  const semuaBaris = semuaPesanUrut.split("\n").map(s => s.trim()).filter(Boolean);
+  const pesanHabis = semuaBaris.filter(p => p.includes("#habis")).join("\n");
+  const pesanUmum = semuaBaris.filter(p => !p.includes("#habis")).join("\n");
+
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id,
-        text: semuaPesanUrut,
-        disable_web_page_preview: true
-      })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      status.textContent = "✅ Semua laporan terkirim dan tersimpan urut!";
-      status.style.color = "#009f3c";
-      input.value = "";
-      document.querySelectorAll(".tag").forEach(cb => cb.checked = false);
-    } else {
-      status.textContent = "❌ Gagal: " + data.description;
-      status.style.color = "#cc0000";
+    if (pesanUmum) {
+      await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: channelUmum,
+          text: pesanUmum,
+          disable_web_page_preview: true
+        })
+      });
     }
+
+    if (pesanHabis) {
+      await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: channelKhusus,
+          text: pesanHabis,
+          disable_web_page_preview: true
+        })
+      });
+    }
+
+    status.textContent = "✅ Semua laporan berhasil dikirim ke channel masing-masing!";
+    status.style.color = "#009f3c";
+    input.value = "";
+    document.querySelectorAll(".tag").forEach(cb => cb.checked = false);
+
   } catch (err) {
     status.textContent = "🚫 Error jaringan: " + err.message;
     status.style.color = "#cc0000";
