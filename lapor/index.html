@@ -97,10 +97,33 @@
     transform: translateY(-1px);
   }
 
+  #lihatData, #hapusData {
+    background-color: #555;
+    margin-top: 10px;
+  }
+
+  #lihatData:hover, #hapusData:hover {
+    background-color: #333;
+  }
+
   #status {
     margin-top: 15px;
     font-weight: 500;
     font-size: 15px;
+  }
+
+  #tampilData {
+    display: none;
+    margin-top: 15px;
+    width: 100%;
+    height: 120px;
+    font-size: 14px;
+    border-radius: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    resize: none;
   }
 
   footer {
@@ -118,7 +141,6 @@
 
     <textarea id="pesan" placeholder="Tulis pesanmu di sini..."></textarea>
 
-    <!-- Checkbox Tag -->
     <div class="checkbox-group">
       <label><input type="checkbox" class="tag" value="#kalah"> #kalah</label>
       <label><input type="checkbox" class="tag" value="#tokolive"> #tokolive</label>
@@ -129,52 +151,94 @@
     </div>
 
     <button onclick="kirimPesan()">Kirim Sekarang</button>
+    <button id="lihatData" onclick="lihatSemua()">📋 Lihat Semua Laporan</button>
+    <button id="hapusData" onclick="hapusSemua()">🧹 Hapus Semua Data Lokal</button>
+
+    <textarea id="tampilData" readonly></textarea>
     <p id="status"></p>
 
     <footer>© 2025 MadGazan Studio</footer>
   </div>
 
 <script>
-async function kirimPesan() {
-  const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY"; // ganti saat lokal
-  const chat_id = "-1003099805948";
-  const pesanInput = document.getElementById("pesan").value.trim();
-  const status = document.getElementById("status");
+function urutkanPesan(dataString) {
+  const baris = dataString
+    .split("\n")
+    .map(s => s.trim())
+    .filter(Boolean);
 
-  // Ambil semua tag yang dicentang
+  return baris.sort((a, b) => {
+    const tagsA = (a.match(/#\w+/g) || []);
+    const tagsB = (b.match(/#\w+/g) || []);
+
+    if (tagsA.length === 0 && tagsB.length === 0) return 0;
+    if (tagsA.length === 0) return 1;
+    if (tagsB.length === 0) return -1;
+
+    const tag1A = tagsA[0].toLowerCase();
+    const tag1B = tagsB[0].toLowerCase();
+    if (tag1A !== tag1B) return tag1A.localeCompare(tag1B);
+
+    const tag2A = tagsA[1] ? tagsA[1].toLowerCase() : "";
+    const tag2B = tagsB[1] ? tagsB[1].toLowerCase() : "";
+    return tag2A.localeCompare(tag2B);
+  }).join("\n");
+}
+
+async function kirimPesan() {
+  const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY";
+  const chat_id = "-1003099805948";
+  const input = document.getElementById("pesan");
+  const status = document.getElementById("status");
+  const pesanBaru = input.value.trim();
+
   const selectedTags = Array.from(document.querySelectorAll(".tag:checked"))
     .map(cb => cb.value)
     .join(" ");
 
-  // Gabungkan pesan dengan tag di akhir
-  const pesan = selectedTags ? `${pesanInput}\n\n${selectedTags}` : pesanInput;
-
-  if (!pesanInput) {
+  if (!pesanBaru) {
     status.textContent = "⚠️ Pesan tidak boleh kosong.";
     status.style.color = "#cc0000";
     return;
   }
 
-  status.textContent = "⏳ Mengirim...";
+  const dataLama = localStorage.getItem("laporanKendala") || "";
+  const pesanGabung = selectedTags ? `${pesanBaru} ${selectedTags}` : pesanBaru;
+
+  // 🚫 Cegah duplikat persis
+  const baris = dataLama.split("\n").map(s => s.trim()).filter(Boolean);
+  if (baris.includes(pesanGabung)) {
+    status.textContent = "⚠️ Pesan identik sudah tersimpan, tidak disimpan ulang.";
+    status.style.color = "#cc0000";
+    return;
+  }
+
+  const semuaPesanGabung = dataLama ? `${dataLama}\n${pesanGabung}` : pesanGabung;
+  const semuaPesanUrut = urutkanPesan(semuaPesanGabung);
+  localStorage.setItem("laporanKendala", semuaPesanUrut);
+
+  const today = new Date().toISOString().slice(0, 10);
+  localStorage.setItem("laporanTanggal", today);
+
+  status.textContent = "⏳ Mengirim semua laporan (urut)...";
   status.style.color = "#555";
 
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
-
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chat_id: chat_id,
-        text: pesan,
-        disable_web_page_preview: true // ✅ Mencegah preview link
+        chat_id,
+        text: semuaPesanUrut,
+        disable_web_page_preview: true
       })
     });
     const data = await res.json();
     if (data.ok) {
-      status.textContent = "✅ Pesan laporan terkirim!";
+      status.textContent = "✅ Semua laporan terkirim dan tersimpan urut!";
       status.style.color = "#009f3c";
-      document.getElementById("pesan").value = "";
+      input.value = "";
       document.querySelectorAll(".tag").forEach(cb => cb.checked = false);
     } else {
       status.textContent = "❌ Gagal: " + data.description;
@@ -186,13 +250,42 @@ async function kirimPesan() {
   }
 }
 
-/* === Auto-isi dari URL === */
+function lihatSemua() {
+  const tampil = document.getElementById("tampilData");
+  const data = localStorage.getItem("laporanKendala") || "(belum ada data)";
+  tampil.value = urutkanPesan(data);
+  tampil.style.display = "block";
+}
+
+function hapusSemua() {
+  if (confirm("Yakin ingin menghapus semua laporan lokal?")) {
+    localStorage.removeItem("laporanKendala");
+    localStorage.removeItem("laporanTanggal");
+    document.getElementById("tampilData").value = "";
+    alert("✅ Semua data lokal telah dihapus.");
+  }
+}
+
+function resetTiapHari() {
+  const today = new Date().toISOString().slice(0, 10);
+  const lastSaved = localStorage.getItem("laporanTanggal");
+
+  if (lastSaved && lastSaved !== today) {
+    localStorage.removeItem("laporanKendala");
+    localStorage.removeItem("laporanTanggal");
+    console.log("🧹 Data lama dihapus otomatis karena hari baru.");
+  }
+
+  localStorage.setItem("laporanTanggal", today);
+}
+
 window.addEventListener('load', () => {
+  resetTiapHari();
+
   const params = new URLSearchParams(window.location.search);
   const link = params.get('link');
   const file = params.get('file');
   if (link) {
-    // Jika file ada, tambahkan tanda #
     const fileDisplay = file ? `#${file}` : "";
     document.getElementById('pesan').value = fileDisplay
       ? `${link} - ${fileDisplay}`
