@@ -118,7 +118,6 @@
 
     <textarea id="pesan" placeholder="Tulis pesanmu di sini..."></textarea>
 
-    <!-- Checkbox Tag -->
     <div class="checkbox-group">
       <label><input type="checkbox" class="tag" value="#kalah"> #kalah</label>
       <label><input type="checkbox" class="tag" value="#tokolive"> #tokolive</label>
@@ -138,31 +137,30 @@
 async function kirimPesan() {
   const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY"; // ganti saat lokal
   const chat_id = "-1003099805948";
-  const pesanInput = document.getElementById("pesan").value.trim();
+  const input = document.getElementById("pesan");
   const status = document.getElementById("status");
+  const pesanBaru = input.value.trim();
 
-  // Ambil semua tag yang dicentang
   const selectedTags = Array.from(document.querySelectorAll(".tag:checked"))
     .map(cb => cb.value)
     .join(" ");
 
-  // Gabungkan pesan dengan tag di akhir
-  const pesan = selectedTags ? `${pesanInput}\n\n${selectedTags}` : pesanInput;
-
-  if (!pesanInput) {
+  if (!pesanBaru) {
     status.textContent = "⚠️ Pesan tidak boleh kosong.";
     status.style.color = "#cc0000";
     return;
   }
 
   // === Simpan ke localStorage ===
-  const waktu = new Date().toLocaleString("id-ID");
-  const dataBaru = `[${waktu}] ${pesan}`;
   const dataLama = localStorage.getItem("laporanKendala") || "";
-  const gabungan = dataLama ? `${dataLama}\n${dataBaru}` : dataBaru;
-  localStorage.setItem("laporanKendala", gabungan);
+  const pesanGabung = selectedTags ? `${pesanBaru} ${selectedTags}` : pesanBaru;
+  const semuaPesan = dataLama ? `${dataLama}\n${pesanGabung}` : pesanGabung;
+  localStorage.setItem("laporanKendala", semuaPesan);
 
-  status.textContent = "⏳ Mengirim...";
+  // === Kirim SEMUA pesan (lama + baru) ===
+  const pesanKirim = semuaPesan;
+
+  status.textContent = "⏳ Mengirim semua laporan...";
   status.style.color = "#555";
 
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
@@ -172,16 +170,16 @@ async function kirimPesan() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chat_id: chat_id,
-        text: pesan,
+        chat_id,
+        text: pesanKirim,
         disable_web_page_preview: true
       })
     });
     const data = await res.json();
     if (data.ok) {
-      status.textContent = "✅ Pesan laporan terkirim & tersimpan lokal!";
+      status.textContent = "✅ Semua laporan terkirim!";
       status.style.color = "#009f3c";
-      document.getElementById("pesan").value = "";
+      input.value = "";
       document.querySelectorAll(".tag").forEach(cb => cb.checked = false);
     } else {
       status.textContent = "❌ Gagal: " + data.description;
