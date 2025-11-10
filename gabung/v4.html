@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Import Universal Data MadGazan</title>
+<title>Backup & Import Data MadGazan</title>
 <style>
   body { 
     font-family: Arial, sans-serif; 
@@ -38,7 +38,6 @@
     background:#f5f5f5; 
   }
   .input-buttons button:hover { background:#eee; }
-  .display-area button:hover { background:#d0f0f5; }
   #toast {
     position: fixed; bottom: 25px; right: 25px; 
     padding: 12px 20px; border-radius: 8px; 
@@ -53,21 +52,23 @@
 </head>
 <body>
 
-<h1>Import Universal Data</h1>
+<h1>Backup & Import Data</h1>
 
 <div class="backup-area">
-  <h3>🌐 Import & Tampilkan Semua Data</h3>
+  <h3>🔒 Import & Lihat Semua Data LocalStorage</h3>
   <div class="input-buttons">
     <input type="file" id="importFile" accept=".json">
-    <button onclick="importUniversal()">Import Universal</button>
-    <button onclick="showAllLocalStorageData()">Tampilkan Semua Data</button>
+    <button onclick="importUniversal()">📦 Import Universal</button>
+    <button onclick="showAllLocalStorageData()">📄 Tampilkan Semua Data</button>
   </div>
+  <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data LocalStorage</button>
 </div>
 
 <div class="display-area" style="margin-top:20px; text-align:center;">
   <pre id="localData" style="text-align:left; margin-top:12px; padding:10px; background:#f9f9f9; border:1px solid #ddd; border-radius:6px; max-height:300px; overflow:auto;"></pre>
 </div>
 
+<!-- Toast -->
 <div id="toast"></div>
 
 <script>
@@ -99,7 +100,8 @@ function importUniversal() {
     try {
       const data = JSON.parse(e.target.result);
       Object.keys(data).forEach(key => localStorage.setItem(key, data[key]));
-      showToast('✅ Data universal berhasil diimport.', 'success');
+      showToast('✅ Data berhasil diimport (Universal).', 'success');
+      setTimeout(showAllLocalStorageData, 1000);
     } catch (err) {
       showToast('❌ File tidak valid: ' + err.message, 'error');
     }
@@ -107,18 +109,79 @@ function importUniversal() {
   reader.readAsText(file);
 }
 
+/* ===== Reset Semua Data ===== */
+function resetLocalStorage() {
+  if (confirm('Yakin ingin menghapus semua data localStorage?')) {
+    localStorage.clear();
+    showToast('⚠️ Semua data LocalStorage telah dihapus.', 'warning');
+    document.getElementById('localData').textContent = '';
+  }
+}
+
 /* ===== Tampilkan Semua Data ===== */
 function showAllLocalStorageData() {
   const display = document.getElementById('localData');
-  const allData = {};
+  if (localStorage.length === 0) {
+    display.textContent = '📭 LocalStorage kosong.';
+    showToast('ℹ️ Tidak ada data untuk ditampilkan.', 'info');
+    return;
+  }
+  const data = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    allData[key] = localStorage.getItem(key);
+    data[key] = localStorage.getItem(key);
   }
-  display.textContent = Object.keys(allData).length
-    ? JSON.stringify(allData, null, 2)
-    : '📭 Tidak ada data tersimpan di LocalStorage browser ini.';
-  showToast('🌐 Semua data LocalStorage berhasil ditampilkan.', 'info');
+  display.textContent = JSON.stringify(data, null, 2);
+  showToast('✅ Semua data LocalStorage berhasil ditampilkan.', 'success');
+}
+</script>
+
+<!-- ===== Fitur Filter Toko ===== -->
+<hr style="margin:25px 0;">
+<h3 style="text-align:center; color:#b36b00;">🧹 Filter Berdasarkan ID Toko Shopee</h3>
+
+<div style="text-align:center; margin-bottom:12px;">
+  <input id="shopInput" type="text" placeholder="Masukkan link atau ID toko Shopee..." 
+         style="width:90%; max-width:400px; padding:8px; border:1px solid #ccc; border-radius:6px;">
+</div>
+<div style="text-align:center;">
+  <button onclick="filterByShopId()" 
+          style="padding:10px 18px; background:#ffefc2; border:1px solid #d4a017; border-radius:6px; cursor:pointer;">
+    🚫 Hapus Semua Data dari Toko Ini
+  </button>
+</div>
+
+<script>
+function filterByShopId() {
+  const input = document.getElementById('shopInput').value.trim();
+  if (!input) return showToast('⚠️ Masukkan link atau ID toko terlebih dahulu.', 'warning');
+
+  // Ekstrak ID toko dari link Shopee jika ada
+  const shopIdMatch = input.match(/shopee\.co\.id\/product\/(\d+)/);
+  const shopId = shopIdMatch ? shopIdMatch[1] : input.replace(/\D/g, ''); // hanya ambil angka
+
+  if (!shopId) return showToast('❌ Tidak dapat menemukan ID toko yang valid.', 'error');
+
+  let deleted = 0;
+  const toDelete = [];
+
+  // Cari data di localStorage yang mengandung ID toko
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    const value = localStorage.getItem(key);
+    if (value && value.includes(shopId)) {
+      toDelete.push(key);
+    }
+  }
+
+  // Hapus semua yang cocok
+  toDelete.forEach(k => {
+    localStorage.removeItem(k);
+    deleted++;
+  });
+
+  showToast(`🧹 ${deleted} data dari toko ID ${shopId} berhasil dihapus.`, 'success');
+  showAllLocalStorageData(); // tampilkan ulang data terbaru setelah dihapus
 }
 </script>
 
