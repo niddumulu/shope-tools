@@ -3,92 +3,71 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Backup, Import & Filter Data MadGazan</title>
+<title>Filter Toko Shopee - MadGazan</title>
 <style>
   body{font-family:Arial, sans-serif;margin:15px;max-width:900px;margin-inline:auto;background:#fffef9;color:#222}
   h1,h3{color:#b36b00;text-align:center}
-  .section{padding:12px;background:#fffbe6;border-radius:8px;border:1px solid #ffd42a;margin-bottom:16px;text-align:center}
-  button,input[type="file"],textarea{padding:8px 10px;font-size:0.95rem;border-radius:6px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer}
-  button:hover,input[type="file"]:hover,textarea:hover{background:#eee}
+  .card{padding:12px;background:#fffbe6;border-radius:8px;border:1px solid #ffd42a;margin-bottom:16px;text-align:center}
+  button, textarea, input{padding:8px 10px;font-size:0.95rem;border-radius:6px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer}
   textarea{width:100%;height:70px;resize:none;margin-top:8px;font-family:monospace}
+  button:hover,textarea:hover,input:hover{background:#eee}
   #toast{position:fixed;right:20px;bottom:20px;padding:12px 16px;border-radius:8px;color:#fff;opacity:0;transform:translateY(12px);transition:opacity .3s,transform .3s;z-index:9999}
-  .output-wrap{background:#fff;padding:12px;border-radius:8px;border:1px solid #eee}
-  .links-list{list-style:none;padding:0;margin:0}
-  .links-list li{padding:8px 6px;border-bottom:1px solid #f0f0f0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .link-anchor{color:#0066cc;text-decoration:none;word-break:break-all}
-  .link-anchor:hover{text-decoration:underline}
+  .output{background:#fff;padding:12px;border-radius:8px;border:1px solid #eee}
+  .links{list-style:none;padding:0;margin:0}
+  .links li{padding:8px 6px;border-bottom:1px solid #f0f0f0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .link-a{color:#0066cc;text-decoration:none;word-break:break-all}
+  .link-a:hover{text-decoration:underline}
   .meta{font-size:0.85rem;color:#666;white-space:nowrap}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
-  .small{font-size:0.9rem;color:#444}
-  .pager{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px}
+  .pager{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:10px}
   .btn{padding:8px 10px;border-radius:6px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer}
   .btn:hover{background:#eee}
   .danger{background:#ffd0d0;border-color:#cc0000}
-  .success{background:#dff0df;border-color:#4CAF50}
   .info{background:#e8f4ff;border-color:#2196F3}
   .muted{color:#777;font-size:0.92rem}
-  .flex{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
   @media (max-width:560px){ .meta{display:block} }
 </style>
 </head>
 <body>
 
-<h1>Backup, Import & Filter Data</h1>
+<h1>Filter / Hapus Berdasarkan ID Toko Shopee</h1>
 
-<div class="section">
-  <h3>📁 Import Universal</h3>
-  <div class="flex">
-    <input type="file" id="importFile" accept=".json">
-    <button class="btn" onclick="importUniversal()">📦 Import Universal</button>
-    <button class="btn" onclick="showAllData()">📄 Tampilkan Semua Data</button>
-    <button id="restoreBtn" class="btn" style="display:none;" onclick="restoreBackup()">🔁 Pulihkan Backup</button>
-    <button class="btn danger" onclick="resetAllWithConfirm()">❌ Hapus Semua LocalStorage</button>
-  </div>
-  <div class="muted" style="margin-top:8px">Import file backup yang dihasilkan oleh sistem (format JSON key → value).</div>
-</div>
-
-<div class="section">
-  <h3>🧹 Filter / Hapus Berdasarkan ID Toko Shopee</h3>
-  <div class="muted">Masukkan 1+ ID toko (pisah koma atau baris baru). Contoh: <code>968553125</code> atau <code>968553125,123456789</code></div>
-  <textarea id="filterIds" placeholder="968553125, 123456789 atau tiap id per baris"></textarea>
-  <div class="controls">
-    <button class="btn" onclick="filterByStoreIds()">🚫 Filter & Hapus Link Toko</button>
+<div class="card">
+  <div class="muted">Masukkan satu atau beberapa ID toko (pisah koma atau baris baru). Contoh: <code>968553125</code> atau <code>968553125,123456789</code></div>
+  <textarea id="idsInput" placeholder="968553125, 123456789 atau tiap id per baris"></textarea>
+  <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+    <button class="btn" id="filterBtn" onclick="applyFilter()">🚫 Filter & Hapus Link Toko</button>
     <button class="btn info" onclick="previewFilter()">🔎 Preview Hapus (tanpa menyimpan)</button>
+    <button class="btn" id="undoBtn" style="display:none" onclick="restoreBackup()">🔁 Pulihkan (Undo)</button>
   </div>
-  <div class="muted" id="filterNote" style="margin-top:8px">Sebelum filter: tidak ada backup yang tersimpan. Ketika filter dijalankan, backup otomatis disimpan di memori (tanpa auto-download).</div>
+  <div class="muted" id="note" style="margin-top:8px">Operasi akan menyimpan backup sementara di memori (bisa di-undo selama halaman belum direload).</div>
 </div>
 
-<div class="output-wrap">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-    <div class="small">Hasil & Link (1 baris = 1 link)</div>
-    <div id="stats" class="muted small"></div>
+<div class="output">
+  <div id="pagerTop" style="display:none" class="pager">
+    <button class="btn" onclick="changePage(-1)" id="prevBtn">⬅️ Sebelumnya</button>
+    <div id="pageInfo" class="muted"></div>
+    <button class="btn" onclick="changePage(1)" id="nextBtn">➡️ Berikutnya</button>
   </div>
 
-  <ul id="linksList" class="links-list"></ul>
+  <ul id="linksUL" class="links"></ul>
 
-  <div class="pager" id="pager" style="display:none">
-    <button class="btn" id="prevBtn" onclick="changePage(-1)">⬅️ Sebelumnya</button>
-    <div id="pageInfo" class="muted small"></div>
-    <button class="btn" id="nextBtn" onclick="changePage(1)">➡️ Berikutnya</button>
-  </div>
-
-  <div style="text-align:center;margin-top:10px">
-    <button class="btn" onclick="downloadFilteredResult()" id="downloadFilteredBtn" style="display:none">⬇️ Download Hasil Filter (.txt)</button>
+  <div style="text-align:center;margin-top:8px">
+    <div id="stats" class="muted"></div>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-/* ===== Konfigurasi ===== */
+/* konfigurasi */
 const PER_PAGE = 99;
 
-/* ===== State ===== */
-let lastBackupData = null; // menyimpan backup sebelum filter (object)
-let aggregatedLinks = []; // array { link, key }
-let currentPage = 1;
+/* state */
+let lastBackupData = null;
+let aggregated = []; // {link, key}
+let page = 1;
 
-/* ===== Toast ===== */
+/* toast */
 function showToast(msg, type='info'){
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -102,294 +81,220 @@ function showToast(msg, type='info'){
   setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(12px)'; },3500);
 }
 
-/* ===== Import Universal ===== */
-function importUniversal(){
-  const f = document.getElementById('importFile').files[0];
-  if(!f) return showToast('❌ Pilih file JSON dulu.', 'error');
-  const r = new FileReader();
-  r.onload = e => {
-    try{
-      const data = JSON.parse(e.target.result);
-      Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-      showToast('✅ Import selesai.', 'success');
-      setTimeout(showAllData,200);
-    }catch(err){
-      showToast('❌ File JSON tidak valid: ' + err.message, 'error');
-    }
-  };
-  r.readAsText(f);
-}
-
-/* ===== Show All Data -> buat aggregatedLinks ===== */
-function showAllData(){
-  aggregatedLinks = collectAllLinksFromLocalStorage();
-  currentPage = 1;
-  renderPage();
-  showToast(`✅ Menampilkan semua link (${aggregatedLinks.length})`, 'success');
-}
-
-/* ===== Collect links from localStorage values (safe parsing) ===== */
-function collectAllLinksFromLocalStorage(){
-  const arr = [];
+/* collect links from localStorage */
+function collectLinks(){
+  const list = [];
   for(let i=0;i<localStorage.length;i++){
     const key = localStorage.key(i);
-    const val = localStorage.getItem(key);
-    if(!val) continue;
-    // coba parse json
-    let parsed = null;
-    try { parsed = JSON.parse(val); } catch(e){ parsed = null; }
+    const raw = localStorage.getItem(key);
+    if(!raw) continue;
+    // try parse JSON
+    let parsed=null;
+    try{ parsed = JSON.parse(raw); } catch(e){ parsed = null; }
     if(parsed && parsed.inputList && typeof parsed.inputList === 'string'){
       const lines = parsed.inputList.split('\n').map(s=>s.trim()).filter(Boolean);
-      for(const ln of lines) arr.push({link:ln, key});
+      for(const l of lines) list.push({link:l, key});
       continue;
     }
-    // jika plain multiline text
-    if(!parsed && val.includes('\n')){
-      const lines = val.split('\n').map(s=>s.trim()).filter(Boolean);
-      for(const ln of lines) arr.push({link:ln, key});
+    if(!parsed && raw.includes('\n')){
+      const lines = raw.split('\n').map(s=>s.trim()).filter(Boolean);
+      for(const l of lines) list.push({link:l, key});
       continue;
     }
-    // jika value tampak seperti single link atau id
-    const single = val.trim();
+    // single-value case
+    const single = raw.trim();
     if(single && (single.startsWith('http') || /\d{5,}/.test(single))){
-      arr.push({link: single, key});
+      list.push({link: single, key});
     }
-    // untuk nilai lain kita abaikan (agar aman)
   }
-  return arr;
+  return list;
 }
 
-/* ===== Render pagination page ===== */
-function renderPage(){
-  const listEl = document.getElementById('linksList');
-  listEl.innerHTML = '';
-  const total = aggregatedLinks.length;
-  if(total === 0){
-    document.getElementById('stats').textContent = '📭 Tidak ada link untuk ditampilkan.';
-    document.getElementById('pager').style.display = 'none';
-    document.getElementById('downloadFilteredBtn').style.display = 'none';
-    return;
-  }
-
+/* render page (pagination above results) */
+function render(){
+  const ul = document.getElementById('linksUL');
+  ul.innerHTML = '';
+  const total = aggregated.length;
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-  if(currentPage < 1) currentPage = 1;
-  if(currentPage > totalPages) currentPage = totalPages;
+  if(page < 1) page = 1;
+  if(page > totalPages) page = totalPages;
 
-  const start = (currentPage - 1) * PER_PAGE;
-  const chunk = aggregatedLinks.slice(start, start + PER_PAGE);
+  // show/hide pager
+  const pager = document.getElementById('pagerTop');
+  if(total > 0) pager.style.display = 'flex'; else pager.style.display = 'none';
 
-  for(const item of chunk){
+  const start = (page -1) * PER_PAGE;
+  const chunk = aggregated.slice(start, start + PER_PAGE);
+  for(const it of chunk){
     const li = document.createElement('li');
     const a = document.createElement('a');
-    a.href = item.link.startsWith('http') ? item.link : item.link;
+    a.href = it.link.startsWith('http') ? it.link : it.link;
     a.target = '_blank';
-    a.className = 'link-anchor';
-    a.textContent = item.link;
+    a.className = 'link-a';
+    a.textContent = it.link;
     const meta = document.createElement('span');
     meta.className = 'meta';
-    meta.textContent = item.key;
+    meta.textContent = it.key;
     li.appendChild(a);
     li.appendChild(meta);
-    listEl.appendChild(li);
+    ul.appendChild(li);
   }
 
-  document.getElementById('stats').textContent = `Total link: ${total} • Halaman ${currentPage} / ${totalPages}`;
-  document.getElementById('pager').style.display = totalPages > 1 ? 'flex' : 'none';
-  document.getElementById('pageInfo').textContent = `Menampilkan ${start+1}–${Math.min(start+chunk.length,total)} dari ${total}`;
-  document.getElementById('downloadFilteredBtn').style.display = total ? 'inline-block' : 'none';
+  document.getElementById('pageInfo').textContent = total===0 ? 'Tidak ada link' : `Menampilkan ${Math.min(start+1,total)}–${Math.min(start+chunk.length,total)} dari ${total} • Halaman ${page}/${totalPages}`;
+  document.getElementById('stats').textContent = total===0 ? '' : `Total link: ${total}`;
 }
 
-/* ===== Change page ===== */
+/* change page */
 function changePage(delta){
-  currentPage += delta;
-  renderPage();
+  page += delta;
+  render();
 }
 
-/* ===== Preview Filter (hanya hitung tanpa ubah storage) ===== */
-function previewFilter(){
-  const ids = parseIdsInput();
-  if(ids.length === 0) return showToast('⚠️ Masukkan minimal 1 ID toko untuk preview.', 'warning');
-  const links = collectAllLinksFromLocalStorage();
-  const willRemove = [];
-  for(const item of links){
-    for(const id of ids){
-      if(matchLineContainsId(item.link, id)){
-        willRemove.push(item);
-        break;
-      }
-    }
-  }
-  showToast(`🔎 Preview: ${willRemove.length} link akan dihapus jika menjalankan filter.`, 'info');
-  // tampilkan preview list (temporary)
-  aggregatedLinks = links.filter(li => !willRemove.includes(li));
-  currentPage = 1;
-  renderPage();
-}
-
-/* ===== Parse IDs from textarea ===== */
-function parseIdsInput(){
-  const raw = document.getElementById('filterIds').value.trim();
+/* helper: parse IDs input */
+function parseIds(){
+  const raw = document.getElementById('idsInput').value.trim();
   if(!raw) return [];
   const parts = raw.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
-  // normalize: keep digits only, require at least 5 digits to reduce false positive
   const ids = [];
   for(const p of parts){
     const digits = p.replace(/\D/g,'');
     if(digits.length >= 5) ids.push(digits);
   }
-  // unique
   return Array.from(new Set(ids));
 }
 
-/* ===== Matching helper: decide if a line contains the shop id as product/{id} or word boundary ===== */
-function matchLineContainsId(line, id){
+/* match line contains id: product/{id}/ or product/{id} or standalone word */
+function matchContains(line, id){
   if(!line) return false;
-  const lower = line.toLowerCase();
-  // check product/{id}/ or product/{id}
-  if(lower.includes(`/product/${id}/`) || lower.includes(`/product/${id}`)) return true;
-  // or standalone number word
-  const wordNum = new RegExp(`\\b${id}\\b`);
-  return wordNum.test(line);
+  const l = line.toLowerCase();
+  if(l.includes(`/product/${id}/`) || l.includes(`/product/${id}`)) return true;
+  const re = new RegExp(`\\b${id}\\b`);
+  return re.test(line);
 }
 
-/* ===== Filter & apply to localStorage (safe) ===== */
-function filterByStoreIds(){
-  const ids = parseIdsInput();
+/* preview filter: show what remains without changing storage */
+function previewFilter(){
+  const ids = parseIds();
+  if(ids.length === 0) return showToast('⚠️ Masukkan minimal 1 ID toko untuk preview.', 'warning');
+  const all = collectLinks();
+  // compute remaining
+  const removed = new Set();
+  const remaining = [];
+  for(const it of all){
+    let rm=false;
+    for(const id of ids){ if(matchContains(it.link, id)){ rm=true; break; } }
+    if(!rm) remaining.push(it);
+  }
+  aggregated = remaining;
+  page = 1;
+  render();
+  showToast(`🔎 Preview: ${all.length - remaining.length} link akan dihapus (preview).`, 'info');
+}
+
+/* main apply filter (with in-memory backup and undo) */
+function applyFilter(){
+  const ids = parseIds();
   if(ids.length === 0) return showToast('⚠️ Masukkan minimal 1 ID toko.', 'warning');
 
-  // backup in-memory (no download)
+  // backup in-memory
   lastBackupData = {};
   for(let i=0;i<localStorage.length;i++){
     const k = localStorage.key(i);
     lastBackupData[k] = localStorage.getItem(k);
   }
-  document.getElementById('restoreBtn').style.display = 'inline-block';
-  document.getElementById('filterNote').textContent = 'Backup tersimpan di memori. Gunakan "Pulihkan Backup" jika ingin rollback.';
+  document.getElementById('undoBtn').style.display = 'inline-block';
+  document.getElementById('note').textContent = 'Backup disimpan di memori — gunakan Pulihkan (Undo) jika perlu.';
 
-  // stats
-  let totalKeysChecked = 0;
-  let totalKeysUpdated = 0;
-  let totalKeysRemoved = 0;
-  let totalLinesRemoved = 0;
-
-  // collect keys first to avoid mutation during iteration
+  // iterate keys safely
   const keys = [];
   for(let i=0;i<localStorage.length;i++) keys.push(localStorage.key(i));
 
-  const newStorage = {}; // we'll build new storage then write (to avoid partial issues)
+  const newStore = {};
+  let totalLinesRemoved = 0;
+  let keysUpdated = 0;
+  let keysRemoved = 0;
 
   for(const key of keys){
-    totalKeysChecked++;
     const raw = localStorage.getItem(key);
-    if(!raw){
-      continue;
-    }
+    if(!raw){ continue; }
 
-    // try parse JSON
-    let parsed = null;
-    let isJson = false;
-    try { parsed = JSON.parse(raw); isJson = true; } catch(e){ isJson = false; }
+    // try JSON with inputList
+    let parsed=null;
+    let isJson=false;
+    try{ parsed = JSON.parse(raw); isJson=true; } catch(e){ isJson=false; parsed=null; }
 
-    if(isJson && parsed && typeof parsed === 'object' && typeof parsed.inputList === 'string'){
+    if(isJson && parsed && typeof parsed.inputList === 'string'){
       const lines = parsed.inputList.split('\n').map(s=>s.trim()).filter(Boolean);
-      const retained = [];
-      for(const line of lines){
-        let shouldRemove = false;
-        for(const id of ids){ if(matchLineContainsId(line, id)){ shouldRemove = true; break; } }
-        if(!shouldRemove) retained.push(line); else totalLinesRemoved++;
+      const kept = [];
+      for(const ln of lines){
+        let rm=false;
+        for(const id of ids){ if(matchContains(ln, id)){ rm=true; break; } }
+        if(!rm) kept.push(ln); else totalLinesRemoved++;
       }
-      if(retained.length === 0){
-        totalKeysRemoved++;
-        // do not put this key into newStorage
+      if(kept.length === 0){
+        keysRemoved++;
       } else {
-        parsed.inputList = retained.join('\n');
-        newStorage[key] = JSON.stringify(parsed);
-        totalKeysUpdated++;
+        parsed.inputList = kept.join('\n');
+        newStore[key] = JSON.stringify(parsed);
+        keysUpdated++;
       }
       continue;
     }
 
-    // if plain multiline text
+    // if plain multiline
     if(!isJson && raw.includes('\n')){
       const lines = raw.split('\n').map(s=>s.trim()).filter(Boolean);
-      const retained = [];
-      for(const line of lines){
-        let shouldRemove = false;
-        for(const id of ids){ if(matchLineContainsId(line, id)){ shouldRemove = true; break; } }
-        if(!shouldRemove) retained.push(line); else totalLinesRemoved++;
+      const kept = [];
+      for(const ln of lines){
+        let rm=false;
+        for(const id of ids){ if(matchContains(ln, id)){ rm=true; break; } }
+        if(!rm) kept.push(ln); else totalLinesRemoved++;
       }
-      if(retained.length === 0){
-        totalKeysRemoved++;
+      if(kept.length === 0){
+        keysRemoved++;
       } else {
-        newStorage[key] = retained.join('\n');
-        totalKeysUpdated++;
+        newStore[key] = kept.join('\n');
+        keysUpdated++;
       }
       continue;
     }
 
-    // other values (single line) - keep as-is
-    newStorage[key] = raw;
+    // other single values -> keep as is
+    newStore[key] = raw;
   }
 
-  // write newStorage: clear then set
+  // write newStore
   localStorage.clear();
-  Object.keys(newStorage).forEach(k => localStorage.setItem(k, newStorage[k]));
+  Object.keys(newStore).forEach(k => localStorage.setItem(k, newStore[k]));
 
-  // update aggregated list and UI
-  aggregatedLinks = collectAllLinksFromLocalStorage();
-  currentPage = 1;
-  renderPage();
+  // update aggregated and UI
+  aggregated = collectLinks();
+  page = 1;
+  render();
 
-  showToast(`✅ Filter selesai. Keys dicek:${totalKeysChecked} • diupdate:${totalKeysUpdated} • dihapus:${totalKeysRemoved} • link dihapus:${totalLinesRemoved}`, 'success');
+  showToast(`✅ Filter selesai. Keys diperbarui: ${keysUpdated}, Keys dihapus: ${keysRemoved}, Link dihapus: ${totalLinesRemoved}`, 'success');
 }
 
-/* ===== Restore backup (in-memory) ===== */
+/* restore backup (undo) */
 function restoreBackup(){
-  if(!lastBackupData) return showToast('❌ Tidak ada backup tersedia.', 'error');
-  if(!confirm('Pulihkan backup yang tersimpan di memori? Ini akan mengganti seluruh localStorage saat ini.')) return;
+  if(!lastBackupData) return showToast('❌ Tidak ada backup di memori.', 'error');
+  if(!confirm('Pulihkan backup? Ini akan mengganti seluruh localStorage saat ini.')) return;
   localStorage.clear();
   Object.keys(lastBackupData).forEach(k => localStorage.setItem(k, lastBackupData[k]));
   lastBackupData = null;
-  document.getElementById('restoreBtn').style.display = 'none';
-  document.getElementById('filterNote').textContent = 'Tidak ada backup tersimpan.';
-  showAllData();
+  document.getElementById('undoBtn').style.display = 'none';
+  document.getElementById('note').textContent = 'Backup dipulihkan / tidak ada backup tersimpan.';
+  aggregated = collectLinks();
+  page = 1;
+  render();
   showToast('🔁 Backup dipulihkan.', 'success');
 }
 
-/* ===== Reset all with confirm ===== */
-function resetAllWithConfirm(){
-  if(!confirm('Yakin ingin menghapus seluruh localStorage? Tindakan ini permanen.')) return;
-  localStorage.clear();
-  aggregatedLinks = [];
-  renderPage();
-  showToast('⚠️ Semua localStorage telah dihapus.', 'warning');
-}
-
-/* ===== Download filtered result as .txt (all links aggregated) ===== */
-function downloadFilteredResult(){
-  // aggregate current displayed full list (not only page): aggregatedLinks
-  if(!aggregatedLinks || aggregatedLinks.length===0) return showToast('❌ Tidak ada link untuk di-download.','error');
-  const lines = aggregatedLinks.map(i => i.link);
-  const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'filtered_links.txt';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* ===== Init: show current data on load (but don't flood) ===== */
+/* init: prepare aggregated but don't force preview; only show if there are links */
 window.addEventListener('load', () => {
-  // do not auto-show; show only if there's data — safer
-  if(localStorage.length > 0){
-    // prepare aggregated list but don't render automatically to avoid UI flash
-    aggregatedLinks = collectAllLinksFromLocalStorage();
-    // only render first page if there are links
-    if(aggregatedLinks.length > 0) renderPage();
-  }
+  aggregated = collectLinks();
+  if(aggregated.length>0) render();
 });
 </script>
-
 </body>
 </html>
