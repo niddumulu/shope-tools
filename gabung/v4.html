@@ -62,7 +62,6 @@
     <button onclick="exportLocalStorageClean()">Backup Data (Tanpa Duplikat)</button>
     <input type="file" id="importFile" accept=".json">
     <button onclick="importLocalStorage()">Import Data</button>
-    <!-- 🔽 Tombol baru universal -->
     <button onclick="exportUniversalLocal()">Backup Universal (Halaman Ini)</button>
     <button onclick="importUniversalLocal()">Import Universal</button>
   </div>
@@ -72,6 +71,9 @@
 <div class="display-area" style="margin-top:20px; text-align:center;">
   <button onclick="showLocalStorageData()" style="padding:10px 16px; font-size:0.95rem; border-radius:6px; border:1px solid #ccc; background:#e0f7fa; cursor:pointer;">
     📄 Tampilkan Data LocalStorage Halaman Ini
+  </button>
+  <button onclick="showAllLocalStorageData()" style="padding:10px 16px; font-size:0.95rem; border-radius:6px; border:1px solid #ccc; background:#fff3e0; cursor:pointer;">
+    🌐 Tampilkan Semua Data (Universal)
   </button>
   <pre id="localData" style="text-align:left; margin-top:12px; padding:10px; background:#f9f9f9; border:1px solid #ddd; border-radius:6px; max-height:300px; overflow:auto;"></pre>
 </div>
@@ -100,7 +102,7 @@ function showToast(message, type='info') {
   }, 4000);
 }
 
-/* ===== Backup & Import Universal ===== */
+/* ===== Backup & Import Biasa ===== */
 function exportLocalStorage() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
@@ -193,8 +195,21 @@ function showLocalStorageData() {
   showToast('✅ Data halaman ini berhasil ditampilkan.', 'success');
 }
 
+/* ===== Tampilkan semua data (Universal View) ===== */
+function showAllLocalStorageData() {
+  const display = document.getElementById('localData');
+  const allData = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    allData[key] = localStorage.getItem(key);
+  }
+  display.textContent = Object.keys(allData).length
+    ? JSON.stringify(allData, null, 2)
+    : '📭 Tidak ada data tersimpan di LocalStorage browser ini.';
+  showToast('🌐 Semua data LocalStorage berhasil ditampilkan.', 'info');
+}
+
 /* ===== UNIVERSAL BACKUP SISTEM (v2) ===== */
-// Backup hanya data unik halaman ini → untuk dibagikan ke halaman lain
 function exportUniversalLocal() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
@@ -213,7 +228,6 @@ function exportUniversalLocal() {
   showToast('✅ Backup halaman ini (universal) berhasil.', 'success');
 }
 
-// Import universal → bisa menerima file dari halaman mana pun
 function importUniversalLocal() {
   const fileInput = document.getElementById('importFile');
   const file = fileInput.files[0];
@@ -222,7 +236,7 @@ function importUniversalLocal() {
   reader.onload = e => {
     try {
       const json = JSON.parse(e.target.result);
-      const imported = json.data ? json.data : json; // mendukung format lama & baru
+      const imported = json.data ? json.data : json;
       let count = 0;
       Object.entries(imported).forEach(([key, val]) => {
         localStorage.setItem(key, val);
