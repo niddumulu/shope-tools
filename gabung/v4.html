@@ -5,13 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Filter & Hapus Berdasarkan ID Toko Shopee</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px auto;
-    max-width: 900px;
-    background: #fffef9;
-    color: #333;
-  }
+  body { font-family: Arial, sans-serif; margin: 20px auto; max-width: 900px; background: #fffef9; color: #333; }
   h1 { text-align:center; color:#b36b00; margin-bottom:10px; }
   textarea {
     width:100%; padding:10px; font-size:1rem; border:1px solid #ccc;
@@ -31,9 +25,7 @@
     padding:10px 15px; box-shadow:0 0 5px rgba(255,212,42,0.3);
     margin-top:15px; white-space:pre-line;
   }
-  .link-item {
-    border-bottom:1px dashed #ffd42a; padding:6px 0; word-break:break-all;
-  }
+  .link-item { border-bottom:1px dashed #ffd42a; padding:6px 0; word-break:break-all; }
   .pagination { margin-top:15px; text-align:center; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
   .page-btn { padding:8px 12px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer; }
   .page-btn:hover { background:#ffd42a; color:#b36b00; }
@@ -112,10 +104,6 @@ function parseIds(){
 /* ===== Simpan ID toko ke local ===== */
 function saveFilterInput(){
   localStorage.setItem('filter_toko_ids', document.getElementById('idsInput').value);
-}
-function loadFilterInput(){
-  const saved=localStorage.getItem('filter_toko_ids')||'';
-  document.getElementById('idsInput').value=saved;
 }
 
 /* ===== Terapkan filter dan tampilkan ===== */
@@ -206,12 +194,15 @@ async function applyAndSave(){
 }
 
 /* ===== Event ===== */
-document.getElementById('idsInput').addEventListener('input', saveFilterInput);
+document.getElementById('idsInput').addEventListener('input', ()=>{
+  saveFilterInput();
+  processAndRender(); // auto-filter real-time!
+});
 document.getElementById('applyBtn').addEventListener('click', applyAndSave);
 
 /* ===== Inisialisasi ===== */
 window.addEventListener('load', ()=>{
-  loadFilterInput();
+  document.getElementById('idsInput').value=localStorage.getItem('filter_toko_ids')||'';
   processAndRender();
 });
 </script>
