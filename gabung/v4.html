@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Backup & Import Data MadGazan</title>
+<title>Import Universal Data MadGazan</title>
 <style>
   body { 
     font-family: Arial, sans-serif; 
@@ -53,37 +53,24 @@
 </head>
 <body>
 
-<h1>Backup & Import Data</h1>
+<h1>Import Universal Data</h1>
 
 <div class="backup-area">
-  <h3>🔒 Backup & Import Data LocalStorage</h3>
+  <h3>🌐 Import & Tampilkan Semua Data</h3>
   <div class="input-buttons">
-    <button onclick="exportLocalStorage()">Backup Data ke File</button>
-    <button onclick="exportLocalStorageClean()">Backup Data (Tanpa Duplikat)</button>
     <input type="file" id="importFile" accept=".json">
-    <button onclick="importLocalStorage()">Import Data</button>
-    <button onclick="exportUniversalLocal()">Backup Universal (Halaman Ini)</button>
-    <button onclick="importUniversalLocal()">Import Universal</button>
+    <button onclick="importUniversal()">Import Universal</button>
+    <button onclick="showAllLocalStorageData()">Tampilkan Semua Data</button>
   </div>
-  <button style="margin-top:10px; background:#ffd0d0; border-color:#cc0000;" onclick="resetLocalStorage()">❌ Hapus Semua Data Halaman Ini</button>
 </div>
 
 <div class="display-area" style="margin-top:20px; text-align:center;">
-  <button onclick="showLocalStorageData()" style="padding:10px 16px; font-size:0.95rem; border-radius:6px; border:1px solid #ccc; background:#e0f7fa; cursor:pointer;">
-    📄 Tampilkan Data LocalStorage Halaman Ini
-  </button>
-  <button onclick="showAllLocalStorageData()" style="padding:10px 16px; font-size:0.95rem; border-radius:6px; border:1px solid #ccc; background:#fff3e0; cursor:pointer;">
-    🌐 Tampilkan Semua Data (Universal)
-  </button>
   <pre id="localData" style="text-align:left; margin-top:12px; padding:10px; background:#f9f9f9; border:1px solid #ddd; border-radius:6px; max-height:300px; overflow:auto;"></pre>
 </div>
 
 <div id="toast"></div>
 
 <script>
-/* ===== Prefix Unik Berdasarkan Nama Halaman ===== */
-const PAGE_PREFIX = location.pathname.split('/').pop().replace('.html','') + '_';
-
 /* ===== Toast Notification ===== */
 function showToast(message, type='info') {
   const toast = document.getElementById('toast');
@@ -102,54 +89,8 @@ function showToast(message, type='info') {
   }, 4000);
 }
 
-/* ===== Backup & Import Biasa ===== */
-function exportLocalStorage() {
-  const data = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    data[key] = localStorage.getItem(key);
-  }
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'madgazan_backup_all.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✅ Backup semua data berhasil disimpan.', 'success');
-}
-
-function exportLocalStorageClean() {
-  const cleanedData = {};
-  let totalRemoved = 0;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    const value = localStorage.getItem(key);
-    try {
-      const parsed = JSON.parse(value);
-      if (parsed && parsed.inputList) {
-        const lines = parsed.inputList.split('\n').map(l => l.trim()).filter(Boolean);
-        const unique = [...new Set(lines)];
-        totalRemoved += lines.length - unique.length;
-        cleanedData[key] = JSON.stringify({ ...parsed, inputList: unique.join('\n') });
-      } else {
-        cleanedData[key] = value;
-      }
-    } catch {
-      cleanedData[key] = value;
-    }
-  }
-  const blob = new Blob([JSON.stringify(cleanedData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'madgazan_backup_clean.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast(`✅ Backup bersih selesai!\nDuplikat dihapus: ${totalRemoved}`, 'success');
-}
-
-function importLocalStorage() {
+/* ===== Import Universal ===== */
+function importUniversal() {
   const fileInput = document.getElementById('importFile');
   const file = fileInput.files[0];
   if (!file) return showToast('❌ Pilih file JSON dulu.', 'error');
@@ -158,8 +99,7 @@ function importLocalStorage() {
     try {
       const data = JSON.parse(e.target.result);
       Object.keys(data).forEach(key => localStorage.setItem(key, data[key]));
-      showToast('✅ Data berhasil diimport.\nReload halaman untuk melihat hasil.', 'success');
-      setTimeout(() => location.reload(), 1500);
+      showToast('✅ Data universal berhasil diimport.', 'success');
     } catch (err) {
       showToast('❌ File tidak valid: ' + err.message, 'error');
     }
@@ -167,35 +107,7 @@ function importLocalStorage() {
   reader.readAsText(file);
 }
 
-/* ===== Reset hanya data halaman ini ===== */
-function resetLocalStorage() {
-  if (confirm('Yakin ingin menghapus semua data halaman ini saja?')) {
-    const toDelete = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.startsWith(PAGE_PREFIX)) toDelete.push(key);
-    }
-    toDelete.forEach(k => localStorage.removeItem(k));
-    showToast('⚠️ Semua data halaman ini telah dihapus.', 'warning');
-    setTimeout(() => location.reload(), 1000);
-  }
-}
-
-/* ===== Tampilkan hanya data halaman ini ===== */
-function showLocalStorageData() {
-  const display = document.getElementById('localData');
-  const data = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith(PAGE_PREFIX)) data[key] = localStorage.getItem(key);
-  }
-  display.textContent = Object.keys(data).length
-    ? JSON.stringify(data, null, 2)
-    : '📭 LocalStorage halaman ini kosong.';
-  showToast('✅ Data halaman ini berhasil ditampilkan.', 'success');
-}
-
-/* ===== Tampilkan semua data (Universal View) ===== */
+/* ===== Tampilkan Semua Data ===== */
 function showAllLocalStorageData() {
   const display = document.getElementById('localData');
   const allData = {};
@@ -207,48 +119,6 @@ function showAllLocalStorageData() {
     ? JSON.stringify(allData, null, 2)
     : '📭 Tidak ada data tersimpan di LocalStorage browser ini.';
   showToast('🌐 Semua data LocalStorage berhasil ditampilkan.', 'info');
-}
-
-/* ===== UNIVERSAL BACKUP SISTEM (v2) ===== */
-function exportUniversalLocal() {
-  const data = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith(PAGE_PREFIX)) data[key] = localStorage.getItem(key);
-  }
-  if (Object.keys(data).length === 0) return showToast('📭 Tidak ada data halaman ini untuk dibackup.', 'warning');
-  
-  const blob = new Blob([JSON.stringify({ origin: PAGE_PREFIX, data }, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `madgazan_backup_${PAGE_PREFIX}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✅ Backup halaman ini (universal) berhasil.', 'success');
-}
-
-function importUniversalLocal() {
-  const fileInput = document.getElementById('importFile');
-  const file = fileInput.files[0];
-  if (!file) return showToast('❌ Pilih file JSON dulu.', 'error');
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const json = JSON.parse(e.target.result);
-      const imported = json.data ? json.data : json;
-      let count = 0;
-      Object.entries(imported).forEach(([key, val]) => {
-        localStorage.setItem(key, val);
-        count++;
-      });
-      showToast(`✅ Import universal selesai.\nTotal data masuk: ${count}`, 'success');
-      setTimeout(() => location.reload(), 1500);
-    } catch (err) {
-      showToast('❌ File tidak valid: ' + err.message, 'error');
-    }
-  };
-  reader.readAsText(file);
 }
 </script>
 
