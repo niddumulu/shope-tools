@@ -97,10 +97,33 @@
     transform: translateY(-1px);
   }
 
+  #lihatData, #hapusData {
+    background-color: #555;
+    margin-top: 10px;
+  }
+
+  #lihatData:hover, #hapusData:hover {
+    background-color: #333;
+  }
+
   #status {
     margin-top: 15px;
     font-weight: 500;
     font-size: 15px;
+  }
+
+  #tampilData {
+    display: none;
+    margin-top: 15px;
+    width: 100%;
+    height: 120px;
+    font-size: 14px;
+    border-radius: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    resize: none;
   }
 
   footer {
@@ -128,14 +151,42 @@
     </div>
 
     <button onclick="kirimPesan()">Kirim Sekarang</button>
+    <button id="lihatData" onclick="lihatSemua()">📋 Lihat Semua Laporan</button>
+    <button id="hapusData" onclick="hapusSemua()">🧹 Hapus Semua Data Lokal</button>
+
+    <textarea id="tampilData" readonly></textarea>
     <p id="status"></p>
 
     <footer>© 2025 MadGazan Studio</footer>
   </div>
 
 <script>
+function urutkanPesan(dataString) {
+  const baris = dataString
+    .split("\n")
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  return baris.sort((a, b) => {
+    const tagsA = (a.match(/#\w+/g) || []);
+    const tagsB = (b.match(/#\w+/g) || []);
+
+    if (tagsA.length === 0 && tagsB.length === 0) return 0;
+    if (tagsA.length === 0) return 1;
+    if (tagsB.length === 0) return -1;
+
+    const tag1A = tagsA[0].toLowerCase();
+    const tag1B = tagsB[0].toLowerCase();
+    if (tag1A !== tag1B) return tag1A.localeCompare(tag1B);
+
+    const tag2A = tagsA[1] ? tagsA[1].toLowerCase() : "";
+    const tag2B = tagsB[1] ? tagsB[1].toLowerCase() : "";
+    return tag2A.localeCompare(tag2B);
+  }).join("\n");
+}
+
 async function kirimPesan() {
-  const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY"; // ganti saat lokal
+  const token = "8384730708:AAHjPCLYpW7wz2B5-jBxMJ17-kH1G1zXZuY";
   const chat_id = "-1003099805948";
   const input = document.getElementById("pesan");
   const status = document.getElementById("status");
@@ -151,33 +202,31 @@ async function kirimPesan() {
     return;
   }
 
-  // === Simpan ke localStorage ===
+  // === Gabung dan urutkan ===
   const dataLama = localStorage.getItem("laporanKendala") || "";
   const pesanGabung = selectedTags ? `${pesanBaru} ${selectedTags}` : pesanBaru;
-  const semuaPesan = dataLama ? `${dataLama}\n${pesanGabung}` : pesanGabung;
-  localStorage.setItem("laporanKendala", semuaPesan);
+  const semuaPesanGabung = dataLama ? `${dataLama}\n${pesanGabung}` : pesanGabung;
+  const semuaPesanUrut = urutkanPesan(semuaPesanGabung);
+  localStorage.setItem("laporanKendala", semuaPesanUrut);
 
-  // === Kirim SEMUA pesan (lama + baru) ===
-  const pesanKirim = semuaPesan;
-
-  status.textContent = "⏳ Mengirim semua laporan...";
+  // === Kirim ke Telegram ===
+  status.textContent = "⏳ Mengirim semua laporan (urut)...";
   status.style.color = "#555";
 
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
-
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id,
-        text: pesanKirim,
+        text: semuaPesanUrut,
         disable_web_page_preview: true
       })
     });
     const data = await res.json();
     if (data.ok) {
-      status.textContent = "✅ Semua laporan terkirim!";
+      status.textContent = "✅ Semua laporan terkirim dan tersimpan urut!";
       status.style.color = "#009f3c";
       input.value = "";
       document.querySelectorAll(".tag").forEach(cb => cb.checked = false);
@@ -191,7 +240,21 @@ async function kirimPesan() {
   }
 }
 
-/* === Auto-isi dari URL === */
+function lihatSemua() {
+  const tampil = document.getElementById("tampilData");
+  const data = localStorage.getItem("laporanKendala") || "(belum ada data)";
+  tampil.value = urutkanPesan(data);
+  tampil.style.display = "block";
+}
+
+function hapusSemua() {
+  if (confirm("Yakin ingin menghapus semua laporan lokal?")) {
+    localStorage.removeItem("laporanKendala");
+    document.getElementById("tampilData").value = "";
+    alert("✅ Semua data lokal telah dihapus.");
+  }
+}
+
 window.addEventListener('load', () => {
   const params = new URLSearchParams(window.location.search);
   const link = params.get('link');
