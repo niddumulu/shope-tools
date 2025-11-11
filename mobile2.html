@@ -3,14 +3,41 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Link Shopee Pagination</title>
+<title>Produk Live MadGazan</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 15px; max-width: 700px; margin-left:auto; margin-right:auto; }
-  h2,h3 { font-size: 1.2rem; margin-bottom: 8px; }
-  textarea { width:100%; height:150px; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; }
-  #output { display:none; margin-top:10px; }
-  #output a { display:block; margin-bottom:6px; color:#0066cc; text-decoration:none; word-wrap:break-word; }
-  #output a:hover { text-decoration:underline; }
+  body { font-family: Arial, sans-serif; margin: 15px; max-width: 900px; margin-inline:auto; background-color:#fffef9; }
+  h1,h2,h3 { color:#b36b00; text-align:center; }
+  h1 { font-size:1.6rem; margin-bottom:5px; }
+  h2 { font-size:1.2rem; margin-bottom:10px; }
+  textarea, select { width:100%; box-sizing:border-box; font-size:1rem; padding:8px; border-radius:6px; border:1px solid #ccc; resize:vertical; }
+  textarea { height:150px; }
+  #output { display:none; margin-top:10px; background:#fff; border-radius:8px; border:1px solid #ffd42a; padding:10px 15px; box-shadow:0 0 8px rgba(255,212,42,0.2);}
+  .link-item {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#fffbec;
+    padding:8px 10px;
+    border-bottom:1px dashed #ffd42a;
+    border-radius:5px;
+    margin-bottom:6px;
+  }
+  .link-item a.link {
+    color:#0066cc;
+    text-decoration:none;
+    word-break:break-all;
+    flex:1;
+  }
+  .link-item a.link:hover { text-decoration:underline; }
+  .link-item a.report {
+    color:#cc0000;
+    text-decoration:none;
+    font-weight:bold;
+    margin-left:10px;
+    white-space:nowrap;
+  }
+  .link-item a.report:hover { text-decoration:underline; }
+
   .pagination { margin-top:15px; text-align:center; display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
   .page-btn { padding:10px 14px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background-color:white; font-size:1rem; min-width:40px; }
   .page-btn:hover { background-color:#ffd42a; color:#b36b00; }
@@ -22,8 +49,14 @@
   .input-buttons button:hover { background:#eee; }
   #stats { margin:15px 0; font-weight:bold; font-size:1rem; white-space:pre-line; }
   .sponsor { background-color:#fffae6; border:1px solid #ffd42a; padding:12px; margin:15px 0; font-weight:bold; text-align:center; color:#b36b00; border-radius:6px; box-shadow:0 0 5px rgba(255,212,42,0.5); font-size:1rem; }
+  footer { text-align:center; margin-top:25px; font-size:0.9rem; color:#888; }
+  .backup-area { margin-top:25px; padding:12px; background:#fffbe6; border-radius:8px; border:1px solid #ffd42a; text-align:center; }
+  @media (max-width:720px){
+    body { padding:12px; }
+    textarea{ height:120px; }
+  }
   @media (max-width:480px){
-    h2,h3{ font-size:1rem; }
+    h1,h2,h3{ font-size:1rem; }
     textarea{ height:120px; font-size:0.9rem; }
     #output{ font-size:0.85rem; }
     .page-btn{ padding:8px 12px; font-size:0.9rem; }
@@ -31,155 +64,61 @@
     .input-buttons{ flex-direction:column; }
     .input-buttons button{ flex:unset; width:100%; }
   }
+
+  /* ✅ Toast Notification Style */
+  #toast {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: #333;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s, transform 0.4s;
+    z-index: 9999;
+    max-width: 320px;
+    white-space: pre-line;
+    line-height:1.3;
+    font-size:0.95rem;
+  }
 </style>
 </head>
 <body>
 
-<h2>Masukkan Link Shopee</h2>
-<textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
+<h1>Produk Live MadGazan</h1>
+<h2>Manajemen Shopee Live V7</h2>
+
+<textarea id="inputLinks" placeholder="Masukkan ribuan link produk Shopee, satu per baris..."></textarea>
+
 <div class="input-buttons">
-  <button id="ambilLinksBtn">Ambil dari data.txt</button>
   <button id="clearInputLinksBtn">Clear Input Links</button>
   <button id="copyInputLinksBtn">Copy Input Links</button>
+  <button id="hapusDuplikatBtn">Hapus Duplikat</button>
+  <button id="sortirPerTokoBtn">Sortir Berdasarkan Toko</button>
+</div>
+
+<h3>Daftar File TXT Produk</h3>
+<select id="fileDropdown">
+  <option value="">-- Pilih File TXT --</option>
+  <option value="jalb.txt">jalb.txt</option>
+  <option value="rano.txt">rano.txt</option>
+  <option value="indah.txt">kakfitro.txt</option>
+  <option value="rini.txt">rini.txt</option>
+  <option value="nurbad.txt">nurbad.txt</option>
+</select>
+<div id="updateNotice" style="margin:10px 0; font-weight:bold;"></div>
+<div class="input-buttons">
+  <button id="ambilFileListLinksBtn">Download Terbaru Masal</button>
 </div>
 
 <div class="sponsor">
-  Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
-</div>
-
-<h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
-<textarea id="excludedShops" placeholder="Contoh: 123456789&#10;987654321"></textarea>
-<div class="input-buttons">
-  <button id="ambilTokoBtn">Ambil dari data_toko.txt</button>
-  <button id="clearInputTokoBtn">Clear Input Toko</button>
-  <button id="copyInputTokoBtn">Copy Input Toko</button>
+  Disponsori oleh <strong>MadGazan Studio</strong><br>
 </div>
 
 <div id="stats"></div>
-
-<h3>Output (maks 100 per halaman)</h3>
-<div id="output"></div>
-<button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
-
-<div class="pagination" id="pagination"></div>
-
-<script>
-let allLinks=[], currentPage=1, maxPerPage=100;
-const inputLinksEl=document.getElementById('inputLinks');
-const excludedShopsEl=document.getElementById('excludedShops');
-const pageKey=location.pathname.split('/').pop().replace(/\.[^/.]+$/,'');
-
-window.onload=()=>{ 
-  if(localStorage.getItem(`${pageKey}_inputLinks`)) inputLinksEl.value=localStorage.getItem(`${pageKey}_inputLinks`);
-  if(localStorage.getItem(`${pageKey}_excludedShops`)) excludedShopsEl.value=localStorage.getItem(`${pageKey}_excludedShops`);
-  processLinks();
-}
-
-// Ambil data.txt
-document.getElementById('ambilLinksBtn').addEventListener('click',async ()=>{
-  try{
-    const res=await fetch('data.txt?t='+Date.now(),{cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const text=await res.text();
-    const rows=text.split(/\r?\n/).map(r=>r.trim()).filter(Boolean);
-    inputLinksEl.value=rows.join("\n");
-    localStorage.setItem(`${pageKey}_inputLinks`,inputLinksEl.value);
-    processLinks();
-  }catch(e){alert("Gagal mengambil data.txt: "+e.message);}
-});
-
-// Ambil data_toko.txt
-document.getElementById('ambilTokoBtn').addEventListener('click',async ()=>{
-  try{
-    const res=await fetch('data_toko.txt?t='+Date.now(),{cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const text=await res.text();
-    const rows=text.split(/\r?\n/).map(r=>r.trim()).filter(Boolean);
-    excludedShopsEl.value=rows.join("\n");
-    localStorage.setItem(`${pageKey}_excludedShops`,excludedShopsEl.value);
-    processLinks();
-  }catch(e){alert("Gagal mengambil data_toko.txt: "+e.message);}
-});
-
-// Clear/copy links
-document.getElementById('clearInputLinksBtn').addEventListener('click',()=>{
-  inputLinksEl.value=''; localStorage.removeItem(`${pageKey}_inputLinks`); processLinks();
-});
-document.getElementById('copyInputLinksBtn').addEventListener('click',()=>{
-  const text=inputLinksEl.value.trim();
-  if(!text){alert("Input kosong!"); return;}
-  navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!")).catch(()=>alert("Gagal menyalin!"));
-});
-
-// Clear/copy toko
-document.getElementById('clearInputTokoBtn').addEventListener('click',()=>{
-  excludedShopsEl.value=''; localStorage.removeItem(`${pageKey}_excludedShops`); processLinks();
-});
-document.getElementById('copyInputTokoBtn').addEventListener('click',()=>{
-  const text=excludedShopsEl.value.trim();
-  if(!text){alert("Input kosong!"); return;}
-  navigator.clipboard.writeText(text).then(()=>alert("Isi input berhasil disalin!")).catch(()=>alert("Gagal menyalin!"));
-});
-
-// Simpan input ke localStorage saat diketik
-inputLinksEl.addEventListener('input',()=>{ localStorage.setItem(`${pageKey}_inputLinks`,inputLinksEl.value); processLinks(); });
-excludedShopsEl.addEventListener('input',()=>{ localStorage.setItem(`${pageKey}_excludedShops`,excludedShopsEl.value); processLinks(); });
-
-// Fungsi utama
-function processLinks(){
-  const rawLines=inputLinksEl.value.split('\n').map(l=>l.trim());
-  const excludedShopIds=excludedShopsEl.value.split('\n').map(id=>id.trim()).filter(Boolean);
-  
-  let pages=[], currentLinks=[];
-  for(let i=0;i<rawLines.length;i++){
-    const line=rawLines[i];
-    if(line==='' || line==='###'){ // pemisah halaman
-      if(currentLinks.length>0){ pages.push(currentLinks); currentLinks=[]; }
-    }else if(/\/product\/\d+\/\d+/.test(line)){
-      const match=line.match(/\/product\/(\d+)\/\d+/);
-      const shopId=match[1];
-      if(!excludedShopIds.includes(shopId)) currentLinks.push(line);
-      if(currentLinks.length>=maxPerPage){ pages.push(currentLinks); currentLinks=[]; }
-    }
-  }
-  if(currentLinks.length>0) pages.push(currentLinks);
-
-  allLinks=pages; currentPage=1; showPage(currentPage); renderPagination();
-
-  const totalLinks=rawLines.filter(l=>l && l!=='###').length;
-  document.getElementById('stats').textContent=`Total link diinput: ${totalLinks}\nTotal halaman: ${allLinks.length}`;
-  document.getElementById('output').style.display=allLinks.length?'block':'none';
-}
-
-function showPage(page){
-  if(page<1||page>allLinks.length) return;
-  const pageLinks=allLinks[page-1];
-  document.getElementById('output').innerHTML=pageLinks.map(l=>`<a href="${l}" target="_blank" rel="noopener noreferrer">${l}</a>`).join('');
-  currentPage=page; highlightActivePage();
-}
-
-function copyToClipboard(){
-  if(!allLinks.length) return;
-  const text=allLinks[currentPage-1].join('\n');
-  navigator.clipboard.writeText(text).then(()=>alert(`Link di halaman ${currentPage} berhasil disalin!`)).catch(()=>alert('Gagal menyalin!'));
-}
-
-function renderPagination(){
-  const pagination=document.getElementById('pagination');
-  pagination.innerHTML='';
-  for(let i=1;i<=allLinks.length;i++){
-    const btn=document.createElement('button');
-    btn.textContent=i; btn.className='page-btn';
-    if(i===currentPage) btn.classList.add('active');
-    btn.addEventListener('click',()=>showPage(i));
-    pagination.appendChild(btn);
-  }
-}
-
-function highlightActivePage(){
-  document.querySelectorAll('.page-btn').forEach(btn=>{ btn.classList.remove('active'); if(parseInt(btn.textContent)===currentPage) btn.classList.add('active'); });
-}
-</script>
 
 </body>
 </html>
