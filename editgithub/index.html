@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Edit File GitHub (Smart Version + Autosave Token)</title>
+<title>Edit File GitHub (Repo: shope-tools / Folder: gabung)</title>
 <style>
   body { font-family: Arial, sans-serif; background: #f9f9f9; margin: 0; color: #333; }
   .container { max-width: 900px; margin: 20px auto; background: #fff; padding: 20px;
@@ -31,7 +31,7 @@
 </head>
 <body>
 <div class="container">
-  <h1>Editor File GitHub</h1>
+  <h1>🛠️ Editor File GitHub</h1>
 
   <input type="password" id="token" placeholder="Masukkan GitHub Token">
   <div id="tokenStatus" style="margin-top:5px;"></div>
@@ -39,14 +39,16 @@
   <input type="hidden" id="owner" />
   <button onclick="clearToken()" class="danger">❌ Hapus Token</button>
 
-  <select id="repoSelect"><option>Menunggu...</option></select>
+  <!-- Repo tetap -->
+  <input type="hidden" id="repoSelect" value="shope-tools">
+  <div style="margin-top:10px; color:green;">📦 Repo aktif: <b>shope-tools</b></div>
+
   <input type="text" id="branch" value="main" />
   <div id="loading">⏳ Memuat data...</div>
 
   <select id="fileList" onchange="onSelectFile()"><option>Menunggu...</option></select>
   <button id="backButton" onclick="goBack()" style="display:none;background:#777;">⬅️ Kembali</button>
 
-  <!-- Toolbar Editor -->
   <div class="toolbar">
     <div class="filename" id="activeFile">Tidak ada file aktif</div>
     <button onclick="reloadFile()" style="background:#6c5ce7;">🔄 Reload</button>
@@ -61,8 +63,18 @@
 </div>
 
 <script>
-let currentPath = "";
+let currentPath = "gabung"; // folder default
 let activeFilePath = "";
+
+// Daftar file yang diizinkan muncul (urutan tetap)
+const allowedFiles = [
+  "readme.html",
+  "jalb.txt",
+  "rano.txt",
+  "indah.txt",
+  "rini.txt",
+  "nurbad.txt"
+];
 
 function getToken() {
   return localStorage.getItem("github_token") || document.getElementById("token").value;
@@ -74,13 +86,12 @@ function showTokenStatus(saved) {
   el.style.color = saved ? "green" : "red";
 }
 
-// 🔄 Autosave Token setiap kali diketik
 document.getElementById("token").addEventListener("input", async () => {
   const token = document.getElementById("token").value.trim();
   if (token.length > 10) {
     localStorage.setItem("github_token", token);
     showTokenStatus(true);
-    await getUsernameFromToken(); // cek user otomatis
+    await getUsernameFromToken();
   } else if (token === "") {
     localStorage.removeItem("github_token");
     document.getElementById("usernameStatus").textContent = "❌ Username belum ditemukan";
@@ -101,7 +112,7 @@ async function getUsernameFromToken() {
     localStorage.setItem("github_user", data.login);
     document.getElementById("usernameStatus").textContent = "✅ Username ditemukan";
     document.getElementById("usernameStatus").style.color = "green";
-    await loadRepos();
+    await loadFileList("gabung"); // otomatis buka folder gabung
     return data.login;
   } else {
     document.getElementById("usernameStatus").textContent = "❌ Username tidak valid";
@@ -110,44 +121,7 @@ async function getUsernameFromToken() {
   }
 }
 
-async function loadRepos() {
-  const token = getToken();
-  const res = await fetch("https://api.github.com/user/repos?per_page=200", {
-    headers: { Authorization: `token ${token}` }
-  });
-  const data = await res.json();
-  const select = document.getElementById("repoSelect");
-  select.innerHTML = "";
-
-  if (!Array.isArray(data)) {
-    select.innerHTML = "<option>Gagal memuat repositori</option>";
-    return;
-  }
-
-  data.forEach(repo => {
-    const opt = document.createElement("option");
-    opt.value = repo.name;
-    opt.textContent = repo.name;
-    select.appendChild(opt);
-  });
-
-  const lastRepo = localStorage.getItem("last_repo");
-  if (lastRepo && data.some(r => r.name === lastRepo)) {
-    select.value = lastRepo;
-  } else {
-    select.selectedIndex = 0;
-  }
-
-  select.onchange = async () => {
-    localStorage.setItem("last_repo", select.value);
-    currentPath = "";
-    await loadFileList();
-  };
-
-  await loadFileList();
-}
-
-async function loadFileList(path = "") {
+async function loadFileList(path = "gabung") {
   const owner = document.getElementById("owner").value;
   const repo = document.getElementById("repoSelect").value;
   const branch = document.getElementById("branch").value;
@@ -160,29 +134,35 @@ async function loadFileList(path = "") {
   loading.style.display = "block";
   fileList.innerHTML = "<option>⏳ Memuat...</option>";
 
-  const url = path
-    ? `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`
-    : `https://api.github.com/repos/${owner}/${repo}/contents?ref=${encodeURIComponent(branch)}`;
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
 
   try {
     const res = await fetch(url, { headers: { Authorization: `token ${token}` } });
     const data = await res.json();
-
     fileList.innerHTML = "";
-    if (!Array.isArray(data)) throw new Error("Bukan array");
 
-    data.forEach(item => {
+    // 🔍 Urutkan sesuai daftar allowedFiles
+    const filtered = allowedFiles
+      .map(name => data.find(item => item.name === name))
+      .filter(Boolean);
+
+    // Tambahkan ke dropdown sesuai urutan
+    filtered.forEach(item => {
       const opt = document.createElement("option");
       opt.value = item.path;
-      opt.textContent = item.type === "dir" ? "📁 " + item.name : "📄 " + item.name;
+      opt.textContent = "📄 " + item.name;
       fileList.appendChild(opt);
     });
 
     currentPath = path;
-    document.getElementById("backButton").style.display = path ? "inline-block" : "none";
+    document.getElementById("backButton").style.display = "none";
 
-    const firstFile = data.find(i => i.type === "file");
-    if (firstFile) await loadFile(firstFile.path);
+    // 🚀 Selalu buka readme.html pertama kali
+    const readmeFile = filtered.find(f => f.name.toLowerCase() === "readme.html");
+    if (readmeFile) {
+      fileList.value = readmeFile.path;
+      await loadFile(readmeFile.path);
+    }
   } catch (err) {
     fileList.innerHTML = "<option>❌ Gagal memuat file</option>";
   }
@@ -190,22 +170,10 @@ async function loadFileList(path = "") {
   loading.style.display = "none";
 }
 
-function goBack() {
-  if (!currentPath) return;
-  const parts = currentPath.split("/");
-  parts.pop();
-  loadFileList(parts.join("/"));
-}
-
 function onSelectFile() {
   const selected = document.getElementById("fileList").selectedOptions[0];
   if (!selected) return;
-  const value = selected.value;
-  if (selected.textContent && selected.textContent.startsWith("📁")) {
-    loadFileList(value);
-  } else {
-    loadFile(value);
-  }
+  loadFile(selected.value);
 }
 
 async function loadFile(filePath) {
