@@ -1,343 +1,41 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Link Shopee Pagination</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 15px;
-      max-width: 700px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    h2, h3 {
-      font-size: 1.2rem;
-      margin-bottom: 8px;
-    }
-    textarea {
-      width: 100%;
-      height: 150px;
-      box-sizing: border-box;
-      font-size: 1rem;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-    #output {
-      display: none;
-      margin-top: 10px;
-    }
-    #output a {
-      display: block;
-      margin-bottom: 6px;
-      color: #0066cc;
-      text-decoration: none;
-      word-wrap: break-word;
-    }
-    #output a:hover { text-decoration: underline; }
-    .pagination {
-      margin-top: 15px;
-      text-align: center;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      justify-content: center;
-    }
-    .page-btn {
-      padding: 10px 14px;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background-color: white;
-      font-size: 1rem;
-      min-width: 40px;
-    }
-    .page-btn:hover { background-color: #ffd42a; color: #b36b00; }
-    .active {
-      font-weight: bold;
-      background-color: #ffd42a;
-      color: #b36b00;
-      border-color: #b36b00;
-    }
-    #copyBtn {
-      margin-top: 12px;
-      padding: 12px;
-      font-size: 1rem;
-      cursor: pointer;
-      border: none;
-      background-color: #ffd42a;
-      color: #b36b00;
-      border-radius: 6px;
-      width: 100%;
-    }
-    #copyBtn:hover { background-color: #e6c72b; }
-    .input-buttons {
-      display: flex;
-      gap: 8px;
-      margin-top: 6px;
-      flex-wrap: wrap;
-    }
-    .input-buttons button {
-      flex: 1;
-      padding: 10px;
-      font-size: 0.95rem;
-      cursor: pointer;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background: #f5f5f5;
-    }
-    .input-buttons button:hover {
-      background: #eee;
-    }
-    #stats {
-      margin: 15px 0;
-      font-weight: bold;
-      font-size: 1rem;
-      white-space: pre-line;
-    }
-    .sponsor {
-      background-color: #fffae6;
-      border: 1px solid #ffd42a;
-      padding: 12px;
-      margin: 15px 0;
-      font-weight: bold;
-      text-align: center;
-      color: #b36b00;
-      border-radius: 6px;
-      box-shadow: 0 0 5px rgba(255, 212, 42, 0.5);
-      font-size: 1rem;
-    }
-    /* Responsive tweaks */
-    @media (max-width: 480px) {
-      h2, h3 { font-size: 1rem; }
-      textarea { height: 120px; font-size: 0.9rem; }
-      #output { font-size: 0.85rem; }
-      .page-btn { padding: 8px 12px; font-size: 0.9rem; }
-      #copyBtn { font-size: 0.95rem; }
-      .input-buttons { flex-direction: column; }
-      .input-buttons button { flex: unset; width: 100%; }
-    }
-  </style>
+  <title>Laporan Kendala MadGazan Studio</title>
 </head>
 <body>
+  <h1>Halaman Utama</h1>
+  <p>Ini adalah contoh struktur dasar halaman HTML.</p>
 
-  <h2>Masukkan Link Shopee</h2>
-  <textarea id="inputLinks" placeholder="Masukkan ribuan link Shopee, satu per baris..."></textarea>
-  <div class="input-buttons">
-    <button id="ambilLinksBtn">Ambil dari data.txt</button>
-    <button id="clearInputLinksBtn">Clear Input Links</button>
-    <button id="copyInputLinksBtn">Copy Input Links</button>
-  </div>
-
-  <div class="sponsor">
-    Disponsori oleh <strong>Kios Tembakau MadGazan</strong>
-  </div>
-
-  <h3>Masukkan ID Toko yang Dikecualikan (satu per baris)</h3>
-  <textarea id="excludedShops" placeholder="Contoh: 123456789&#10;987654321"></textarea>
-  <div class="input-buttons">
-    <button id="ambilTokoBtn">Ambil dari data_toko.txt</button>
-    <button id="clearInputTokoBtn">Clear Input Toko</button>
-    <button id="copyInputTokoBtn">Copy Input Toko</button>
-  </div>
-
-  <div id="stats"></div>
-
-  <h3>Output (maks 100 per halaman)</h3>
-  <div id="output"></div>
-  <button id="copyBtn" onclick="copyToClipboard()">Copy Link di Halaman Ini</button>
-
-  <div class="pagination" id="pagination"></div>
-
-  <script>
-    let allLinks = [];
-    let currentPage = 1;
-    const maxPerPage = 100;
-
-    const inputLinksEl = document.getElementById('inputLinks');
-    const excludedShopsEl = document.getElementById('excludedShops');
-    const pageKey = location.pathname.split('/').pop().replace(/\.[^/.]+$/, '');
-
-    window.onload = () => {
-      if (localStorage.getItem(`${pageKey}_inputLinks`)) {
-        inputLinksEl.value = localStorage.getItem(`${pageKey}_inputLinks`);
-      }
-      if (localStorage.getItem(`${pageKey}_excludedShops`)) {
-        excludedShopsEl.value = localStorage.getItem(`${pageKey}_excludedShops`);
-      }
-      processLinks();
-    }
-
-    // Ambil data links
-    document.getElementById('ambilLinksBtn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('data.txt?t=' + Date.now(), { cache: 'no-store' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const text = await res.text();
-        const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
-        inputLinksEl.value = rows.join("\n");
-        localStorage.setItem(`${pageKey}_inputLinks`, inputLinksEl.value);
-        processLinks();
-      } catch (e) {
-        alert("Gagal mengambil data.txt: " + e.message);
-      }
-    });
-
-    // Ambil data toko
-    document.getElementById('ambilTokoBtn').addEventListener('click', async () => {
-      try {
-        const res = await fetch('data_toko.txt?t=' + Date.now(), { cache: 'no-store' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const text = await res.text();
-        const rows = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
-        excludedShopsEl.value = rows.join("\n");
-        localStorage.setItem(`${pageKey}_excludedShops`, excludedShopsEl.value);
-        processLinks();
-      } catch (e) {
-        alert("Gagal mengambil data_toko.txt: " + e.message);
-      }
-    });
-
-    // Event clear/copy untuk links
-    document.getElementById('clearInputLinksBtn').addEventListener('click', () => {
-      inputLinksEl.value = '';
-      localStorage.removeItem(`${pageKey}_inputLinks`);
-      processLinks();
-    });
-
-    document.getElementById('copyInputLinksBtn').addEventListener('click', () => {
-      const textToCopy = inputLinksEl.value.trim();
-      if (!textToCopy) {
-        alert("Input kosong, tidak ada yang disalin!");
-        return;
-      }
-      navigator.clipboard.writeText(textToCopy)
-        .then(() => alert("Isi input berhasil disalin!"))
-        .catch(() => alert("Gagal menyalin!"));
-    });
-
-    // Event clear/copy untuk toko
-    document.getElementById('clearInputTokoBtn').addEventListener('click', () => {
-      excludedShopsEl.value = '';
-      localStorage.removeItem(`${pageKey}_excludedShops`);
-      processLinks();
-    });
-
-    document.getElementById('copyInputTokoBtn').addEventListener('click', () => {
-      const textToCopy = excludedShopsEl.value.trim();
-      if (!textToCopy) {
-        alert("Input kosong, tidak ada yang disalin!");
-        return;
-      }
-      navigator.clipboard.writeText(textToCopy)
-        .then(() => alert("Isi input berhasil disalin!"))
-        .catch(() => alert("Gagal menyalin!"));
-    });
-
-    inputLinksEl.addEventListener('input', () => {
-      localStorage.setItem(`${pageKey}_inputLinks`, inputLinksEl.value);
-      processLinks();
-    });
-    excludedShopsEl.addEventListener('input', () => {
-      localStorage.setItem(`${pageKey}_excludedShops`, excludedShopsEl.value);
-      processLinks();
-    });
-
-    function processLinks() {
-      const input = inputLinksEl.value;
-      const excludeInput = excludedShopsEl.value;
-
-      const rawLinks = input.split('\n').map(link => link.trim()).filter(link => link);
-      const uniqueLinks = [...new Set(rawLinks)];
-
-      const excludedShopIds = excludeInput
-        .split('\n')
-        .map(id => id.trim())
-        .filter(id => id !== '');
-
-      const duplicateShopIds = excludedShopIds.filter((id, idx, arr) => arr.indexOf(id) !== idx);
-      if (duplicateShopIds.length > 0) {
-        alert(`Peringatan: Ditemukan ID toko yang duplikat:\n${[...new Set(duplicateShopIds)].join('\n')}`);
-      }
-
-      const validLinks = uniqueLinks.filter(link => /\/product\/\d+\/\d+/.test(link));
-
-      const filteredLinks = validLinks.filter(link => {
-        const match = link.match(/\/product\/(\d+)\/\d+/);
-        if (match) {
-          const shopId = match[1];
-          return !excludedShopIds.includes(shopId);
-        }
-        return false;
-      });
-
-      allLinks = filteredLinks;
-      currentPage = 1;
-      showPage(currentPage);
-      renderPagination();
-
-      const totalPages = Math.ceil(allLinks.length / maxPerPage);
-
-      const statsText =
-        `Total link diinput: ${rawLinks.length}\n` +
-        `Link unik: ${uniqueLinks.length}\n` +
-        `Link valid (sesuai pola): ${validLinks.length}\n` +
-        `Link tereliminasi (excluded toko): ${validLinks.length - filteredLinks.length}\n` +
-        `Link setelah eliminasi: ${filteredLinks.length}\n` +
-        `Total halaman: ${totalPages}`;
-
-      document.getElementById('stats').textContent = statsText;
-      document.getElementById('output').style.display = allLinks.length ? 'block' : 'none';
-    }
-
-    function showPage(page) {
-      const start = (page - 1) * maxPerPage;
-      const end = start + maxPerPage;
-      const pageLinks = allLinks.slice(start, end);
-
-      const outputDiv = document.getElementById('output');
-      outputDiv.innerHTML = pageLinks.map(link =>
-        `<a href="${link}" target="_blank" rel="noopener noreferrer">${link}</a>`
-      ).join('');
-
-      currentPage = page;
-      highlightActivePage();
-    }
-
-    function renderPagination() {
-      const totalPages = Math.ceil(allLinks.length / maxPerPage);
-      const pagination = document.getElementById('pagination');
-      pagination.innerHTML = '';
-
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        btn.className = 'page-btn';
-        if (i === currentPage) btn.classList.add('active');
-        btn.addEventListener('click', () => showPage(i));
-        pagination.appendChild(btn);
-      }
-    }
-
-    function highlightActivePage() {
-      document.querySelectorAll('.page-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (parseInt(btn.textContent) === currentPage) {
-          btn.classList.add('active');
-        }
-      });
-    }
-
-    function copyToClipboard() {
-      const links = allLinks.slice((currentPage - 1) * maxPerPage, currentPage * maxPerPage);
-      const textToCopy = links.join('\n');
-      navigator.clipboard.writeText(textToCopy)
-        .then(() => alert('Link berhasil disalin!'))
-        .catch(() => alert('Gagal menyalin!'));
-    }
-  </script>
-
+  <!--
+  ==========================================================
+  🧩 CATATAN PENGEMBANGAN (MadGazan Studio)
+  ----------------------------------------------------------
+  Alur pengembangan file HTML ini:
+  
+  1️⃣ File: gabung/index.html
+      - Bagian bawah file ini akan dipangkas.
+      - Hanya bagian atas yang tetap dipertahankan.
+  
+  2️⃣ File: sortir produk v5.html
+      - Bagian atas dari file ini dimasukkan ke bagian bawah 
+        gabung/index.html (setelah bagian yang dipertahankan).
+  
+  3️⃣ File: read/h.html
+      - Ditempatkan di bagian paling bawah setelah penyisipan
+        dari sortir produk v5.html.
+  
+  Hasil akhirnya:
+      gabung/index.html (atas)
+      + sortir produk v5.html (atas)
+      + read/h.html (bawah)
+  ----------------------------------------------------------
+  Tujuan:
+      🔹 Menggabungkan fungsi utama dari ketiga file.
+      🔹 Membentuk satu halaman integrasi lengkap.
+  ==========================================================
+  -->
 </body>
 </html>
