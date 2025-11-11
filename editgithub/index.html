@@ -51,10 +51,8 @@
 
   <div class="toolbar">
     <div class="filename" id="activeFile">Tidak ada file aktif</div>
-    <button onclick="reloadFile()" style="background:#6c5ce7;">🔄 Reload</button>
     <button onclick="clearEditor()" style="background:#e74c3c;">🧹 Hapus</button>
     <button onclick="pasteFromClipboard()" style="background:#3498db;">📋 Paste</button>
-    <button onclick="copyToClipboard()" style="background:#27ae60;">📄 Copy</button>
   </div>
   <div id="fileInfo"></div>
 
@@ -141,12 +139,10 @@ async function loadFileList(path = "gabung") {
     const data = await res.json();
     fileList.innerHTML = "";
 
-    // 🔍 Urutkan sesuai daftar allowedFiles
     const filtered = allowedFiles
       .map(name => data.find(item => item.name === name))
       .filter(Boolean);
 
-    // Tambahkan ke dropdown sesuai urutan
     filtered.forEach(item => {
       const opt = document.createElement("option");
       opt.value = item.path;
@@ -157,11 +153,11 @@ async function loadFileList(path = "gabung") {
     currentPath = path;
     document.getElementById("backButton").style.display = "none";
 
-    // 🚀 Selalu buka readme.html pertama kali
+    // selalu pilih readme.html pertama kali
     const readmeFile = filtered.find(f => f.name.toLowerCase() === "readme.html");
     if (readmeFile) {
       fileList.value = readmeFile.path;
-      await loadFile(readmeFile.path);
+      await loadFile(readmeFile.path, true); // tampilkan isi
     }
   } catch (err) {
     fileList.innerHTML = "<option>❌ Gagal memuat file</option>";
@@ -173,10 +169,11 @@ async function loadFileList(path = "gabung") {
 function onSelectFile() {
   const selected = document.getElementById("fileList").selectedOptions[0];
   if (!selected) return;
-  loadFile(selected.value);
+  const isReadme = selected.textContent.toLowerCase().includes("readme.html");
+  loadFile(selected.value, isReadme);
 }
 
-async function loadFile(filePath) {
+async function loadFile(filePath, showContent = false) {
   const owner = document.getElementById("owner").value;
   const repo = document.getElementById("repoSelect").value;
   const branch = document.getElementById("branch").value;
@@ -187,28 +184,25 @@ async function loadFile(filePath) {
     headers: { Authorization: `token ${token}` }
   });
   const data = await res.json();
+  if (!data) return alert("Gagal memuat file!");
 
-  if (data && data.content !== undefined) {
-    const decoded = atob(data.content);
-    const textarea = document.getElementById("fileContent");
-    textarea.value = decoded;
-    localStorage.setItem("last_path", filePath);
-    localStorage.setItem("last_sha", data.sha);
-    activeFilePath = filePath;
+  localStorage.setItem("last_path", filePath);
+  localStorage.setItem("last_sha", data.sha || "");
+  activeFilePath = filePath;
 
-    document.getElementById("activeFile").textContent = `📄 ${filePath}`;
-    document.getElementById("fileInfo").textContent = `Tipe file: ${detectFileType(filePath)}, Ukuran: ${data.size ? (data.size/1024).toFixed(1) + " KB" : "—"}`;
+  document.getElementById("activeFile").textContent = `📄 ${filePath}`;
+  document.getElementById("fileInfo").textContent = `Tipe file: ${detectFileType(filePath)}, Ukuran: ${data.size ? (data.size/1024).toFixed(1)+" KB" : "—"}`;
 
+  const textarea = document.getElementById("fileContent");
+  if (showContent) {
+    textarea.value = atob(data.content);
     applySyntaxStyle(filePath, textarea);
   } else {
-    alert("Gagal memuat isi file.");
+    textarea.value = ""; // kosongkan isi untuk file selain readme
+    textarea.style.background = "#fff";
+    textarea.style.color = "#222";
+    textarea.style.fontFamily = "Arial,sans-serif";
   }
-}
-
-async function reloadFile() {
-  if (!activeFilePath) return alert("Tidak ada file aktif untuk dimuat ulang!");
-  await loadFile(activeFilePath);
-  alert("🔄 File dimuat ulang!");
 }
 
 async function updateFile() {
@@ -217,7 +211,7 @@ async function updateFile() {
   const branch = document.getElementById("branch").value;
   const token = getToken();
   const filePath = localStorage.getItem("last_path");
-  const sha = localStorage.getItem("last_sha");
+  const sha = localStorage.getItem("last_sha") || undefined;
   if (!filePath) return alert("Tidak ada file untuk disimpan.");
   const content = btoa(document.getElementById("fileContent").value);
 
@@ -271,16 +265,6 @@ async function pasteFromClipboard() {
     alert("✅ Teks berhasil di-paste!");
   } catch {
     alert("❌ Gagal membaca clipboard.");
-  }
-}
-
-async function copyToClipboard() {
-  try {
-    const text = document.getElementById("fileContent").value;
-    await navigator.clipboard.writeText(text);
-    alert("✅ Disalin ke clipboard!");
-  } catch {
-    alert("❌ Gagal menyalin teks!");
   }
 }
 
