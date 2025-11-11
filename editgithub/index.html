@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Edit File GitHub (Smart Version + Copy)</title>
+<title>Edit File GitHub (Smart Version + Autosave Token)</title>
 <style>
   body { font-family: Arial, sans-serif; background: #f9f9f9; margin: 0; color: #333; }
   .container { max-width: 900px; margin: 20px auto; background: #fff; padding: 20px;
@@ -34,11 +34,11 @@
   <h1>Editor File GitHub</h1>
 
   <input type="password" id="token" placeholder="Masukkan GitHub Token">
-  <div id="tokenStatus" style="font-size:0.9em; margin-top:5px;"></div>
-  <button onclick="saveToken()">💾 Simpan Token</button>
+  <div id="tokenStatus" style="margin-top:5px;"></div>
+  <div id="usernameStatus" style="margin-top:5px; color:#555;">❌ Username belum ditemukan</div>
+  <input type="hidden" id="owner" />
   <button onclick="clearToken()" class="danger">❌ Hapus Token</button>
 
-  <input type="text" id="owner" placeholder="Username" readonly>
   <select id="repoSelect"><option>Menunggu...</option></select>
   <input type="text" id="branch" value="main" />
   <div id="loading">⏳ Memuat data...</div>
@@ -70,9 +70,24 @@ function getToken() {
 
 function showTokenStatus(saved) {
   const el = document.getElementById("tokenStatus");
-  el.textContent = saved ? "✅ Token tersimpan otomatis" : "❌ Token belum tersimpan";
+  el.textContent = saved ? "✅ Token tersimpan" : "❌ Token belum tersimpan";
   el.style.color = saved ? "green" : "red";
 }
+
+// 🔄 Autosave Token setiap kali diketik
+document.getElementById("token").addEventListener("input", async () => {
+  const token = document.getElementById("token").value.trim();
+  if (token.length > 10) {
+    localStorage.setItem("github_token", token);
+    showTokenStatus(true);
+    await getUsernameFromToken(); // cek user otomatis
+  } else if (token === "") {
+    localStorage.removeItem("github_token");
+    document.getElementById("usernameStatus").textContent = "❌ Username belum ditemukan";
+    document.getElementById("usernameStatus").style.color = "#555";
+    showTokenStatus(false);
+  }
+});
 
 async function getUsernameFromToken() {
   const token = getToken();
@@ -84,9 +99,13 @@ async function getUsernameFromToken() {
   if (data && data.login) {
     document.getElementById("owner").value = data.login;
     localStorage.setItem("github_user", data.login);
+    document.getElementById("usernameStatus").textContent = "✅ Username ditemukan";
+    document.getElementById("usernameStatus").style.color = "green";
+    await loadRepos();
     return data.login;
   } else {
-    alert("Token tidak valid");
+    document.getElementById("usernameStatus").textContent = "❌ Username tidak valid";
+    document.getElementById("usernameStatus").style.color = "red";
     return null;
   }
 }
@@ -244,32 +263,14 @@ async function updateFile() {
   else alert("❌ Gagal menyimpan file!");
 }
 
-function saveToken() {
-  const token = document.getElementById("token").value;
-  if (!token) return alert("Masukkan token!");
-  localStorage.setItem("github_token", token);
-  showTokenStatus(true);
-  initLoad();
-}
-
 function clearToken() {
   localStorage.clear();
   document.getElementById("token").value = "";
   document.getElementById("owner").value = "";
   showTokenStatus(false);
+  document.getElementById("usernameStatus").textContent = "❌ Username belum ditemukan";
+  document.getElementById("usernameStatus").style.color = "#555";
 }
-
-// 🔄 AUTOSAVE TOKEN
-document.getElementById("token").addEventListener("input", () => {
-  const token = document.getElementById("token").value.trim();
-  if (token.length > 10) {
-    localStorage.setItem("github_token", token);
-    showTokenStatus(true);
-  } else if (token === "") {
-    localStorage.removeItem("github_token");
-    showTokenStatus(false);
-  }
-});
 
 function detectFileType(path) {
   const name = String(path).split('/').pop();
@@ -320,8 +321,7 @@ async function initLoad() {
   if (!token) return showTokenStatus(false);
   document.getElementById("token").value = token;
   showTokenStatus(true);
-  const user = await getUsernameFromToken();
-  if (user) await loadRepos();
+  await getUsernameFromToken();
 }
 
 window.onload = initLoad;
