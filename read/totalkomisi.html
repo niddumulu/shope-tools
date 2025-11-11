@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Total Komisi Shopee - CSV Reader</title>
+<title>Total Komisi Shopee - Multi CSV Detail</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -31,14 +31,25 @@
     border-radius: 8px;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
   }
+  .file-list {
+    margin-top: 10px;
+    padding-left: 20px;
+  }
+  .file-item {
+    margin: 5px 0;
+  }
   .total {
     font-size: 1.6em;
     font-weight: bold;
     color: #28a745;
+    margin-top: 15px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
   }
   .error {
     color: red;
     font-weight: bold;
+    white-space: pre-line;
   }
   .sponsor {
     background-color: #fffae6;
@@ -54,14 +65,13 @@
 </head>
 
 <body>
-  <h2>💰 Hitung Total Komisi Shopee (CSV)</h2>
-  <input type="file" id="csvFile" accept=".csv"><br>
+  <h2>💰 Hitung Total Komisi Shopee (Multi File + Detail)</h2>
+  <input type="file" id="csvFiles" accept=".csv" multiple><br>
 
   <div id="result" class="result" style="display:none;">
     <p><strong>Kolom yang dipakai:</strong> <span id="colName"></span></p>
-    <p><strong>Jumlah data terbaca:</strong> <span id="rowCount"></span></p>
-    <hr>
-    <p>Total Komisi:</p>
+    <p><strong>Jumlah file:</strong> <span id="fileCount"></span></p>
+    <div class="file-list" id="fileDetails"></div>
     <p class="total" id="totalKomisi">Rp 0</p>
   </div>
 
@@ -72,45 +82,62 @@
   </div>
 
 <script>
-document.getElementById('csvFile').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
+document.getElementById('csvFiles').addEventListener('change', e => {
+  const files = e.target.files;
+  if (!files.length) return;
 
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const rows = ev.target.result
-      .split('\n')
-      .map(r => r.trim())
-      .filter(r => r);
+  let totalGlobal = 0;
+  let processed = 0;
+  let colName = "";
+  const resultsPerFile = [];
+  const errorMsg = document.getElementById('errorMsg');
+  const resultDiv = document.getElementById('result');
+  const fileDetailsDiv = document.getElementById('fileDetails');
 
-    const data = rows.map(r => r.split(',').map(c => c.replace(/^"|"$/g, '')));
-    const headers = data[0];
-    const komisiIndex = headers.findIndex(h => h.trim() === "Total Komisi per Pesanan(Rp)");
+  errorMsg.textContent = "";
+  resultDiv.style.display = 'none';
+  fileDetailsDiv.innerHTML = "";
 
-    const errorMsg = document.getElementById('errorMsg');
-    const resultDiv = document.getElementById('result');
+  for (const file of files) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const rows = ev.target.result
+        .split('\n')
+        .map(r => r.trim())
+        .filter(r => r);
 
-    if (komisiIndex === -1) {
-      errorMsg.textContent = "⚠️ Kolom 'Total Komisi per Pesanan(Rp)' tidak ditemukan dalam file CSV!";
-      resultDiv.style.display = 'none';
-      return;
-    }
+      const data = rows.map(r => r.split(',').map(c => c.replace(/^"|"$/g, '')));
+      const headers = data[0];
+      const komisiIndex = headers.findIndex(h => h.trim() === "Total Komisi per Pesanan(Rp)");
 
-    errorMsg.textContent = "";
-    let total = 0;
-    for (let i = 1; i < data.length; i++) {
-      const val = parseFloat(data[i][komisiIndex].replace(/[^\d.-]/g, '')) || 0;
-      total += val;
-    }
+      if (komisiIndex === -1) {
+        errorMsg.textContent += `⚠️ Kolom 'Total Komisi per Pesanan(Rp)' tidak ditemukan di file: ${file.name}\n`;
+      } else {
+        colName = headers[komisiIndex];
+        let totalFile = 0;
+        for (let i = 1; i < data.length; i++) {
+          const val = parseFloat(data[i][komisiIndex].replace(/[^\d.-]/g, '')) || 0;
+          totalFile += val;
+        }
+        resultsPerFile.push({ name: file.name, total: totalFile });
+        totalGlobal += totalFile;
+      }
 
-    document.getElementById('colName').textContent = headers[komisiIndex];
-    document.getElementById('rowCount').textContent = (data.length - 1) + " baris";
-    document.getElementById('totalKomisi').textContent = 
-      "Rp " + total.toLocaleString("id-ID");
-    resultDiv.style.display = 'block';
-  };
-
-  reader.readAsText(file);
+      processed++;
+      if (processed === files.length) {
+        // tampilkan hasil akhir
+        document.getElementById('fileCount').textContent = `${files.length} file`;
+        document.getElementById('colName').textContent = colName || "Tidak ditemukan";
+        fileDetailsDiv.innerHTML = resultsPerFile.map((r, i) =>
+          `<div class="file-item">${i+1}. ${r.name.replace('.csv','')} - Rp ${r.total.toLocaleString("id-ID")}</div>`
+        ).join('');
+        document.getElementById('totalKomisi').textContent =
+          "Total Keseluruhan = Rp " + totalGlobal.toLocaleString("id-ID");
+        resultDiv.style.display = 'block';
+      }
+    };
+    reader.readAsText(file);
+  }
 });
 </script>
 </body>
