@@ -4,38 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Laporan Kendala MadGazan Studio</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f0f8ff;
+      color: #222;
+      margin: 0;
+      padding: 20px;
+    }
+    .catatan {
+      background: #fff;
+      border-left: 6px solid #0078d7;
+      padding: 15px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .catatan h2 {
+      margin-top: 0;
+      color: #0078d7;
+    }
+    .catatan ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .catatan p {
+      margin-top: 10px;
+      font-style: italic;
+      color: #444;
+    }
+  </style>
 </head>
 <body>
-  <h1>Halaman Utama</h1>
-  <p>Ini adalah contoh struktur dasar halaman HTML.</p>
 
-  <!--
-  ==========================================================
-  🧩 CATATAN PENGEMBANGAN (MadGazan Studio)
-  ----------------------------------------------------------
-  Alur pengembangan file HTML ini:
-  
-  1️⃣ File: gabung/index.html
-      - Bagian bawah file ini akan dipangkas.
-      - Hanya bagian atas yang tetap dipertahankan.
-  
-  2️⃣ File: sortir produk v5.html
-      - Bagian atas dari file ini dimasukkan ke bagian bawah 
-        gabung/index.html (setelah bagian yang dipertahankan).
-  
-  3️⃣ File: read/h.html
-      - Ditempatkan di bagian paling bawah setelah penyisipan
-        dari sortir produk v5.html.
-  
-  Hasil akhirnya:
-      gabung/index.html (atas)
-      + sortir produk v5.html (atas)
-      + read/h.html (bawah)
-  ----------------------------------------------------------
-  Tujuan:
-      🔹 Menggabungkan fungsi utama dari ketiga file.
-      🔹 Membentuk satu halaman integrasi lengkap.
-  ==========================================================
-  -->
+  <div class="catatan">
+    <h2>🧩 Catatan Pengembangan</h2>
+    <ol>
+      <li>File <b>gabung/index.html</b> dipangkas bagian bawah.</li>
+      <li>Bagian atas file <b>sortir produk v5.html</b> dimasukkan ke bagian bawah <b>gabung/index.html</b>.</li>
+      <li>File <b>read/h.html</b> ditaruh pada bagian paling bawah setelah penyisipan file sebelumnya.</li>
+    </ol>
+    <p>🎯 <b>Tujuan:</b> Menggabungkan fungsi utama dari ketiga file untuk membentuk satu halaman integrasi lengkap.</p>
+  </div>
+
+  <h1>Halaman Utama</h1>
+  <p>Ini adalah struktur dasar halaman HTML setelah penggabungan.</p>
+
 </body>
 </html>
