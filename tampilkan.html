@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📚 Daftar Isi - Shope Tools</title>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
     body {
       font-family: 'Poppins', sans-serif;
       margin: 0;
@@ -25,6 +27,12 @@
     h1 {
       font-size: 1.8rem;
       margin: 0;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      font-size: 0.95rem;
+      opacity: 0.95;
     }
 
     .container {
@@ -47,6 +55,7 @@
     ul {
       list-style: none;
       padding-left: 0;
+      margin-top: 15px;
     }
 
     li {
@@ -67,6 +76,7 @@
       text-decoration: none;
       color: #ff6600;
       font-weight: 600;
+      display: block;
     }
 
     footer {
@@ -74,11 +84,6 @@
       padding: 15px;
       font-size: 0.9rem;
       color: #666;
-    }
-
-    @media (max-width: 600px) {
-      .container { margin: 15px; padding: 20px; }
-      h1 { font-size: 1.5rem; }
     }
 
     .search-box {
@@ -90,7 +95,7 @@
     .search-box input {
       width: 100%;
       max-width: 400px;
-      padding: 10px;
+      padding: 10px 12px;
       border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 1rem;
@@ -101,6 +106,17 @@
     .search-box input:focus {
       border-color: #ff6600;
       box-shadow: 0 0 3px #ffb266;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        margin: 15px;
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
@@ -118,7 +134,7 @@
 
     <h2>🔧 Tools Utama</h2>
     <ul id="daftarIsi">
-      <!-- Link akan dimasukkan otomatis lewat JS -->
+      <!-- Link di-generate via JavaScript -->
     </ul>
   </div>
 
@@ -128,9 +144,11 @@
   </footer>
 
   <script>
-    // Daftar file HTML di proyek
+    const baseURL = "https://niddumulu.github.io/shope-tools/";
+
     const links = [
-      { name: "Produk Run Saat Ini", file: "gabung/index.html" },
+      { name: "Produk Run Sebelumnya", file: "gabung/index.html" },
+      { name: "Produk Run Aktif (External)", url: "https://bpindo.github.io/fg/" },
       { name: "Sortir ID Produk", file: "gabung/v5.html" },
       { name: "Sortir ID Toko", file: "gabung/v4.html" },
       { name: "Laporan Kendala", file: "lapor/index.html" },
@@ -142,27 +160,30 @@
       { name: "CSV Riset Upload", file: "read/index.html" },
       { name: "Ada Sortir ID Produk", file: "gabung/sortirgabung.html" },
       { name: "Edit Github", file: "editgithub/v1.html" },
-      { name: "Editor Github", file: "read/h.html" },
+      { name: "Editor Github", file: "read/h.html" }
     ];
 
     const ul = document.getElementById("daftarIsi");
-    const baseURL = "https://niddumulu.github.io/shope-tools/";
 
     links.forEach(link => {
       const li = document.createElement("li");
       const a = document.createElement("a");
-      a.href = baseURL + link.file;
+
+      a.href = link.url ? link.url : baseURL + link.file;
       a.textContent = link.name;
       a.target = "_blank";
+      a.rel = "noopener noreferrer";
+
       li.appendChild(a);
       ul.appendChild(li);
     });
 
-    // Fitur pencarian sederhana
     document.getElementById("searchInput").addEventListener("input", function () {
       const keyword = this.value.toLowerCase();
       document.querySelectorAll("#daftarIsi li").forEach(li => {
-        li.style.display = li.textContent.toLowerCase().includes(keyword) ? "" : "none";
+        li.style.display = li.textContent.toLowerCase().includes(keyword)
+          ? ""
+          : "none";
       });
     });
   </script>
