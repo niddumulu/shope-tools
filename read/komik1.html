@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pembaca Komik JPG – Final Stable</title>
+
+<style>
+body {
+  margin: 0;
+  background: #111;
+  color: #fff;
+  font-family: system-ui, Arial, sans-serif;
+  padding-bottom: 40px;
+}
+
+header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: #1e1e1e;
+  padding: 10px;
+  text-align: center;
+  z-index: 10;
+}
+
+#reader {
+  margin-top: 70px;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+img {
+  width: 78vw;
+  max-width: 520px;
+  height: auto;
+  display: block;
+  margin: auto;
+}
+
+#status {
+  text-align: center;
+  font-size: 13px;
+  opacity: 0.6;
+  padding: 10px 0;
+}
+
+#footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  text-align: center;
+  line-height: 32px;
+  font-size: 13px;
+  z-index: 20;
+  pointer-events: none;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <input type="file" id="folderInput"
+         webkitdirectory
+         accept="image/jpeg,image/png">
+</header>
+
+<div id="reader">
+  <div>
+    <img id="image">
+    <div id="status">Pilih folder komik</div>
+  </div>
+</div>
+
+<div id="footer">Halaman 1 / 1</div>
+
+<script>
+const input  = document.getElementById("folderInput");
+const image  = document.getElementById("image");
+const status = document.getElementById("status");
+const footer = document.getElementById("footer");
+
+let files = [];
+let index = 0;
+
+input.addEventListener("change", () => {
+  files = Array.from(input.files)
+    .filter(f => /\.(jpe?g|png)$/i.test(f.name))
+    .sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, {
+        numeric: true,
+        sensitivity: "base"
+      })
+    );
+
+  if (!files.length) {
+    status.textContent = "Tidak ada gambar";
+    return;
+  }
+
+  index = 0;
+  show();
+});
+
+function show() {
+  image.src = URL.createObjectURL(files[index]);
+  window.scrollTo({ top: 0, behavior: "instant" });
+  footer.textContent = `Halaman ${index + 1} / ${files.length}`;
+}
+
+/* ============================= */
+/* SWIPE KIRI / KANAN (ASLI) */
+/* ============================= */
+let startX = 0;
+
+document.addEventListener("touchstart", e => {
+  startX = e.touches[0].clientX;
+}, { passive: true });
+
+document.addEventListener("touchend", e => {
+  const dx = e.changedTouches[0].clientX - startX;
+
+  if (dx < -60 && index < files.length - 1) {
+    index++; show();
+  }
+  if (dx > 60 && index > 0) {
+    index--; show();
+  }
+}, { passive: true });
+
+/* ============================= */
+/* KEYBOARD (ASLI) */
+/* ============================= */
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" && index < files.length - 1) {
+    index++; show();
+  }
+  if (e.key === "ArrowLeft" && index > 0) {
+    index--; show();
+  }
+});
+
+/* ============================= */
+/* KLIK = SCROLL KE BAWAH (BARU) */
+/* ============================= */
+const SCROLL_STEP = () => window.innerHeight * 0.85;
+
+image.addEventListener("click", () => {
+  const reachedBottom =
+    window.innerHeight + window.scrollY >= document.body.scrollHeight - 10;
+
+  if (!reachedBottom) {
+    window.scrollBy({
+      top: SCROLL_STEP(),
+      behavior: "smooth"
+    });
+  } else {
+    // jika sudah mentok bawah → lanjut halaman
+    if (index < files.length - 1) {
+      index++;
+      show();
+    }
+  }
+});
+</script>
+
+</body>
+</html>
