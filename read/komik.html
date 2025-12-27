@@ -6,12 +6,14 @@
 <title>Pembaca Komik JPG – Final Stable</title>
 
 <style>
-  body {
-    margin: 0;
-    background: #111;
-    color: #fff;
-    font-family: system-ui, Arial, sans-serif;
-  }
+body {
+  margin: 0;
+  background: #111;
+  color: #fff;
+  font-family: system-ui, Arial, sans-serif;
+  padding-bottom: 40px;
+}
+
 
   header {
     position: fixed;
@@ -45,10 +47,29 @@
     opacity: 0.6;
     padding: 10px 0;
   }
+  
+  #footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  text-align: center;
+  line-height: 32px;
+  font-size: 13px;
+  z-index: 20;
+  pointer-events: none; /* 🔑 tidak ganggu swipe */
+}
+
+/* beri ruang supaya gambar tidak ketutup */
+  
 </style>
 </head>
 
 <body>
+
 
 <header>
   <input type="file" id="folderInput"
@@ -62,11 +83,13 @@
     <div id="status">Pilih folder komik</div>
   </div>
 </div>
-
+<div id="footer">Halaman 1 / 1</div>
 <script>
 const input = document.getElementById("folderInput");
 const image = document.getElementById("image");
 const status = document.getElementById("status");
+const footer = document.getElementById("footer");
+
 
 let files = [];
 let index = 0;
@@ -93,8 +116,9 @@ input.addEventListener("change", () => {
 function show() {
   image.src = URL.createObjectURL(files[index]);
   window.scrollTo({ top: 0, behavior: "instant" });
-  status.textContent = `Halaman ${index + 1} / ${files.length}`;
+  footer.textContent = `Halaman ${index + 1} / ${files.length}`;
 }
+
 
 /* Swipe kiri-kanan */
 let startX = 0;
@@ -123,6 +147,7 @@ document.addEventListener("keydown", e => {
   }
 });
 </script>
+
 
 </body>
 </html>
